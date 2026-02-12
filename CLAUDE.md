@@ -1,4 +1,3 @@
-
 # Bureaucrat v2
 
 Discord bot built with Bun, TypeScript, discord.js, Drizzle ORM, and Postgres.
@@ -54,9 +53,9 @@ Production does not use Docker. The bot runs directly with `bun run start` again
 Use `bun test` to run tests.
 
 ```ts
-import { test, expect } from "bun:test";
+import { test, expect } from 'bun:test';
 
-test("example", () => {
+test('example', () => {
   expect(1).toBe(1);
 });
 ```

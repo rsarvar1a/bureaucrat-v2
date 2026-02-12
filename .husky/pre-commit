@@ -1,12 +1,16 @@
-bun run db:generate
+if git diff --cached --name-only | grep -q 'schema/'; then
 
-# stage any newly generated migration files
-git add migrations/
+  bun run db:generate || true
+  git add migrations/
 
-# warn if migrations were generated
-if git diff --cached --name-only | grep -q '^migrations/'; then
-  echo ""
-  echo "New migrations were generated and staged."
-  echo "Please rename the migration subfolder in a fixup commit."
-  echo ""
+  if git diff --cached --name-only | grep -q '^migrations/'; then
+    echo ""
+    echo "New migrations were generated and staged."
+    echo "Please rename the migration subfolder in a fixup commit."
+    echo ""
+  fi
 fi
+
+# oxlint and prettier
+bun run lint && bun run format
+echo ""

@@ -32,8 +32,5 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/index.ts .
 COPY --from=prerelease /usr/src/app/package.json .
 
-# run any necessary DB migrations
-RUN bun x drizzle-kit migrate
-
 # run the app
-CMD "bun run index.ts"
+CMD "bun run start"

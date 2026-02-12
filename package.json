@@ -18,5 +18,10 @@
     "drizzle-orm": "^0.45.1",
     "pg": "^8.18.0",
     "postgres": "^3.4.8"
+  },
+  "scripts": {
+    "db:generate": "bun x drizzle-kit generate",
+    "db:migrate": "bun x drizzle-kit migrate",
+    "start": "bun run db:migrate && bun run index.ts"
   }
 }

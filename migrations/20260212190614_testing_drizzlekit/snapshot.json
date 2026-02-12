@@ -1,26 +1,16 @@
 {
-  "id": "b80fdcf1-5e04-4904-93dd-38c5df578faa",
+  "version": "8",
+  "dialect": "postgres",
+  "id": "706c9d79-30c7-4fe1-b4d1-09d4e228b841",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
-  "version": "8",
-  "dialect": "postgres",
   "ddl": [
     {
       "isRlsEnabled": false,
       "name": "meta",
-      "schema": "public",
-      "entityType": "tables"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "meta_pkey",
-      "schema": "public",
-      "table": "meta",
-      "entityType": "pks"
+      "entityType": "tables",
+      "schema": "public"
     },
     {
       "type": "integer",
@@ -30,19 +20,19 @@
       "default": null,
       "generated": null,
       "identity": {
-        "name": "meta_id_seq",
         "type": "always",
+        "name": "meta_id_seq",
+        "increment": "1",
         "startWith": "1",
         "minValue": "1",
         "maxValue": "2147483647",
-        "increment": "1",
         "cache": 1,
         "cycle": false
       },
       "name": "id",
+      "entityType": "columns",
       "schema": "public",
-      "table": "meta",
-      "entityType": "columns"
+      "table": "meta"
     },
     {
       "type": "text",
@@ -53,9 +43,9 @@
       "generated": null,
       "identity": null,
       "name": "name",
+      "entityType": "columns",
       "schema": "public",
-      "table": "meta",
-      "entityType": "columns"
+      "table": "meta"
     },
     {
       "type": "text",
@@ -66,9 +56,9 @@
       "generated": null,
       "identity": null,
       "name": "script_id",
+      "entityType": "columns",
       "schema": "public",
-      "table": "meta",
-      "entityType": "columns"
+      "table": "meta"
     },
     {
       "type": "text",
@@ -79,9 +69,19 @@
       "generated": null,
       "identity": null,
       "name": "author",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "meta"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "meta_pkey",
       "schema": "public",
       "table": "meta",
-      "entityType": "columns"
+      "entityType": "pks"
     }
   ],
   "renames": []

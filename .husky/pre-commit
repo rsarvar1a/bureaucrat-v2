@@ -1,0 +1,12 @@
+bun run db:generate
+
+# stage any newly generated migration files
+git add migrations/
+
+# warn if migrations were generated
+if git diff --cached --name-only | grep -q '^migrations/'; then
+  echo ""
+  echo "New migrations were generated and staged."
+  echo "Please rename the migration subfolder in a fixup commit."
+  echo ""
+fi

@@ -4,9 +4,12 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "@types/bun": "latest",
     "@types/pg": "^8.16.0",
     "drizzle-kit": "^1.0.0-beta.15-859cf75",
+    "husky": "^9.1.7",
     "tsx": "^4.21.0"
   },
   "peerDependencies": {
@@ -23,6 +26,7 @@
     "db:generate": "bun x drizzle-kit generate",
     "db:migrate": "bun x drizzle-kit migrate",
     "docker": "bun --watch run docker/entrypoint.ts",
-    "dev": "bun run index.ts"
+    "dev": "bun run index.ts",
+    "prepare": "husky"
   }
 }

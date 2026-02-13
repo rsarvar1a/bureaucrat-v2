@@ -30,7 +30,7 @@ export const Queue = core.table('Queue', {
   name: text().notNull(),
   concurrency: integer(),
   entriesPerStoryteller: integer(),
-  ...snowflakes('category'),
+  ...snowflakes('guild', 'category'),
   ...timestamps(),
 });
 

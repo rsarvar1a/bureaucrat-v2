@@ -11,7 +11,8 @@ export type SnowflakeReferenceable = 'guild' | 'category' | 'channel' | 'thread'
 type _ColumnSet<T extends SnowflakeReferenceable, N> = Record<T, ReturnType<N extends true ? typeof bigint : typeof bigintnotnull>>;
 
 /**
- *  Given a set of Discord object types referenceable by snowflake, produces a subset of non-null integer columns for them.
+ *  Given a set of Discord object types referenceable by snowflake, produces a subset of integer columns for them.
+ *  Pass `true` as the first argument to make columns nullable.
  */
 export const snowflakes = <
   TA extends [true, ...SnowflakeReferenceable[]] | SnowflakeReferenceable[],

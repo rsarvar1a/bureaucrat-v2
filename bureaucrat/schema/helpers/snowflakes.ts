@@ -21,6 +21,11 @@ type _ColumnSet<T extends SnowflakeReferenceable, N> = Record<
 >;
 
 /**
+ *  Creates a bigint column in JS mode to represent a snowflake.
+ */
+export const snowflake = bigint;
+
+/**
  *  Given a set of Discord object types referenceable by snowflake, produces a subset of integer columns for them.
  *  Pass `true` as the first argument to make columns nullable.
  */

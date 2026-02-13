@@ -1,6 +1,6 @@
 import { bigint as pgBigint } from 'drizzle-orm/pg-core';
 
-const bigint = () => pgBigint({ mode: 'number' });
+const bigint = () => pgBigint({ mode: 'bigint' });
 const bigintnotnull = () => bigint().notNull();
 
 /**

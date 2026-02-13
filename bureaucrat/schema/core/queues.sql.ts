@@ -49,12 +49,14 @@ export const Queue = core.table('Queue', {
  */
 export const QueueEntry = core.table('QueueEntry', {
   id: primary.uuid(),
-  queue: uuid().references(() => Queue.id, { onDelete: 'cascade' }),
+  queue: uuid()
+    .notNull()
+    .references(() => Queue.id, { onDelete: 'cascade' }),
   storyteller: snowflake().notNull(),
   title: text().notNull(),
   description: text().notNull(),
-  minimumStartDate: automaticTimestamp(),
-  public: boolean().default(true),
+  minimumStartDate: automaticTimestamp().notNull(),
+  public: boolean().notNull().default(true),
   ...timestamps(),
 });
 

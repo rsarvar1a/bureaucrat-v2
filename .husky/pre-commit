@@ -1,6 +1,8 @@
 if git diff --cached --name-only | grep -q 'schema/'; then
 
   bun run db:generate || true
+  echo ""
+  
   git add migrations/
 
   if git diff --cached --name-only | grep -q '^migrations/'; then

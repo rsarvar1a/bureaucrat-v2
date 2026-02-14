@@ -1,6 +1,6 @@
 import { bigint as pgBigint } from 'drizzle-orm/pg-core';
 
-const bigint = () => pgBigint({ mode: 'number' });
+const bigint = () => pgBigint({ mode: 'bigint' });
 const bigintnotnull = () => bigint().notNull();
 
 /**
@@ -19,6 +19,11 @@ type _ColumnSet<T extends SnowflakeReferenceable, N> = Record<
   T,
   ReturnType<N extends true ? typeof bigint : typeof bigintnotnull>
 >;
+
+/**
+ *  Creates a bigint column in JS mode to represent a snowflake.
+ */
+export const snowflake = bigint;
 
 /**
  *  Given a set of Discord object types referenceable by snowflake, produces a subset of integer columns for them.

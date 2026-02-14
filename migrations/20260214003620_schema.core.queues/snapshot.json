@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "75b21c41-e91c-4d17-9275-31eaabe86393",
+  "id": "19f37f14-e71d-46bb-a2cb-0e5cb69ea55e",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -94,6 +94,19 @@
       "default": null,
       "generated": null,
       "identity": null,
+      "name": "guild",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
       "name": "category",
       "entityType": "columns",
       "schema": "core",
@@ -141,7 +154,7 @@
     {
       "type": "uuid",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -193,7 +206,7 @@
     {
       "type": "timestamp",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": "now()",
       "generated": null,
@@ -206,7 +219,7 @@
     {
       "type": "boolean",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": "true",
       "generated": null,

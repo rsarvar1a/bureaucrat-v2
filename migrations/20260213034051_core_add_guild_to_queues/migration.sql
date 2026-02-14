@@ -1,1 +1,0 @@
-ALTER TABLE "core"."Queue" ADD COLUMN "guild" bigint NOT NULL;

@@ -78,9 +78,11 @@ export const QueueEntrySignup = core.table(
   'QueueEntrySignup',
   {
     ...snowflakes('member'),
-    queueEntryId: uuid().references(() => QueueEntry.id, {
-      onDelete: 'cascade',
-    }),
+    queueEntryId: uuid()
+      .notNull()
+      .references(() => QueueEntry.id, {
+        onDelete: 'cascade',
+      }),
     role: Role().notNull(),
     message: text(),
     accepted: boolean().notNull().default(false),

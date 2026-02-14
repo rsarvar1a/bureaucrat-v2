@@ -4,6 +4,7 @@ CREATE TABLE "core"."Queue" (
 	"name" text NOT NULL,
 	"concurrency" integer,
 	"entriesPerStoryteller" integer,
+	"guild" bigint NOT NULL,
 	"category" bigint NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
@@ -11,12 +12,12 @@ CREATE TABLE "core"."Queue" (
 --> statement-breakpoint
 CREATE TABLE "core"."QueueEntry" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"queue" uuid,
+	"queue" uuid NOT NULL,
 	"storyteller" bigint NOT NULL,
 	"title" text NOT NULL,
 	"description" text NOT NULL,
-	"minimumStartDate" timestamp DEFAULT now(),
-	"public" boolean DEFAULT true,
+	"minimumStartDate" timestamp DEFAULT now() NOT NULL,
+	"public" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );

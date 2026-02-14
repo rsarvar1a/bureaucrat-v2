@@ -1,4 +1,4 @@
-import { boolean, integer, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, text, unique, uuid } from 'drizzle-orm/pg-core';
 import {
   automaticTimestamp,
   primary,
@@ -6,8 +6,8 @@ import {
   snowflakes,
   timestamps,
 } from '../helpers';
-import { core } from '.';
-import { Role } from './roles.sql';
+import { core } from './.schema.sql';
+import { Role } from './enums.sql';
 
 /**
  * A Queue is a list of Storyteller intents to run games:
@@ -77,8 +77,9 @@ export const QueueEntry = core.table('QueueEntry', {
 export const QueueEntrySignup = core.table(
   'QueueEntrySignup',
   {
+    id: primary.uuid(),
     ...snowflakes('member'),
-    queueEntryId: uuid()
+    entry: uuid()
       .notNull()
       .references(() => QueueEntry.id, {
         onDelete: 'cascade',
@@ -88,5 +89,5 @@ export const QueueEntrySignup = core.table(
     accepted: boolean().notNull().default(false),
     ...timestamps(),
   },
-  (table) => [primaryKey({ columns: [table.member, table.queueEntryId] })],
+  (table) => [unique().on(table.member, table.entry)],
 );

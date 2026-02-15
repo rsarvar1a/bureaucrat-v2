@@ -1,4 +1,10 @@
-import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  foreignKey,
+  integer,
+  text,
+  unique,
+} from 'drizzle-orm/pg-core';
 import { primary, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { PlayerState } from './enums.sql';
@@ -38,5 +44,12 @@ export const Seating = core.table(
     trueRole: text(),
     ...timestamps(),
   },
-  (table) => [unique().on(table.game, table.seat)],
+  (table) => [
+    unique().on(table.game, table.seat),
+    unique().on(table.game, table.id),
+    foreignKey({
+      columns: [table.game, table.player],
+      foreignColumns: [Participant.game, Participant.id],
+    }).onDelete('cascade'),
+  ],
 );

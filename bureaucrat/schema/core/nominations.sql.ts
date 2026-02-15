@@ -1,7 +1,13 @@
-import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  foreignKey,
+  integer,
+  text,
+  unique,
+} from 'drizzle-orm/pg-core';
 import { primary, timestamps } from '../helpers';
 import { core } from './.schema.sql';
-import { GamePhase } from './games.sql';
+import { Game, GamePhase } from './games.sql';
 import { Seating } from './seating.sql';
 import { PlayerState } from './enums.sql';
 import { fk } from '../helpers/foreign-key';
@@ -14,6 +20,7 @@ export const Nomination = core.table(
   'Nomination',
   {
     id: primary.uuid(),
+    game: fk(Game.id, { onDelete: 'cascade' }),
     phase: fk(GamePhase.id, { onDelete: 'cascade' }),
     plaintiff: fk(Seating.id, { onDelete: 'cascade' }),
     defendant: fk(Seating.id, { onDelete: 'cascade' }),
@@ -26,6 +33,19 @@ export const Nomination = core.table(
   (table) => [
     unique().on(table.phase, table.plaintiff),
     unique().on(table.phase, table.defendant),
+    unique().on(table.game, table.id),
+    foreignKey({
+      columns: [table.game, table.phase],
+      foreignColumns: [GamePhase.game, GamePhase.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.game, table.plaintiff],
+      foreignColumns: [Seating.game, Seating.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.game, table.defendant],
+      foreignColumns: [Seating.game, Seating.id],
+    }).onDelete('cascade'),
   ],
 );
 
@@ -44,6 +64,7 @@ export const Vote = core.table(
   'Vote',
   {
     id: primary.uuid(),
+    game: fk(Game.id, { onDelete: 'cascade' }),
     nomination: fk(Nomination.id, { onDelete: 'cascade' }),
     player: fk(Seating.id, { onDelete: 'cascade' }),
     state: PlayerState().notNull(),
@@ -52,5 +73,15 @@ export const Vote = core.table(
     private: text(),
     ...timestamps(),
   },
-  (table) => [unique().on(table.nomination, table.player)],
+  (table) => [
+    unique().on(table.nomination, table.player),
+    foreignKey({
+      columns: [table.game, table.nomination],
+      foreignColumns: [Nomination.game, Nomination.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.game, table.player],
+      foreignColumns: [Seating.game, Seating.id],
+    }).onDelete('cascade'),
+  ],
 );

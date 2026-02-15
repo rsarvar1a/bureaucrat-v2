@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "838064e9-caaa-4fde-b711-1b0fc4c028e0",
+  "id": "dd7bf87a-6e56-40ae-b125-c6e632811399",
   "prevIds": [
-    "46003d0c-32c4-42e4-8ec0-cf83166687f9"
+    "19f37f14-e71d-46bb-a2cb-0e5cb69ea55e"
   ],
   "ddl": [
     {
@@ -380,6 +380,19 @@
       "default": null,
       "generated": null,
       "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
       "name": "phase",
       "entityType": "columns",
       "schema": "core",
@@ -498,6 +511,19 @@
       "generated": null,
       "identity": null,
       "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
       "entityType": "columns",
       "schema": "core",
       "table": "Vote"
@@ -1141,6 +1167,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "phase"
       ],
       "schemaTo": "core",
@@ -1192,6 +1235,80 @@
     {
       "nameExplicit": false,
       "columns": [
+        "game",
+        "phase"
+      ],
+      "schemaTo": "core",
+      "tableTo": "GamePhase",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_phase_GamePhase_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "plaintiff"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_plaintiff_Seating_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "defendant"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_defendant_Seating_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Vote_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "nomination"
       ],
       "schemaTo": "core",
@@ -1219,6 +1336,44 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "Vote_player_Seating_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "nomination"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Nomination",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Vote_game_nomination_Nomination_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "player"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Vote_game_player_Seating_game_id_fkey",
       "entityType": "fks",
       "schema": "core",
       "table": "Vote"
@@ -1287,6 +1442,25 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "Seating_player_Participant_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "player"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Seating_game_player_Participant_game_id_fkey",
       "entityType": "fks",
       "schema": "core",
       "table": "Seating"
@@ -1398,10 +1572,34 @@
       "nameExplicit": false,
       "columns": [
         "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "GamePhase_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
         "member"
       ],
       "nullsNotDistinct": false,
       "name": "Participant_game_member_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Participant_game_id_unique",
       "entityType": "uniques",
       "schema": "core",
       "table": "Participant"
@@ -1426,6 +1624,18 @@
       ],
       "nullsNotDistinct": false,
       "name": "Nomination_phase_defendant_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Nomination_game_id_unique",
       "entityType": "uniques",
       "schema": "core",
       "table": "Nomination"
@@ -1469,6 +1679,18 @@
     {
       "nameExplicit": false,
       "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Seating_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "player"
       ],
       "nullsNotDistinct": false,
@@ -1478,5 +1700,7 @@
       "entityType": "uniques"
     }
   ],
-  "renames": []
+  "renames": [
+    "core.QueueEntrySignup.queueEntryId->core.QueueEntrySignup.entry"
+  ]
 }

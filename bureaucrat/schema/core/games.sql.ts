@@ -41,7 +41,10 @@ export const Participant = core.table(
     ...snowflakes('member'),
     ...timestamps(),
   },
-  (table) => [unique().on(table.game, table.member)],
+  (table) => [
+    unique().on(table.game, table.member),
+    unique().on(table.game, table.id),
+  ],
 );
 
 /**
@@ -62,5 +65,8 @@ export const GamePhase = core.table(
     on: integer().notNull(),
     ...timestamps(),
   },
-  (table) => [unique().on(table.game, table.phase, table.on)],
+  (table) => [
+    unique().on(table.game, table.phase, table.on),
+    unique().on(table.game, table.id),
+  ],
 );

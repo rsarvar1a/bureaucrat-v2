@@ -1,1 +1,0 @@
-ALTER TABLE "core"."Seating" ADD CONSTRAINT "Seating_player_key" UNIQUE("player");

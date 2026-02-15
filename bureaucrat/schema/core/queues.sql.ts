@@ -1,4 +1,4 @@
-import { boolean, integer, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
 import {
   automaticTimestamp,
   primary,
@@ -6,8 +6,9 @@ import {
   snowflakes,
   timestamps,
 } from '../helpers';
-import { core } from '.';
-import { Role } from './roles.sql';
+import { core } from './.schema.sql';
+import { Role } from './enums.sql';
+import { fk } from '../helpers/foreign-key';
 
 /**
  * A Queue is a list of Storyteller intents to run games:
@@ -49,9 +50,7 @@ export const Queue = core.table('Queue', {
  */
 export const QueueEntry = core.table('QueueEntry', {
   id: primary.uuid(),
-  queue: uuid()
-    .notNull()
-    .references(() => Queue.id, { onDelete: 'cascade' }),
+  queue: fk(Queue.id, { onDelete: 'cascade' }),
   storyteller: snowflake().notNull(),
   title: text().notNull(),
   description: text().notNull(),
@@ -77,16 +76,13 @@ export const QueueEntry = core.table('QueueEntry', {
 export const QueueEntrySignup = core.table(
   'QueueEntrySignup',
   {
+    id: primary.uuid(),
     ...snowflakes('member'),
-    queueEntryId: uuid()
-      .notNull()
-      .references(() => QueueEntry.id, {
-        onDelete: 'cascade',
-      }),
+    entry: fk(QueueEntry.id, { onDelete: 'cascade' }),
     role: Role().notNull(),
     message: text(),
     accepted: boolean().notNull().default(false),
     ...timestamps(),
   },
-  (table) => [primaryKey({ columns: [table.member, table.queueEntryId] })],
+  (table) => [unique().on(table.member, table.entry)],
 );

@@ -1,0 +1,9 @@
+ALTER TABLE "core"."Nomination" DROP CONSTRAINT "Nomination_game_Game_id_fkey", ADD CONSTRAINT "Nomination_game_Game_id_fkey" FOREIGN KEY ("game") REFERENCES "core"."Game"("id");--> statement-breakpoint
+ALTER TABLE "core"."Nomination" DROP CONSTRAINT "Nomination_phase_GamePhase_id_fkey", ADD CONSTRAINT "Nomination_phase_GamePhase_id_fkey" FOREIGN KEY ("phase") REFERENCES "core"."GamePhase"("id");--> statement-breakpoint
+ALTER TABLE "core"."Nomination" DROP CONSTRAINT "Nomination_plaintiff_Seating_id_fkey", ADD CONSTRAINT "Nomination_plaintiff_Seating_id_fkey" FOREIGN KEY ("plaintiff") REFERENCES "core"."Seating"("id");--> statement-breakpoint
+ALTER TABLE "core"."Nomination" DROP CONSTRAINT "Nomination_defendant_Seating_id_fkey", ADD CONSTRAINT "Nomination_defendant_Seating_id_fkey" FOREIGN KEY ("defendant") REFERENCES "core"."Seating"("id");--> statement-breakpoint
+ALTER TABLE "core"."Vote" DROP CONSTRAINT "Vote_game_Game_id_fkey", ADD CONSTRAINT "Vote_game_Game_id_fkey" FOREIGN KEY ("game") REFERENCES "core"."Game"("id");--> statement-breakpoint
+ALTER TABLE "core"."Vote" DROP CONSTRAINT "Vote_nomination_Nomination_id_fkey", ADD CONSTRAINT "Vote_nomination_Nomination_id_fkey" FOREIGN KEY ("nomination") REFERENCES "core"."Nomination"("id");--> statement-breakpoint
+ALTER TABLE "core"."Vote" DROP CONSTRAINT "Vote_player_Seating_id_fkey", ADD CONSTRAINT "Vote_player_Seating_id_fkey" FOREIGN KEY ("player") REFERENCES "core"."Seating"("id");--> statement-breakpoint
+ALTER TABLE "core"."Seating" DROP CONSTRAINT "Seating_game_Game_id_fkey", ADD CONSTRAINT "Seating_game_Game_id_fkey" FOREIGN KEY ("game") REFERENCES "core"."Game"("id");--> statement-breakpoint
+ALTER TABLE "core"."Seating" DROP CONSTRAINT "Seating_player_Participant_id_fkey", ADD CONSTRAINT "Seating_player_Participant_id_fkey" FOREIGN KEY ("player") REFERENCES "core"."Participant"("id");

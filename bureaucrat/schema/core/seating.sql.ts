@@ -33,8 +33,8 @@ export const Seating = core.table(
   'Seating',
   {
     id: primary.uuid(),
-    game: fk(Game.id, { onDelete: 'cascade' }),
-    player: fk(Participant.id, { onDelete: 'cascade' }).unique(),
+    game: fk(Game.id),
+    player: fk(Participant.id).unique(),
     seat: integer().notNull(),
     state: PlayerState().notNull().default('alive'),
     traveler: boolean().notNull().default(false),

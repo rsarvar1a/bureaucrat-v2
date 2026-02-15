@@ -1,8 +1,9 @@
-import { integer, unique, uuid } from 'drizzle-orm/pg-core';
+import { integer, unique } from 'drizzle-orm/pg-core';
 import { primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { GameState, PhaseType, Role } from './enums.sql';
 import { Queue } from './queues.sql';
+import { fk } from '../helpers/foreign-key';
 
 /**
  * A Game is the central reference for all parts of its constituent state.
@@ -17,17 +18,12 @@ import { Queue } from './queues.sql';
  */
 export const Game = core.table('Game', {
   id: primary.uuid(),
-  queue: uuid().references(() => Queue.id, { onDelete: 'set null' }),
+  queue: fk(Queue.id, { nullable: true, onDelete: 'set null' }),
   creator: snowflake().notNull(),
   state: GameState().notNull().default('signups'),
   ...snowflakes('guild', 'channel'),
   ...timestamps(),
 });
-
-export const FKGame = () =>
-  uuid()
-    .notNull()
-    .references(() => Game.id, { onDelete: 'cascade' });
 
 /**
  * A Participant describes the capacity in which a server member is
@@ -40,18 +36,13 @@ export const Participant = core.table(
   'Participant',
   {
     id: primary.uuid(),
-    game: FKGame(),
+    game: fk(Game.id, { onDelete: 'cascade' }),
     role: Role().notNull(),
     ...snowflakes('member'),
     ...timestamps(),
   },
   (table) => [unique().on(table.game, table.member)],
 );
-
-export const FKParticipant = () =>
-  uuid()
-    .notNull()
-    .references(() => Participant.id, { onDelete: 'cascade' });
 
 /**
  * A GamePhase represents a day or night in a running Game. The
@@ -66,7 +57,7 @@ export const GamePhase = core.table(
   'GamePhase',
   {
     id: primary.uuid(),
-    game: FKGame(),
+    game: fk(Game.id, { onDelete: 'cascade' }),
     phase: PhaseType().notNull(),
     on: integer().notNull(),
     ...timestamps(),

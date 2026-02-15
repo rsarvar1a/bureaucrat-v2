@@ -1,9 +1,10 @@
-import { boolean, integer, text, unique, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
 import { primary, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { GamePhase } from './games.sql';
-import { FKPlayer } from './seating.sql';
+import { Seating } from './seating.sql';
 import { PlayerState } from './enums.sql';
+import { fk } from '../helpers/foreign-key';
 
 /**
  * A Nomination is a collection of each point-in-time voting ballot created
@@ -13,11 +14,9 @@ export const Nomination = core.table(
   'Nomination',
   {
     id: primary.uuid(),
-    phase: uuid()
-      .notNull()
-      .references(() => GamePhase.id, { onDelete: 'cascade' }),
-    plaintiff: FKPlayer(),
-    defendant: FKPlayer(),
+    phase: fk(GamePhase.id, { onDelete: 'cascade' }),
+    plaintiff: fk(Seating.id, { onDelete: 'cascade' }),
+    defendant: fk(Seating.id, { onDelete: 'cascade' }),
     required: integer().notNull(),
     block: boolean().notNull().default(false),
     accusation: text(),
@@ -45,10 +44,8 @@ export const Vote = core.table(
   'Vote',
   {
     id: primary.uuid(),
-    nomination: uuid()
-      .notNull()
-      .references(() => Nomination.id, { onDelete: 'cascade' }),
-    player: FKPlayer(),
+    nomination: fk(Nomination.id, { onDelete: 'cascade' }),
+    player: fk(Seating.id, { onDelete: 'cascade' }),
     state: PlayerState().notNull(),
     lock: integer(),
     public: text(),

@@ -1,7 +1,7 @@
 import { integer, unique } from 'drizzle-orm/pg-core';
 import { primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
-import { GameState, PhaseType, Role } from './enums.sql';
+import { GameState, Phase, Role } from './enums.sql';
 import { Queue } from './queues.sql';
 import { fk } from '../helpers/foreign-key';
 
@@ -61,7 +61,7 @@ export const GamePhase = core.table(
   {
     id: primary.uuid(),
     game: fk(Game.id, { onDelete: 'cascade' }),
-    phase: PhaseType().notNull(),
+    phase: Phase().notNull(),
     on: integer().notNull(),
     ...timestamps(),
   },

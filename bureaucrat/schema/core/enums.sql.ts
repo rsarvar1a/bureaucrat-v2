@@ -27,4 +27,21 @@ export const PlayerState = core.enum('PlayerState', ['alive', 'dead', 'spent']);
  * Clocktower games have days and nights; we track each one
  * separately so we can attach events to them.
  */
-export const PhaseType = core.enum('Phase', ['night', 'day']);
+export const Phase = core.enum('Phase', ['night', 'day']);
+
+/**
+ * A Thread can be one of the following:
+ * - ST thread: a communication between Storytellers and a particular player
+ * - KIBITZ: a thread for Storytellers and Kibitzers (spectators)
+ * - public: a thread open by default to all players, such as a Rules thread
+ * - storyteller: a thread open only to Storytellers, like ST PRIVATE or GRIMOIRES
+ * - whisper: a thread open to a particular subset of whispering players, as well as
+ *    all Storytellers and any Kibitzers following at least one of the target players
+ */
+export const ThreadType = core.enum('ThreadType', [
+  'storyteller',
+  'kibitz',
+  'public',
+  'ST thread',
+  'whisper',
+]);

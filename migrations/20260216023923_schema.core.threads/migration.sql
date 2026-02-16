@@ -4,6 +4,8 @@ CREATE TABLE "core"."Follow" (
 	"game" uuid NOT NULL,
 	"target" uuid NOT NULL,
 	"follower" uuid NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "Follow_target_follower_unique" UNIQUE("target","follower")
 );
 --> statement-breakpoint
@@ -12,9 +14,10 @@ CREATE TABLE "core"."ManagedThread" (
 	"game" uuid NOT NULL,
 	"kind" "core"."ThreadType" NOT NULL,
 	"tag" text,
-	"thread" bigint NOT NULL,
+	"thread" bigint NOT NULL UNIQUE,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "ManagedThread_game_id_unique" UNIQUE("game","id")
 );
 --> statement-breakpoint
 CREATE TABLE "core"."ManagedThreadParticipant" (
@@ -23,7 +26,8 @@ CREATE TABLE "core"."ManagedThreadParticipant" (
 	"thread" uuid NOT NULL,
 	"participant" uuid NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"updatedAt" timestamp DEFAULT now() NOT NULL
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "ManagedThreadParticipant_thread_participant_unique" UNIQUE("thread","participant")
 );
 --> statement-breakpoint
 ALTER TABLE "core"."Follow" ADD CONSTRAINT "Follow_game_Game_id_fkey" FOREIGN KEY ("game") REFERENCES "core"."Game"("id") ON DELETE CASCADE;--> statement-breakpoint

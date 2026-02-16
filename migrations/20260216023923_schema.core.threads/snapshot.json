@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "db59c93f-33d2-4fe8-8d92-018da56fb4a8",
+  "id": "26f8c95f-8923-4b35-bf21-18e118f7336f",
   "prevIds": [
     "a7e28a31-c839-4a21-9fb3-07b30d3d7859"
   ],
@@ -1196,6 +1196,32 @@
       "table": "Follow"
     },
     {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
       "type": "uuid",
       "typeSchema": null,
       "notNull": true,
@@ -2175,6 +2201,41 @@
       "entityType": "uniques",
       "schema": "core",
       "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "ManagedThread_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "thread"
+      ],
+      "nullsNotDistinct": false,
+      "name": "ManagedThread_thread_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "thread",
+        "participant"
+      ],
+      "nullsNotDistinct": false,
+      "name": "ManagedThreadParticipant_thread_participant_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
     },
     {
       "nameExplicit": false,

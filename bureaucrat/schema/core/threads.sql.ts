@@ -10,14 +10,18 @@ import { Game, Participant } from './games.sql';
  * and certain threads (such as ST threads and whispers) allow Kibitzers to programmatically
  * follow certain players around in the game.
  */
-export const ManagedThread = core.table('ManagedThread', {
-  id: primary.uuid(),
-  game: fk(Game.id, { onDelete: 'cascade' }),
-  kind: ThreadType().notNull(),
-  tag: text(),
-  ...snowflakes('thread'),
-  ...timestamps(),
-});
+export const ManagedThread = core.table(
+  'ManagedThread',
+  {
+    id: primary.uuid(),
+    game: fk(Game.id, { onDelete: 'cascade' }),
+    kind: ThreadType().notNull(),
+    tag: text(),
+    ...snowflakes('thread'),
+    ...timestamps(),
+  },
+  (table) => [unique().on(table.game, table.id), unique().on(table.thread)],
+);
 
 /**
  * A Participant in the Game can interact with a ManagedThread, and Bureaucrat
@@ -33,6 +37,7 @@ export const ManagedThreadParticipant = core.table(
     ...timestamps(),
   },
   (table) => [
+    unique().on(table.thread, table.participant),
     foreignKey({
       columns: [table.game, table.thread],
       foreignColumns: [ManagedThread.game, ManagedThread.id],
@@ -57,6 +62,7 @@ export const Follow = core.table(
     game: fk(Game.id, { onDelete: 'cascade' }),
     target: fk(Participant.id),
     follower: fk(Participant.id),
+    ...timestamps(),
   },
   (table) => [
     unique().on(table.target, table.follower),

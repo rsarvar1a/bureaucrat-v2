@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { db } from './bureaucrat/utilities/db';
+import { commandDefinitions } from './bureaucrat/discord/commands';
 
-const resp = await db.execute('select now()');
-console.log(resp.entries().toArray());
+console.log(`Loaded ${commandDefinitions.length} command definitions.`);

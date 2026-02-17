@@ -41,6 +41,8 @@ export const loadDefinitions = async (): Promise<ResolvedCommandDefinition[]> =>
       .relative(root, `${root}/${file}`)
       .replace(/\.cmd\.ts$/, '')
       .replaceAll('/', '::');
+
+    module.default.spec.setName(cmdpath.split('::').slice(-1)[0]!);
     return { ...module.default, path: cmdpath };
   });
 

@@ -5,6 +5,6 @@ const deepcommand = async (interaction: ChatInputCommandInteraction) => {
 };
 
 export default {
-  spec: new SlashCommandSubcommandBuilder().setName('deepcommand').setDescription('A deep subcommand!'),
+  spec: new SlashCommandSubcommandBuilder().setDescription('A deep subcommand!'),
   func: deepcommand,
 };

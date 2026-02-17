@@ -5,6 +5,6 @@ const ping = async (interaction: ChatInputCommandInteraction) => {
 };
 
 export default {
-  spec: new SlashCommandBuilder().setName('ping').setDescription('Pongs!'),
+  spec: new SlashCommandBuilder().setDescription('Pongs!'),
   func: ping,
 };

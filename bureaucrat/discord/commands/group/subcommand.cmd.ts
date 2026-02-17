@@ -5,6 +5,6 @@ const subcommand = async (interaction: ChatInputCommandInteraction) => {
 };
 
 export default {
-  spec: new SlashCommandSubcommandBuilder().setName('subcommand').setDescription('A subcommand!'),
+  spec: new SlashCommandSubcommandBuilder().setDescription('A subcommand!'),
   func: subcommand,
 };

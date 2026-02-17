@@ -1,3 +1,4 @@
+CREATE SCHEMA "core";--> statement-breakpoint
 CREATE TYPE "core"."Role" AS ENUM('Player', 'Storyteller', 'Kibitzer');--> statement-breakpoint
 CREATE TABLE "core"."Queue" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

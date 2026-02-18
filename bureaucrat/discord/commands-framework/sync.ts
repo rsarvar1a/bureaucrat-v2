@@ -15,3 +15,8 @@ export const syncCommands = async (commands: SlashCommandBuilder[], develop?: tr
       : Routes.applicationCommands(process.env.DISCORD_CLIENT_ID);
   await rest.put(route, { body: commands });
 };
+
+/**
+ * Deletes all commands in the selected scope.
+ */
+export const deleteCommands = async (develop?: true) => syncCommands([], develop);

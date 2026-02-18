@@ -1,4 +1,9 @@
 import 'dotenv/config';
-import { commandDefinitions } from './bureaucrat/discord/commands';
+import { deleteCommands, syncCommands } from './bureaucrat/discord/commands-framework/sync';
+import { client } from './bureaucrat/discord/client';
+import { commands } from './bureaucrat/discord/commands';
 
-console.log(`Loaded ${commandDefinitions.length} command definitions.`);
+await syncCommands(commands, true);
+await deleteCommands();
+
+client.login(process.env.DISCORD_TOKEN!);

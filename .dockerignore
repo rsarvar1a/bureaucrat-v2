@@ -1,5 +1,6 @@
-.claude
-.git
-.notes
-.docs
-node_modules
+.claude/
+.husky/
+.git/
+.notes/
+docs/
+node_modules/

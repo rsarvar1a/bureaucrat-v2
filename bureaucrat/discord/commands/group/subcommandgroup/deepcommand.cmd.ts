@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from 'discord.js';
 
 const deepcommand = async (interaction: ChatInputCommandInteraction) => {
-  interaction.reply('This is a deep subcommand!');
+  await interaction.reply('This is a deep subcommand!');
 };
 
 export default {

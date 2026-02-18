@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from 'discord.js';
 
 const subcommand = async (interaction: ChatInputCommandInteraction) => {
-  interaction.reply('This is a lone subcommand!');
+  await interaction.reply('This is a lone subcommand!');
 };
 
 export default {

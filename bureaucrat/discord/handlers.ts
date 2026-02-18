@@ -15,7 +15,12 @@ class TopLevelHandlerDefinition<E extends keyof ClientEvents> {
   ) {}
 
   registerTo(client: Client) {
-    client[this.as](this.event, this.handler);
+    client[this.as](this.event, (...args) => {
+      Promise.resolve(this.handler(...args)).catch((e) => {
+        const errMsg = typeof e === 'object' && Object.hasOwn(e, 'message') ? e.message : typeof e === 'string' ? e : JSON.stringify(e);
+        console.error(`Encountered uncaught error: ${errMsg}`);
+      });
+    });
   }
 }
 

@@ -2,15 +2,15 @@ if git diff --cached --name-only -- bureaucrat/schema | grep -qE '\.sql\.ts$'; t
 
   bun run db:generate || true
   echo ""
-  
+
+  git add migrations/
+
   if git diff --cached --name-only | grep -q '^migrations/'; then
     echo ""
     echo "New migrations were generated and staged."
     echo "Please rename the migration subfolder in a fixup commit."
     echo ""
   fi
-
-  git add migrations/
 else
   echo "No changes to SQL schema files detected. Skipping migration generation."
   echo ""

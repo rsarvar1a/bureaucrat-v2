@@ -1,10 +1,6 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
+import { Superbuilder } from '../commands-framework/builders/superbuilder';
 
-const ping = async (interaction: ChatInputCommandInteraction) => {
+export default new Superbuilder(new SlashCommandBuilder()).describe('Pongs!').define(async (interaction) => {
   await interaction.reply('Pong!');
-};
-
-export default {
-  spec: new SlashCommandBuilder().setDescription('Pongs!'),
-  func: ping,
-};
+});

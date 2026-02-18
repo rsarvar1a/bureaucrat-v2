@@ -54,7 +54,29 @@ export type OptionValueOf<B> = B extends typeof SlashCommandAttachmentOption
                   ? User | APIUser
                   : never;
 
-export const optionMeta = new Map<OptionBuilderClass, { adder: string; getter: string }>([
+export type Adder =
+  | 'addAttachmentOption'
+  | 'addBooleanOption'
+  | 'addChannelOption'
+  | 'addIntegerOption'
+  | 'addMentionableOption'
+  | 'addNumberOption'
+  | 'addRoleOption'
+  | 'addStringOption'
+  | 'addUserOption';
+
+export type Getter =
+  | 'getAttachment'
+  | 'getBoolean'
+  | 'getChannel'
+  | 'getInteger'
+  | 'getMentionable'
+  | 'getNumber'
+  | 'getRole'
+  | 'getString'
+  | 'getUser';
+
+export const optionMeta = new Map<OptionBuilderClass, { adder: Adder; getter: Getter }>([
   [SlashCommandAttachmentOption, { adder: 'addAttachmentOption', getter: 'getAttachment' }],
   [SlashCommandBooleanOption, { adder: 'addBooleanOption', getter: 'getBoolean' }],
   [SlashCommandChannelOption, { adder: 'addChannelOption', getter: 'getChannel' }],

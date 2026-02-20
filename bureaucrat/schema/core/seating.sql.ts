@@ -9,7 +9,8 @@ import { primary, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { PlayerState } from './enums.sql';
 import { fk } from '../helpers/foreign-key';
-import { Game, Participant } from './games.sql';
+import { Game } from './games.sql';
+import { Participant } from './people.sql';
 
 /**
  * A Seating entry in a game is effectively all of the bird's eye information

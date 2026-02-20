@@ -2,7 +2,8 @@ import { foreignKey, text, unique } from 'drizzle-orm/pg-core';
 import { fk, primary, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { ThreadType } from './enums.sql';
-import { Game, Participant } from './games.sql';
+import { Game } from './games.sql';
+import { Participant } from './people.sql';
 
 /**
  * A ManagedThread is a thread for which Bureaucrat controls entry and exit conditions

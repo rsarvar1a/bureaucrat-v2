@@ -1,7 +1,7 @@
 import { integer, unique } from 'drizzle-orm/pg-core';
 import { primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
-import { GameState, Phase, Role } from './enums.sql';
+import { GameState, Phase } from './enums.sql';
 import { Queue } from './queues.sql';
 import { fk } from '../helpers/foreign-key';
 
@@ -24,28 +24,6 @@ export const Game = core.table('Game', {
   ...snowflakes('guild', 'channel'),
   ...timestamps(),
 });
-
-/**
- * A Participant describes the capacity in which a server member is
- * participating in a given Game. They can be one of:
- * - Storyteller (of which the creator is a member by default)
- * - Player (an actual player seated in the town square)
- * - Kibitzer (someone who is just spectating and wants to follow along)
- */
-export const Participant = core.table(
-  'Participant',
-  {
-    id: primary.uuid(),
-    game: fk(Game.id, { onDelete: 'cascade' }),
-    role: Role().notNull(),
-    ...snowflakes('member'),
-    ...timestamps(),
-  },
-  (table) => [
-    unique().on(table.game, table.member),
-    unique().on(table.game, table.id),
-  ],
-);
 
 /**
  * A GamePhase represents a day or night in a running Game. The

@@ -54,7 +54,7 @@ export const QueueEntry = core.table('QueueEntry', {
   storyteller: snowflake().notNull(),
   title: text().notNull(),
   description: text().notNull(),
-  minimumStartDate: automaticTimestamp().notNull(),
+  minimumStartDate: automaticTimestamp(),
   public: boolean().notNull().default(true),
   ...timestamps(),
 });

@@ -6,19 +6,9 @@ const bigintnotnull = () => bigint().notNull();
 /**
  *  The snowflake object classes relevant to Bureaucrat.
  */
-export type SnowflakeReferenceable =
-  | 'guild'
-  | 'category'
-  | 'channel'
-  | 'thread'
-  | 'message'
-  | 'member'
-  | 'role';
+export type SnowflakeReferenceable = 'guild' | 'category' | 'channel' | 'thread' | 'message' | 'member' | 'role';
 
-type _ColumnSet<T extends SnowflakeReferenceable, N> = Record<
-  T,
-  ReturnType<N extends true ? typeof bigint : typeof bigintnotnull>
->;
+type _ColumnSet<T extends SnowflakeReferenceable, N> = Record<T, ReturnType<N extends true ? typeof bigint : typeof bigintnotnull>>;
 
 /**
  *  Creates a bigint column in JS mode to represent a snowflake.
@@ -42,7 +32,5 @@ export const snowflakes = <
     return nullable;
   })();
 
-  return Object.fromEntries(
-    (args as T[]).map((k: T) => [k, nullable ? bigint() : bigintnotnull()]),
-  ) as _ColumnSet<T, N>;
+  return Object.fromEntries((args as T[]).map((k: T) => [k, nullable ? bigint() : bigintnotnull()])) as _ColumnSet<T, N>;
 };

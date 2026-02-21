@@ -1,14 +1,9 @@
-import {
-  integer as pgInteger,
-  serial as pgSerial,
-  uuid as pgUuid,
-} from 'drizzle-orm/pg-core';
+import { integer as pgInteger, serial as pgSerial, uuid as pgUuid } from 'drizzle-orm/pg-core';
 
 /**
  *  Creates an integer primary key.
  */
-export const integer = () =>
-  pgInteger().primaryKey().generatedAlwaysAsIdentity();
+export const integer = () => pgInteger().primaryKey().generatedAlwaysAsIdentity();
 
 /**
  *  Creates an autoincrementing primary key.

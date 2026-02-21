@@ -1,10 +1,6 @@
-import { ChatInputCommandInteraction, SlashCommandSubcommandBuilder } from 'discord.js';
+import { SlashCommandSubcommandBuilder } from 'discord.js';
+import { Superbuilder } from '../../commands-framework/builders/superbuilder';
 
-const subcommand = async (interaction: ChatInputCommandInteraction) => {
+export default new Superbuilder(new SlashCommandSubcommandBuilder()).describe('A subcommand!').define(async (interaction) => {
   await interaction.reply('This is a lone subcommand!');
-};
-
-export default {
-  spec: new SlashCommandSubcommandBuilder().setDescription('A subcommand!'),
-  func: subcommand,
-};
+});

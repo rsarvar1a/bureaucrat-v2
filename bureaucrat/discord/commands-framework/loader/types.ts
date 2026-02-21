@@ -4,7 +4,7 @@ export type Spec = SlashCommandBuilder | SlashCommandSubcommandGroupBuilder | Sl
 
 export type CommandDefinition = {
   spec: Spec;
-  func: (interaction: ChatInputCommandInteraction, ...args: unknown[]) => void | Promise<void>;
+  func: (interaction: ChatInputCommandInteraction) => void | Promise<void>;
 };
 
 export type CommandProvidingModule = { default: CommandDefinition };

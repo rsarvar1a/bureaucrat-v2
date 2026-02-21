@@ -1,6 +1,6 @@
-import { loadDefinitions } from './commands-framework/load-definitions';
-import { buildCommandTrees } from './commands-framework/command-trees';
-import type { CommandDefinition } from './commands-framework/types';
+import { loadDefinitions } from './commands-framework/loader/load-definitions';
+import { buildCommandTrees } from './commands-framework/loader/command-trees';
+import type { CommandDefinition } from './commands-framework/loader/types';
 
 // Immediately available
 

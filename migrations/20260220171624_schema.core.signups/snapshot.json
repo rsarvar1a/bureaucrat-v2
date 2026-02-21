@@ -1,0 +1,2401 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "405b9ae4-d4b4-4853-b216-ccb963e23414",
+  "prevIds": [
+    "26f8c95f-8923-4b35-bf21-18e118f7336f"
+  ],
+  "ddl": [
+    {
+      "values": [
+        "signups",
+        "running",
+        "completed"
+      ],
+      "name": "GameState",
+      "entityType": "enums",
+      "schema": "core"
+    },
+    {
+      "values": [
+        "night",
+        "day"
+      ],
+      "name": "Phase",
+      "entityType": "enums",
+      "schema": "core"
+    },
+    {
+      "values": [
+        "alive",
+        "dead",
+        "spent"
+      ],
+      "name": "PlayerState",
+      "entityType": "enums",
+      "schema": "core"
+    },
+    {
+      "values": [
+        "Player",
+        "Storyteller",
+        "Kibitzer"
+      ],
+      "name": "Role",
+      "entityType": "enums",
+      "schema": "core"
+    },
+    {
+      "values": [
+        "storyteller",
+        "kibitz",
+        "public",
+        "ST thread",
+        "whisper"
+      ],
+      "name": "ThreadType",
+      "entityType": "enums",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Game",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "GamePhase",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Nomination",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Vote",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Participant",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Signup",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Queue",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "QueueEntry",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "QueueEntrySignup",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Seating",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "Follow",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "ManagedThread",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "ManagedThreadParticipant",
+      "entityType": "tables",
+      "schema": "core"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "queue",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "creator",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "GameState",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'signups'",
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "guild",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "channel",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "type": "Phase",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phase",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "on",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phase",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "plaintiff",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "defendant",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "required",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "block",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "accusation",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "defense",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nomination",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "player",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "PlayerState",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "lock",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "public",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "private",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "type": "Role",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "member",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "Role",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "member",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "accepted",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "concurrency",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entriesPerStoryteller",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "guild",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "category",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Queue"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "queue",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "storyteller",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "title",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "minimumStartDate",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "true",
+      "generated": null,
+      "identity": null,
+      "name": "public",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "member",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "entry",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "Role",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "message",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "accepted",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "player",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "seat",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "PlayerState",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'alive'",
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "traveler",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "claim",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "apparentRole",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "claimedRole",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "trueRole",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "target",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "follower",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "ThreadType",
+      "typeSchema": "core",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "kind",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "tag",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "thread",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "game",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "thread",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "participant",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "queue"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Queue",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "Game_queue_Queue_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Game"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "GamePhase_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Nomination_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "phase"
+      ],
+      "schemaTo": "core",
+      "tableTo": "GamePhase",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Nomination_phase_GamePhase_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "plaintiff"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Nomination_plaintiff_Seating_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "defendant"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Nomination_defendant_Seating_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "phase"
+      ],
+      "schemaTo": "core",
+      "tableTo": "GamePhase",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_phase_GamePhase_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "plaintiff"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_plaintiff_Seating_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "defendant"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Nomination_game_defendant_Seating_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Vote_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "nomination"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Nomination",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Vote_nomination_Nomination_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "player"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Vote_player_Seating_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "nomination"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Nomination",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Vote_game_nomination_Nomination_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "player"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Seating",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Vote_game_player_Seating_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Participant_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Signup_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "queue"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Queue",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "QueueEntry_queue_Queue_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "QueueEntry"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "entry"
+      ],
+      "schemaTo": "core",
+      "tableTo": "QueueEntry",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "QueueEntrySignup_queueEntryId_QueueEntry_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Seating_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "player"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Seating_player_Participant_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "player"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Seating_game_player_Participant_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Follow_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "target"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Follow_target_Participant_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "follower"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "Follow_follower_Participant_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "target"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Follow_game_target_Participant_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "follower"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "Follow_game_follower_Participant_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "ManagedThread_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Game",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "ManagedThreadParticipant_game_Game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "thread"
+      ],
+      "schemaTo": "core",
+      "tableTo": "ManagedThread",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "ManagedThreadParticipant_thread_ManagedThread_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "participant"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "ManagedThreadParticipant_participant_Participant_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "thread"
+      ],
+      "schemaTo": "core",
+      "tableTo": "ManagedThread",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "ManagedThreadParticipant_game_thread_ManagedThread_game_id_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "participant"
+      ],
+      "schemaTo": "core",
+      "tableTo": "Participant",
+      "columnsTo": [
+        "game",
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "ManagedThreadParticipant_yVovpUWhRoKg_fkey",
+      "entityType": "fks",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Game_pkey",
+      "schema": "core",
+      "table": "Game",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "GamePhase_pkey",
+      "schema": "core",
+      "table": "GamePhase",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Nomination_pkey",
+      "schema": "core",
+      "table": "Nomination",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Vote_pkey",
+      "schema": "core",
+      "table": "Vote",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Participant_pkey",
+      "schema": "core",
+      "table": "Participant",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Signup_pkey",
+      "schema": "core",
+      "table": "Signup",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Queue_pkey",
+      "schema": "core",
+      "table": "Queue",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "QueueEntry_pkey",
+      "schema": "core",
+      "table": "QueueEntry",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "QueueEntrySignup_pkey",
+      "schema": "core",
+      "table": "QueueEntrySignup",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Seating_pkey",
+      "schema": "core",
+      "table": "Seating",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "Follow_pkey",
+      "schema": "core",
+      "table": "Follow",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "ManagedThread_pkey",
+      "schema": "core",
+      "table": "ManagedThread",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "ManagedThreadParticipant_pkey",
+      "schema": "core",
+      "table": "ManagedThreadParticipant",
+      "entityType": "pks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "phase",
+        "on"
+      ],
+      "nullsNotDistinct": false,
+      "name": "GamePhase_game_phase_on_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "GamePhase_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "GamePhase"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "phase",
+        "plaintiff"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Nomination_phase_plaintiff_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "phase",
+        "defendant"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Nomination_phase_defendant_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Nomination_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Nomination"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "nomination",
+        "player"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Vote_nomination_player_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Vote"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "member"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Participant_game_member_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Participant_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Participant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "member"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Signup_game_member_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Signup_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Signup"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "member",
+        "entry"
+      ],
+      "nullsNotDistinct": false,
+      "name": "QueueEntrySignup_member_entry_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "QueueEntrySignup"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "seat"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Seating_game_seat_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Seating_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Seating"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "target",
+        "follower"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Follow_target_follower_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "Follow"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "game",
+        "id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "ManagedThread_game_id_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "thread"
+      ],
+      "nullsNotDistinct": false,
+      "name": "ManagedThread_thread_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "ManagedThread"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "thread",
+        "participant"
+      ],
+      "nullsNotDistinct": false,
+      "name": "ManagedThreadParticipant_thread_participant_unique",
+      "entityType": "uniques",
+      "schema": "core",
+      "table": "ManagedThreadParticipant"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "player"
+      ],
+      "nullsNotDistinct": false,
+      "name": "Seating_player_key",
+      "schema": "core",
+      "table": "Seating",
+      "entityType": "uniques"
+    }
+  ],
+  "renames": []
+}

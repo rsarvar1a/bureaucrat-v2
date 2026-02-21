@@ -1,10 +1,4 @@
-import {
-  boolean,
-  foreignKey,
-  integer,
-  text,
-  unique,
-} from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, integer, text, unique } from 'drizzle-orm/pg-core';
 import { primary, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { PlayerState } from './enums.sql';

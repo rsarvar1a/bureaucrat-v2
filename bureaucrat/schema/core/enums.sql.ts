@@ -9,11 +9,7 @@ export const Role = core.enum('Role', ['Player', 'Storyteller', 'Kibitzer']);
 /**
  * A GameState is rather self-explanatory.
  */
-export const GameState = core.enum('GameState', [
-  'signups',
-  'running',
-  'completed',
-]);
+export const GameState = core.enum('GameState', ['signups', 'running', 'completed']);
 
 /**
  * A player is most often thought of as dead or alive, but
@@ -38,10 +34,4 @@ export const Phase = core.enum('Phase', ['night', 'day']);
  * - whisper: a thread open to a particular subset of whispering players, as well as
  *    all Storytellers and any Kibitzers following at least one of the target players
  */
-export const ThreadType = core.enum('ThreadType', [
-  'storyteller',
-  'kibitz',
-  'public',
-  'ST thread',
-  'whisper',
-]);
+export const ThreadType = core.enum('ThreadType', ['storyteller', 'kibitz', 'public', 'ST thread', 'whisper']);

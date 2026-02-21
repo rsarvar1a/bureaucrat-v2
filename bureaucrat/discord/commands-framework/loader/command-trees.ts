@@ -32,7 +32,9 @@ const applySpec = (parent: Spec, child: Spec) => {
  * Given a list of command definitions with their associated paths, constructs a forest of top-level `SlashCommandBuilder`s.
  */
 export const buildCommandTrees = (definitions: ResolvedCommandDefinition[]): SlashCommandBuilder[] => {
-  const unrolled = definitions.sort((a, b) => b.path.localeCompare(a.path)).map((def) => ({ spec: def.spec, path: def.path.split('::') }));
+  const unrolled = definitions
+    .sort((a, b) => b.path.localeCompare(a.path))
+    .map((def) => ({ spec: def.spec, path: def.path.split('::') }));
 
   unrolled
     .filter((d) => d.path.length >= 2)

@@ -1,5 +1,5 @@
 import { REST, Routes, SlashCommandBuilder } from 'discord.js';
-import { logger } from '../../../utilities/logger';
+import { logger } from '../../../../utilities/logger';
 
 /**
  * Push a command forest up to Discord.

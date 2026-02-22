@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
 import { SlashCommandBuilder, SlashCommandSubcommandBuilder, type ChatInputCommandInteraction } from 'discord.js';
-import type { Expand } from '../../../utilities/types';
+import type { Expand } from '../../../../utilities/types';
 import type { CommandDefinition } from '../loader/types';
 import { optionMeta, type Adder, type Getter, type OptionBuilderClass, type OptionValueOf } from './types';
 

@@ -16,6 +16,7 @@ import type { ViewRow } from '../frameworks/views/types';
 import type { Postgres } from '../../utilities/db';
 import { db } from '../../utilities/db';
 import { View } from '../../schema/abc/views.sql';
+import { resolveEventTemplate } from '../frameworks/views/notify';
 
 type ListState = {
   nextIndex: number;
@@ -153,7 +154,7 @@ export default createView<ListState, typeof ListEvents>({
         .where(eq(View.id, selectedItemId));
 
       await ctx.notifyAll(ListEvents.ItemChanged);
-      await ctx.notify(`li::${selectedItemId}::completed`);
+      await ctx.notify(resolveEventTemplate(ListEvents.ItemCompleted, { li: selectedItemId }));
 
       await interaction.editReply({ content: 'Item marked as complete!', components: [] });
     },

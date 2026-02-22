@@ -33,10 +33,12 @@ export const dispatch = async (
   const handler = handlers.get(handlerKey);
   const viewDef = definitions.get(viewId);
   const viewInstanceId = parsed.ids[0];
-  const [viewRow] = await db
-    .select()
-    .from(View)
-    .where(eq(View.id, viewInstanceId ?? ''));
+  const [viewRow] = viewInstanceId
+    ? await db
+        .select()
+        .from(View)
+        .where(eq(View.id, viewInstanceId ?? ''))
+    : [];
 
   if (!handler || !viewDef || !viewInstanceId || !viewRow) {
     return;

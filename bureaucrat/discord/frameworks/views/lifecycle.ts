@@ -1,4 +1,4 @@
-import { lt, eq } from 'drizzle-orm';
+import { lt, eq, and, isNotNull } from 'drizzle-orm';
 import type {
   Message,
   MessagePayload,
@@ -125,10 +125,14 @@ export const destroyView = async (viewId: string): Promise<void> => {
 };
 
 /**
- * Deletes all views whose expiresAt has passed.
+ * Deletes all views whose expiresAt has passed. Does not
+ * target any persistent views.
  */
 export const sweepExpiredViews = async (): Promise<void> => {
-  const deleted = await db.delete(View).where(lt(View.expiresAt, new Date())).returning({ id: View.id });
+  const deleted = await db
+    .delete(View)
+    .where(and(isNotNull(View.expiresAt), lt(View.expiresAt, new Date())))
+    .returning({ id: View.id });
 
   if (deleted.length > 0) {
     logger.info({ message: `Swept ${deleted.length} expired view(s).` });

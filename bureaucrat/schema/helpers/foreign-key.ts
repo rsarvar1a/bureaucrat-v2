@@ -36,10 +36,7 @@ export function fk<T extends AnyPgColumn>(column: T, options: FKOptions & { null
  * The column type is automatically matched to the referenced column.
  * Columns are NOT NULL by default; pass `{ nullable: true }` to allow nulls.
  */
-export function fk<T extends AnyPgColumn>(
-  column: T,
-  options?: Partial<ReferenceConfig['config']>,
-): SetNotNull<_ColumnToBuilder<T>>;
+export function fk<T extends AnyPgColumn>(column: T, options?: Partial<ReferenceConfig['config']>): SetNotNull<_ColumnToBuilder<T>>;
 
 /**
  * Creates a column that references the given table column as a foreign key.

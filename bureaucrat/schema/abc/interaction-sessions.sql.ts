@@ -13,11 +13,11 @@ import { abc } from './.schema.sql';
  * entirely by customId and resolved by the channel→game index.
  */
 export const InteractionSession = abc.table('InteractionSession', {
-  id:        primary.uuid(),
-  game:      fk(Game.id, { onDelete: 'cascade' }),
-  flow:      text().notNull(),
-  step:      text().notNull(),
-  payload:   jsonb().notNull().default({}),
+  id: primary.uuid(),
+  game: fk(Game.id, { onDelete: 'cascade' }),
+  flow: text().notNull(),
+  step: text().notNull(),
+  payload: jsonb().notNull().default({}),
   expiresAt: timestamp().notNull(),
   ...snowflakes('member'),
   ...timestamps(),

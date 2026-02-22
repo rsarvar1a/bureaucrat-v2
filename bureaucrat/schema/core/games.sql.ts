@@ -43,8 +43,5 @@ export const GamePhase = core.table(
     on: integer().notNull(),
     ...timestamps(),
   },
-  (table) => [
-    unique().on(table.game, table.phase, table.on),
-    unique().on(table.game, table.id),
-  ],
+  (table) => [unique().on(table.game, table.phase, table.on), unique().on(table.game, table.id)],
 );

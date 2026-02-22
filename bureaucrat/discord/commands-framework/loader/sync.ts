@@ -1,11 +1,14 @@
 import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { logger } from '../../../utilities/logger';
 
 /**
  * Push a command forest up to Discord.
  */
 export const syncCommands = async (commands: SlashCommandBuilder[], develop?: true) => {
   if (develop && !process.env.DISCORD_GUILD_ID) {
-    console.warn('Tried to sync commands to development guild, but DISCORD_GUILD_ID is not set; falling back to global.');
+    logger.warn({
+      message: 'Tried to sync commands to development guild, but DISCORD_GUILD_ID is not set; falling back to global.',
+    });
   }
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

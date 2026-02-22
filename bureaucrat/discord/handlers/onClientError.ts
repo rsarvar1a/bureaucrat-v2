@@ -1,3 +1,5 @@
+import { logger } from '../../utilities/logger';
+
 export default async function onClientError(error: Error) {
-  console.error(`An error occurred:`, error);
+  logger.error({ message: 'An unhandled exception occurred.', error });
 }

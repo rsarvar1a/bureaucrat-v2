@@ -1,5 +1,6 @@
-import type { ChatInputCommandInteraction } from 'discord.js';
+import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
 import { commandHandlers } from '../../commands';
+import { logger } from '../../../utilities/logger';
 
 const resolve = (interaction: ChatInputCommandInteraction): string => {
   const cmd = interaction.commandName;
@@ -13,27 +14,27 @@ export default async function onChatInputCommand(interaction: ChatInputCommandIn
   const func = commandHandlers.get(path);
 
   if (!func) {
-    console.error(`No command handler found for path: ${path}`);
+    logger.error({ message: `No command handler found for path ${path}.` });
     await interaction.reply({
       content: 'An error occurred while processing this command.',
-      ephemeral: true,
+      flags: [MessageFlags.Ephemeral],
     });
     return;
   }
 
   try {
     await func(interaction);
-  } catch (e) {
-    console.error(`Error executing command at path ${path}:`, e);
+  } catch (error) {
+    logger.error({ message: `Encountered error in command ${path}.`, error });
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
         content: 'An error occurred while executing this command.',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     } else {
       await interaction.reply({
         content: 'An error occurred while executing this command.',
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   }

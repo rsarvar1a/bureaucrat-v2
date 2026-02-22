@@ -3,6 +3,7 @@ import { Client, Events, type ClientEvents } from 'discord.js';
 import onInteractionCreate from './handlers/onInteractionCreate';
 import onClientReady from './handlers/onClientReady';
 import onClientError from './handlers/onClientError';
+import { logger } from '../utilities/logger';
 
 /**
  * Allows for the creation of top-level handlers in a declarative way.
@@ -17,8 +18,7 @@ class TopLevelHandlerDefinition<E extends keyof ClientEvents> {
   registerTo(client: Client) {
     client[this.as](this.event, (...args) => {
       Promise.resolve(this.handler(...args)).catch((e) => {
-        const errMsg = typeof e === 'object' && Object.hasOwn(e, 'message') ? e.message : typeof e === 'string' ? e : JSON.stringify(e);
-        console.error(`Encountered uncaught error: ${errMsg}`);
+        logger.error({ message: `Encountered uncaught error in ${this.event}.`, error: e });
       });
     });
   }

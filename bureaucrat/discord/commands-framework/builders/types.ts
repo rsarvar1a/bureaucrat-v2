@@ -91,4 +91,5 @@ export const optionMeta = new Map<OptionBuilderClass, { adder: Adder; getter: Ge
 /**
  * Extract the accumulated params type from a Superbuilder instance.
  */
-export type InferParams<B> = B extends Superbuilder<SlashCommandBuilder | SlashCommandSubcommandBuilder, infer P> ? P : never;
+export type InferParams<B> =
+  B extends Superbuilder<SlashCommandBuilder | SlashCommandSubcommandBuilder, infer P> ? P : never;

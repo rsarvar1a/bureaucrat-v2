@@ -8,4 +8,6 @@ export const commandDefinitions = await loadDefinitions();
 
 export const commands = buildCommandTrees(commandDefinitions);
 
-export const commandHandlers = new Map<string, CommandDefinition['func']>(commandDefinitions.map((def) => [def.path, def.func]));
+export const commandHandlers = new Map<string, CommandDefinition['func']>(
+  commandDefinitions.map((def) => [def.path, def.func]),
+);

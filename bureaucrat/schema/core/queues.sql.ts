@@ -1,11 +1,5 @@
 import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
-import {
-  automaticTimestamp,
-  primary,
-  snowflake,
-  snowflakes,
-  timestamps,
-} from '../helpers';
+import { automaticTimestamp, primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { Role } from './enums.sql';
 import { fk } from '../helpers/foreign-key';

@@ -1,9 +1,4 @@
-import {
-  boolean,
-  ExtraConfigColumn,
-  unique,
-  type PgColumnBaseConfig,
-} from 'drizzle-orm/pg-core';
+import { boolean, ExtraConfigColumn, unique, type PgColumnBaseConfig } from 'drizzle-orm/pg-core';
 import { fk, primary, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { Role } from './enums.sql';
@@ -35,11 +30,7 @@ const participantConstraint = () => (table: _ConstraintType) => [
  * - Player (an actual player seated in the town square)
  * - Kibitzer (someone who is just spectating and wants to follow along)
  */
-export const Participant = core.table(
-  'Participant',
-  participantTableDefinition(),
-  participantConstraint(),
-);
+export const Participant = core.table('Participant', participantTableDefinition(), participantConstraint());
 
 /**
  * A Signup describes the capacity in which a server member intends to

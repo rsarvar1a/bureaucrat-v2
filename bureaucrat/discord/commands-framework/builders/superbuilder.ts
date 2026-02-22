@@ -39,9 +39,13 @@ export class Superbuilder<S extends SlashCommandBuilder | SlashCommandSubcommand
 
   constructor(public spec: S) {}
 
-  withOption<N extends string, B extends OptionBuilderClass>(option: Option<N, B, true>): Superbuilder<S, Expand<P & Augment<N, B, true>>>;
+  withOption<N extends string, B extends OptionBuilderClass>(
+    option: Option<N, B, true>,
+  ): Superbuilder<S, Expand<P & Augment<N, B, true>>>;
 
-  withOption<N extends string, B extends OptionBuilderClass>(option: Option<N, B, false>): Superbuilder<S, Expand<P & Augment<N, B, false>>>;
+  withOption<N extends string, B extends OptionBuilderClass>(
+    option: Option<N, B, false>,
+  ): Superbuilder<S, Expand<P & Augment<N, B, false>>>;
 
   withOption<N extends string, B extends OptionBuilderClass, R extends boolean>(
     option: Option<N, B, R>,
@@ -56,14 +60,19 @@ export class Superbuilder<S extends SlashCommandBuilder | SlashCommandSubcommand
     return this;
   }
 
-  define(handler: (interaction: ChatInputCommandInteraction, params: Expand<P>) => void | Promise<void>): CommandDefinition {
+  define(
+    handler: (interaction: ChatInputCommandInteraction, params: Expand<P>) => void | Promise<void>,
+  ): CommandDefinition {
     const options = this._options;
     return {
       spec: this.spec,
       func: async (interaction) => {
         const params: Record<string, unknown> = {};
         for (const opt of options) {
-          const value = (interaction.options[opt.getter] as (name: string, required: boolean) => unknown)(opt.name, opt.required);
+          const value = (interaction.options[opt.getter] as (name: string, required: boolean) => unknown)(
+            opt.name,
+            opt.required,
+          );
           params[opt.name] = opt.required ? value : (value ?? undefined);
         }
         await handler(interaction, params as Expand<P>);

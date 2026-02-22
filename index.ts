@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { deleteCommands, syncCommands } from './bureaucrat/discord/commands-framework/loader/sync';
+import { deleteCommands, syncCommands } from './bureaucrat/discord/frameworks/commands/loader/sync';
 import { client } from './bureaucrat/discord/client';
 import { commands } from './bureaucrat/discord/commands';
 

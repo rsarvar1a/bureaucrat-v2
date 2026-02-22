@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { Superbuilder } from '../commands-framework/builders/superbuilder';
+import { Superbuilder } from '../frameworks/commands/builders/superbuilder';
 
 export default new Superbuilder(new SlashCommandBuilder()).describe('Pongs!').define(async (interaction) => {
   await interaction.reply('Pong!');

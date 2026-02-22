@@ -1,5 +1,5 @@
 import { SlashCommandSubcommandBuilder } from 'discord.js';
-import { Superbuilder } from '../../commands-framework/builders/superbuilder';
+import { Superbuilder } from '../../frameworks/commands/builders/superbuilder';
 
 export default new Superbuilder(new SlashCommandSubcommandBuilder())
   .describe('A subcommand!')

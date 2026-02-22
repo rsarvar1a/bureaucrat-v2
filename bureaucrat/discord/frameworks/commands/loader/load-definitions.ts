@@ -9,7 +9,7 @@ import type { CommandProvidingModule, ResolvedCommandDefinition } from './types'
  */
 export const loadDefinitions = async (): Promise<ResolvedCommandDefinition[]> => {
   const commandRoot = 'commands';
-  const root = path.join(import.meta.dir, '..', '..', commandRoot);
+  const root = path.join(import.meta.dir, '..', '..', '..', commandRoot);
   const glob = await Array.fromAsync(new Glob('**/*.cmd.ts').scan({ cwd: root }));
 
   const resolvedDefinitions = glob.map(async (file) => {

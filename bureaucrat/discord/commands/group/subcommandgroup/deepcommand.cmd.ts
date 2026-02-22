@@ -4,8 +4,8 @@ import {
   SlashCommandStringOption,
   SlashCommandSubcommandBuilder,
 } from 'discord.js';
-import { Option, Superbuilder } from '../../../commands-framework/builders/superbuilder';
-import type { InferParams } from '../../../commands-framework/builders/types';
+import { Option, Superbuilder } from '../../../frameworks/commands/builders/superbuilder';
+import type { InferParams } from '../../../frameworks/commands/builders/types';
 
 const spec = new Superbuilder(new SlashCommandSubcommandBuilder())
   .describe('A deep subcommand!')

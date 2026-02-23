@@ -23,6 +23,7 @@ import { fk } from '../helpers/foreign-key';
 export const Queue = core.table('Queue', {
   id: primary.uuid(),
   name: text().notNull(),
+  description: text(),
   concurrency: integer(),
   entriesPerStoryteller: integer(),
   ...snowflakes('guild', 'category'),

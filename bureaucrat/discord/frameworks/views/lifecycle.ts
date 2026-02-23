@@ -5,6 +5,7 @@ import type {
   MessageComponentInteraction,
   ModalSubmitInteraction,
   RepliableInteraction,
+  TextBasedChannel,
 } from 'discord.js';
 import { db } from '../../../utilities/db';
 import { View, Subscription } from '../../../schema/abc/views.sql';
@@ -20,10 +21,14 @@ const SWEEP_INTERVAL_MS = 60_000; // 1 minute
  * - `interaction`: the interaction to reply through (required).
  * - `messageId`: if set, the view is sent as a reply to this message
  *   (creating a reply chain). Otherwise it's sent as the interaction reply.
+ * - `channel`: if set, the view is sent directly to this channel via
+ *   `channel.send()`. The caller is responsible for handling the interaction
+ *   separately (e.g., with an ephemeral confirmation).
  */
 export type SpawnTarget = {
   interaction: RepliableInteraction | MessageComponentInteraction | ModalSubmitInteraction;
   messageId?: string;
+  channel?: TextBasedChannel;
 };
 
 export type SpawnOptions = {
@@ -75,18 +80,24 @@ export const spawnView = async (
   } as ViewRow;
 
   const payload = (await viewDef.render(tempView, db)) as MessagePayload;
-  const { interaction, messageId } = target;
+  const { interaction, messageId, channel } = target;
   const ephemeral = visibility === 'ephemeral';
 
-  const sent: Message = messageId
-    ? await interaction.channel!.messages.fetch(messageId).then((msg) => msg.reply(payload))
-    : interaction.deferred
-      ? await interaction.editReply(payload)
-      : ((await interaction.reply({
-          ...payload,
-          ephemeral,
-          fetchReply: true,
-        } as unknown as MessagePayload)) as unknown as Message);
+  let sent: Message;
+
+  if (channel && 'send' in channel) {
+    sent = await (channel as Extract<TextBasedChannel, { send: unknown }>).send(payload as never);
+  } else if (messageId) {
+    sent = await interaction.channel!.messages.fetch(messageId).then((msg) => msg.reply(payload));
+  } else if (interaction.deferred) {
+    sent = await interaction.editReply(payload);
+  } else {
+    sent = (await interaction.reply({
+      ...payload,
+      ephemeral,
+      fetchReply: true,
+    } as unknown as MessagePayload)) as unknown as Message;
+  }
 
   const [row] = await db
     .insert(View)

@@ -12,10 +12,10 @@ import {
   TextInputStyle,
   type TextChannel,
 } from 'discord.js';
-import { createView } from '../frameworks/views/create-view';
-import { buildCustomId } from '../frameworks/views/custom-id';
-import { destroyView } from '../frameworks/views/lifecycle';
-import type { ViewRow } from '../frameworks/views/types';
+import { createView } from '../../frameworks/views/create-view';
+import { buildCustomId } from '../../frameworks/views/custom-id';
+import { destroyView } from '../../frameworks/views/lifecycle';
+import type { ViewRow } from '../../frameworks/views/types';
 import { ListEvents } from './list.view';
 
 type ListItemState = {

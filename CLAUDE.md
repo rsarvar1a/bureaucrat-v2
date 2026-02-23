@@ -48,6 +48,13 @@ Copy `.env.example` to `.env` and fill in `DISCORD_TOKEN` to get started.
 
 Production does not use Docker. The bot runs directly with `bun run start` against an externally-managed Postgres. Only `DATABASE_URL` and `DISCORD_TOKEN` need to be set.
 
+## Implementation Guidelines
+
+- **Reusable queries/mutations**: Extract shared database operations into `bureaucrat/drizzle/` as parameterized helper functions. Views should not contain inline query logic that could be reused elsewhere.
+- **Complex view structure**: When a view grows beyond a single file, promote it to a folder: `views/<name>/<name>.view.ts`, with subinteractions, helpers, renderers, etc. as sibling files. Avoid monolithic view files.
+- **Small abstractions**: Extract single-responsibility helpers for common application-level and Discord-related patterns (see `helpers/reply.ts` as a reference). Reduce cognitive complexity in event handlers and interaction callbacks by composing these small utilities.
+- **Reusable view components**: When a UI pattern appears in more than one view (or is likely to), extract it into `bureaucrat/discord/frameworks/views/components/` as a composable component. Components return `button`/`row` builders, `interactions` to spread into the view, and any helper methods needed for rendering. Higher-level components should compose lower-level ones (e.g., `dismissButton` with `confirm: true` composes `confirmButton` internally). Prefer composition over monolithic components with many options.
+
 ## Testing
 
 Use `bun test` to run tests.

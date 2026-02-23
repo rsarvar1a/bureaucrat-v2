@@ -10,13 +10,13 @@ import {
   StringSelectMenuBuilder,
   TextDisplayBuilder,
 } from 'discord.js';
-import { createView } from '../frameworks/views/create-view';
-import { buildCustomId } from '../frameworks/views/custom-id';
-import type { ViewRow } from '../frameworks/views/types';
-import type { Postgres } from '../../utilities/db';
-import { db } from '../../utilities/db';
-import { View } from '../../schema/abc/views.sql';
-import { resolveEventTemplate } from '../frameworks/views/notify';
+import { createView } from '../../frameworks/views/create-view';
+import { buildCustomId } from '../../frameworks/views/custom-id';
+import type { ViewRow } from '../../frameworks/views/types';
+import type { Postgres } from '../../../utilities/db';
+import { db } from '../../../utilities/db';
+import { View } from '../../../schema/abc/views.sql';
+import { resolveEventTemplate } from '../../frameworks/views/notify';
 
 type ListState = {
   nextIndex: number;

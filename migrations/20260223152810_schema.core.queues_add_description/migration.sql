@@ -1,0 +1,1 @@
+ALTER TABLE "core"."Queue" ADD COLUMN "description" text;

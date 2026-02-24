@@ -39,6 +39,8 @@ export type SpawnOptions = {
   visibility?: 'public' | 'ephemeral';
   expiresAt?: Date;
   webhookToken?: string;
+  member?: bigint;
+  persistent?: boolean;
 };
 
 /**
@@ -59,13 +61,34 @@ export const spawnView = async (
     entityId,
     state = viewDef.defaultState,
     visibility = 'public',
-    expiresAt,
+    expiresAt: explicitExpiresAt,
     webhookToken,
+    member: explicitMember,
+    persistent,
   } = options;
 
   const viewId = crypto.randomUUID();
   const ids = { [viewDef.id]: entityId ?? viewId, ...callerIds };
-  const resolvedWebhookToken = webhookToken ?? (visibility === 'ephemeral' ? target.interaction.webhook.token : null);
+  const resolvedWebhookToken = webhookToken ?? (visibility === 'ephemeral' ? target.interaction.webhook.url : null);
+  const member = explicitMember ?? (visibility === 'ephemeral' ? BigInt(target.interaction.user.id) : null);
+
+  // Auto-expire ephemeral views unless explicitly persistent or an expiresAt is set
+  let expiresAt = explicitExpiresAt ?? null;
+  if (visibility === 'ephemeral' && !explicitExpiresAt && !persistent) {
+    const timeoutMs = Number(process.env.TEMPORARY_VIEW_TIMEOUT_MS) || 600_000;
+    expiresAt = new Date(Date.now() + timeoutMs);
+  }
+
+  // Invalidate existing ephemeral views for the same route + member
+  if (visibility === 'ephemeral' && member != null) {
+    const stale = await db
+      .delete(View)
+      .where(and(eq(View.route, viewDef.id), eq(View.member, member), eq(View.visibility, 'ephemeral')))
+      .returning({ id: View.id });
+    if (stale.length > 0) {
+      logger.info({ message: `Invalidated ${stale.length} stale ephemeral view(s) for route "${viewDef.id}".` });
+    }
+  }
 
   const tempView = injectCustomId({
     id: viewId,
@@ -73,8 +96,9 @@ export const spawnView = async (
     state: state ?? null,
     entityId: entityId ?? null,
     visibility,
-    expiresAt: expiresAt ?? null,
+    expiresAt,
     webhookToken: resolvedWebhookToken ?? null,
+    member: member ?? null,
     channel: 0n,
     message: 0n,
     createdAt: new Date(),
@@ -109,8 +133,9 @@ export const spawnView = async (
       state: state ?? null,
       entityId: entityId ?? null,
       visibility,
-      expiresAt: expiresAt ?? null,
-      webhookToken: webhookToken ?? null,
+      expiresAt,
+      webhookToken: resolvedWebhookToken ?? null,
+      member: member ?? null,
       channel: BigInt(sent.channelId),
       message: BigInt(sent.id),
     })

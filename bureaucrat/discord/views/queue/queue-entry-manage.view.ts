@@ -23,7 +23,6 @@ import { QueueEvents } from './events';
 type ManageState = {
   entryId: string;
   queueId: string;
-  confirming?: boolean;
 };
 
 const dismiss = dismissButton<ManageState>()({ action: 'dismiss' });

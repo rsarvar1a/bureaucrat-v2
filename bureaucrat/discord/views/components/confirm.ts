@@ -27,7 +27,7 @@ export const confirmButton =
     const row = (view: ViewRow<S>) => new ActionRowBuilder<ButtonBuilder>().addComponents(button(view));
 
     const isConfirming = (view: ViewRow<S>): boolean =>
-      !!((view.state as Record<string, unknown> | null) ?? {})['confirming'];
+      !!((view.state as Record<string, unknown> | null) ?? {})[`confirming:${action}`];
 
     const confirmRow = (view: ViewRow<S>) =>
       new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -43,7 +43,7 @@ export const confirmButton =
 
     const setConfirming = (value: boolean) => async (ctx: ViewContext<S>) => {
       await (ctx.updateState as (patch: Record<string, unknown>) => Promise<void>)({
-        confirming: value,
+        [`confirming:${action}`]: value,
       });
     };
 

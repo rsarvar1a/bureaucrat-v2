@@ -178,10 +178,12 @@ export default createView<QueueState, typeof QueueEvents>()({
       if (!queue) return;
 
       await manageModal.show(interaction, ctx, {
-        name: queue.name,
-        description: queue.description ?? '',
-        concurrency: queue.concurrency?.toString() ?? '',
-        entriesPerStoryteller: queue.entriesPerStoryteller?.toString() ?? '',
+        values: {
+          name: queue.name,
+          description: queue.description ?? '',
+          concurrency: queue.concurrency?.toString() ?? '',
+          entriesPerStoryteller: queue.entriesPerStoryteller?.toString() ?? '',
+        },
       });
     },
 

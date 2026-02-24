@@ -15,5 +15,6 @@ export const getQueue = async (queueId: string) => {
 };
 
 export const updateQueue = async (queueId: string, patch: Partial<InsertQueue>) => {
-  await db.update(Queue).set(patch).where(eq(Queue.id, queueId));
+  const [row] = await db.update(Queue).set(patch).where(eq(Queue.id, queueId)).returning();
+  return row;
 };

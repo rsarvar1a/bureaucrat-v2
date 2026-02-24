@@ -30,7 +30,8 @@ export const listQueueEntries = async (queueId: string) => {
 };
 
 export const updateQueueEntry = async (entryId: string, patch: UpdateQueueEntry) => {
-  await db.update(QueueEntry).set(patch).where(eq(QueueEntry.id, entryId));
+  const [row] = await db.update(QueueEntry).set(patch).where(eq(QueueEntry.id, entryId)).returning();
+  return row;
 };
 
 export const countEntriesByStoryteller = async (queueId: string, storyteller: bigint) => {
@@ -42,5 +43,6 @@ export const countEntriesByStoryteller = async (queueId: string, storyteller: bi
 };
 
 export const deleteQueueEntry = async (entryId: string) => {
-  await db.delete(QueueEntry).where(eq(QueueEntry.id, entryId));
+  const [row] = await db.delete(QueueEntry).where(eq(QueueEntry.id, entryId)).returning();
+  return row;
 };

@@ -4,5 +4,4 @@ export const QueueEvents = {
 
 export const QueueEntryEvents = {
   SignupsChanged: 'qentry::${qentry}::signups',
-  QueueDiscovery: 'queue::${queue}',
 } as const;

@@ -20,6 +20,7 @@ export const View = abc.table('View', {
   expiresAt: timestamp(),
   webhookToken: text(),
   ...snowflakes('channel', 'message'),
+  ...snowflakes(true, 'member'),
   ...timestamps(),
 });
 

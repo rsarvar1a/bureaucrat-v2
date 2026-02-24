@@ -36,9 +36,11 @@ export const listAcceptedSignups = async (entryId: string) => {
 };
 
 export const updateSignup = async (signupId: string, patch: Partial<InsertSignup>) => {
-  await db.update(QueueEntrySignup).set(patch).where(eq(QueueEntrySignup.id, signupId));
+  const [row] = await db.update(QueueEntrySignup).set(patch).where(eq(QueueEntrySignup.id, signupId)).returning();
+  return row;
 };
 
 export const deleteSignup = async (signupId: string) => {
-  await db.delete(QueueEntrySignup).where(eq(QueueEntrySignup.id, signupId));
+  const [row] = await db.delete(QueueEntrySignup).where(eq(QueueEntrySignup.id, signupId)).returning();
+  return row;
 };

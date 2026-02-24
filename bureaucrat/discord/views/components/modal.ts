@@ -43,7 +43,7 @@ type Modal<S, A extends string> = {
   show: (
     interaction: { showModal(modal: ModalBuilder): Promise<void> },
     ctx: ViewContext<S>,
-    overrides?: Record<string, string> & { title?: string },
+    overrides?: { title?: string; values?: Record<string, string> },
   ) => Promise<void>;
   interactions: Record<`${A}-submit`, InteractionHandler<S>>;
 };
@@ -57,7 +57,7 @@ export const modal =
     const show = async (
       interaction: { showModal(modal: ModalBuilder): Promise<void> },
       ctx: ViewContext<S>,
-      overrides?: Record<string, string> & { title?: string },
+      overrides?: { title?: string; values?: Record<string, string> },
     ) => {
       const modalBuilder = new ModalBuilder()
         .setCustomId(ctx.view.customId(submitAction))
@@ -72,7 +72,7 @@ export const modal =
         if (fieldDef.minLength != null) input.setMinLength(fieldDef.minLength);
         if (fieldDef.placeholder) input.setPlaceholder(fieldDef.placeholder);
 
-        const val = overrides?.[customId] ?? fieldDef.value;
+        const val = overrides?.values?.[customId] ?? fieldDef.value;
         if (val != null) input.setValue(val);
 
         const label = new LabelBuilder().setLabel(fieldDef.label).setTextInputComponent(input);

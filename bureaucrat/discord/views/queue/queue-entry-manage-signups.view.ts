@@ -99,6 +99,7 @@ export default createView<ManageSignupsState>()({
 
   interactions: {
     ...dismiss.interactions,
+
     select: async (interaction, ctx) => {
       if (!interaction.isStringSelectMenu()) return;
       await interaction.deferUpdate();

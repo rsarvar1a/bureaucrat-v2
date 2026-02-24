@@ -1,0 +1,1 @@
+ALTER TABLE "abc"."View" ADD COLUMN "member" bigint;

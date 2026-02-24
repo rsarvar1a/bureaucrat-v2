@@ -104,9 +104,11 @@ export default createView<ConfigState>()({
       if (!entry) return;
 
       await editModal.show(interaction, ctx, {
-        title: entry.title,
-        description: entry.description,
-        minimumStartDate: entry.minimumStartDate ? entry.minimumStartDate.toISOString().split('T')[0]! : '',
+        values: {
+          title: entry.title,
+          description: entry.description,
+          minimumStartDate: entry.minimumStartDate ? entry.minimumStartDate.toISOString().split('T')[0]! : '',
+        },
       });
     },
 

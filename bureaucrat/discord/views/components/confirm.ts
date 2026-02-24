@@ -8,12 +8,16 @@ type ConfirmOptions<S, A extends string> = {
   onConfirm: (ctx: ViewContext<S>, interaction: ViewInteraction) => Promise<void>;
 };
 
+export type ConfirmState<A extends string> = { [K in `confirming:${A}`]?: boolean };
+
+export type ConfirmActions<A extends string> = A | `${A}-confirm` | `${A}-cancel`;
+
 type Confirm<S, A extends string> = {
   button: (view: ViewRow<S>) => ButtonBuilder;
   row: (view: ViewRow<S>) => ActionRowBuilder<ButtonBuilder>;
   isConfirming: (view: ViewRow<S>) => boolean;
   confirmRow: (view: ViewRow<S>) => ActionRowBuilder<ButtonBuilder>;
-  interactions: Record<A, InteractionHandler<S>>;
+  interactions: Record<ConfirmActions<A>, InteractionHandler<S>>;
 };
 
 export const confirmButton =
@@ -47,7 +51,7 @@ export const confirmButton =
       });
     };
 
-    const interactions: Record<string, InteractionHandler<S>> = {
+    const interactions = {
       [action]: async (interaction, ctx) => {
         if (!interaction.isMessageComponent()) return;
         await interaction.deferUpdate();
@@ -67,13 +71,13 @@ export const confirmButton =
         await setConfirming(false)(ctx);
         return { action: 'rerender' };
       },
-    };
+    } satisfies Record<string, InteractionHandler<S>>;
 
     return {
       button,
       row,
       isConfirming,
       confirmRow,
-      interactions,
+      interactions: interactions as Record<ConfirmActions<A>, InteractionHandler<S>>,
     };
   };

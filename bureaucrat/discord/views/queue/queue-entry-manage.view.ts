@@ -12,7 +12,7 @@ import { eq, and } from 'drizzle-orm';
 import { createView } from '../../frameworks/views/create-view';
 import { destroyView } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
-import { confirmButton } from '../components/confirm';
+import { confirmButton, type ConfirmState } from '../components/confirm';
 
 import { db } from '../../../utilities/db';
 import { View } from '../../../schema/abc/views.sql';
@@ -20,7 +20,7 @@ import { getQueueEntry, deleteQueueEntry } from '../../../drizzle/queue-entries'
 import { listSignups } from '../../../drizzle/queue-entry-signups';
 import { QueueEvents } from './events';
 
-type ManageState = {
+type ManageState = ConfirmState<'delete'> & {
   entryId: string;
   queueId: string;
 };

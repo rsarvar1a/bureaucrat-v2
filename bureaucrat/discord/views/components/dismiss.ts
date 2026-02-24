@@ -1,28 +1,37 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { destroyView } from '../../frameworks/views/lifecycle';
-import { confirmButton } from './confirm';
+import { confirmButton, type ConfirmActions } from './confirm';
 import type { ViewRow, ViewContext, ViewInteraction, InteractionHandler } from '../../frameworks/views/types';
 
-type DismissOptions<S, A extends string> = {
+type DismissOptionsBase<S, A extends string> = {
   notify?: string[];
   onDismiss?: (ctx: ViewContext<S>, interaction: ViewInteraction) => Promise<void>;
   action: A;
   label?: string;
   style?: ButtonStyle;
-  confirm?: boolean;
 };
 
-type Dismiss<S, A extends string> = {
+type DismissBase<S> = {
   button: (view: ViewRow<S>) => ButtonBuilder;
   row: (view: ViewRow<S>) => ActionRowBuilder<ButtonBuilder>;
-  isConfirming: (view: ViewRow<S>) => boolean;
-  confirmRow: (view: ViewRow<S>) => ActionRowBuilder<ButtonBuilder>;
+};
+
+type DismissSimple<S, A extends string> = DismissBase<S> & {
   interactions: Record<A, InteractionHandler<S>>;
 };
 
-export const dismissButton =
-  <S>() =>
-  <A extends string>(options: DismissOptions<S, A>): Dismiss<S, A> => {
+type DismissWithConfirm<S, A extends string> = DismissBase<S> & {
+  isConfirming: (view: ViewRow<S>) => boolean;
+  confirmRow: (view: ViewRow<S>) => ActionRowBuilder<ButtonBuilder>;
+  interactions: Record<ConfirmActions<A>, InteractionHandler<S>>;
+};
+
+export const dismissButton = <S>() => {
+  function dismiss<A extends string>(options: DismissOptionsBase<S, A> & { confirm: true }): DismissWithConfirm<S, A>;
+  function dismiss<A extends string>(options: DismissOptionsBase<S, A> & { confirm?: false }): DismissSimple<S, A>;
+  function dismiss<A extends string>(
+    options: DismissOptionsBase<S, A> & { confirm?: boolean },
+  ): DismissSimple<S, A> | DismissWithConfirm<S, A> {
     const { notify, onDismiss, action, label = 'Dismiss', style = ButtonStyle.Secondary, confirm = false } = options;
 
     const performDismiss = async (ctx: ViewContext<S>, interaction: ViewInteraction) => {
@@ -40,10 +49,7 @@ export const dismissButton =
         onConfirm: performDismiss,
       });
 
-      return {
-        ...inner,
-        interactions: inner.interactions as Record<string, InteractionHandler<S>>,
-      };
+      return { ...inner };
     }
 
     const button = (view: ViewRow<S>) =>
@@ -60,8 +66,9 @@ export const dismissButton =
     return {
       button,
       row,
-      isConfirming: () => false as const,
-      confirmRow: () => new ActionRowBuilder<ButtonBuilder>(),
-      interactions: { [action]: handler } as Record<string, InteractionHandler<S>>,
+      interactions: { [action]: handler } as Record<A, InteractionHandler<S>>,
     };
-  };
+  }
+
+  return dismiss;
+};

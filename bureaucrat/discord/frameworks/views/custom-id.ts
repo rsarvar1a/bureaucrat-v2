@@ -60,7 +60,6 @@ export const parseCustomId = (id: string): ParsedCustomId | null => {
  */
 export const injectCustomId = <S>(row: Omit<ViewRow<S>, 'customId'>): ViewRow<S> => {
   const viewRow = row as ViewRow<S>;
-  if (row.state) viewRow.state = row.state;
   viewRow.customId = (action: string, ...extraIds: string[]) =>
     buildCustomId(`view::${row.route}`, action, row.id, ...extraIds);
   return viewRow;

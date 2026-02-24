@@ -11,7 +11,7 @@ import {
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
 import { dismissButton } from '../components/dismiss';
-import type { ViewRow } from '../../frameworks/views/types';
+
 import { listSignups, updateSignup, deleteSignup } from '../../../drizzle/queue-entry-signups';
 import { QueueEntryEvents } from './events';
 
@@ -22,16 +22,16 @@ type ManageSignupsState = {
   memberNames: Record<string, string>;
 };
 
-const dismiss = dismissButton<ManageSignupsState>();
+const dismiss = dismissButton<ManageSignupsState>()({ action: 'dismiss' });
 
-export default createView<ManageSignupsState>({
+export default createView<ManageSignupsState>()({
   id: 'qmsignups',
   idParams: [],
   events: {},
   defaultState: { selectedSignupId: null, entryId: '', queueId: '', memberNames: {} },
   subscribesTo: [],
 
-  render: async (view: ViewRow<ManageSignupsState>) => {
+  render: async (view) => {
     const state = view.state;
     const signups = await listSignups(state.entryId);
 

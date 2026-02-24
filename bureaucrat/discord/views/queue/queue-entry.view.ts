@@ -9,21 +9,21 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import type { ViewRow } from '../../frameworks/views/types';
+
 import { getQueueEntry } from '../../../drizzle/queue-entries';
 import { listAcceptedSignups, getSignupByMemberAndEntry } from '../../../drizzle/queue-entry-signups';
 import { QueueEntryEvents } from './events';
 
 type QueueEntryState = Record<string, never>;
 
-export default createView<QueueEntryState, typeof QueueEntryEvents>({
+export default createView<QueueEntryState, typeof QueueEntryEvents>()({
   id: 'qentry',
   idParams: [],
   events: QueueEntryEvents,
   defaultState: {},
   subscribesTo: ['SignupsChanged'],
 
-  render: async (view: ViewRow<QueueEntryState>) => {
+  render: async (view) => {
     const entry = await getQueueEntry(view.entityId!);
     if (!entry) {
       return {

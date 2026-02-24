@@ -10,7 +10,7 @@ import {
   type TextBasedChannel,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import type { ViewRow } from '../../frameworks/views/types';
+
 import { getQueue, updateQueue } from '../../../drizzle/queues';
 import { insertQueueEntry, listQueueEntries, countEntriesByStoryteller } from '../../../drizzle/queue-entries';
 import { ensureEntryThread } from './thread';
@@ -22,7 +22,7 @@ type QueueState = {
   threadId: string | null;
 };
 
-const enterModal = modal<QueueState>({
+const enterModal = modal<QueueState>()({
   action: 'enter',
   title: 'Enter Queue',
   fields: {
@@ -76,7 +76,7 @@ const enterModal = modal<QueueState>({
   },
 });
 
-const manageModal = modal<QueueState>({
+const manageModal = modal<QueueState>()({
   action: 'manage',
   title: 'Manage Queue',
   fields: {
@@ -105,14 +105,14 @@ const manageModal = modal<QueueState>({
   },
 });
 
-export default createView<QueueState, typeof QueueEvents>({
+export default createView<QueueState, typeof QueueEvents>()({
   id: 'queue',
   idParams: [],
   events: QueueEvents,
   defaultState: { threadId: null },
   subscribesTo: ['EntriesChanged'],
 
-  render: async (view: ViewRow<QueueState>) => {
+  render: async (view) => {
     const queue = await getQueue(view.entityId!);
     if (!queue) {
       return {

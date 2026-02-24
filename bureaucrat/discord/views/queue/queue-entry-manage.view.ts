@@ -13,7 +13,7 @@ import { createView } from '../../frameworks/views/create-view';
 import { destroyView } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 import { confirmButton } from '../components/confirm';
-import type { ViewRow } from '../../frameworks/views/types';
+
 import { db } from '../../../utilities/db';
 import { View } from '../../../schema/abc/views.sql';
 import { getQueueEntry, deleteQueueEntry } from '../../../drizzle/queue-entries';
@@ -26,9 +26,9 @@ type ManageState = {
   confirming?: boolean;
 };
 
-const dismiss = dismissButton<ManageState>();
+const dismiss = dismissButton<ManageState>()({ action: 'dismiss' });
 
-const del = confirmButton<ManageState>({
+const del = confirmButton<ManageState>()({
   action: 'delete',
   label: 'Delete',
   onConfirm: async (ctx, interaction) => {
@@ -63,14 +63,14 @@ const del = confirmButton<ManageState>({
   },
 });
 
-export default createView<ManageState>({
+export default createView<ManageState>()({
   id: 'qmanage',
   idParams: [],
   events: {},
   defaultState: { entryId: '', queueId: '' },
   subscribesTo: [],
 
-  render: async (view: ViewRow<ManageState>) => {
+  render: async (view) => {
     const entry = await getQueueEntry(view.state.entryId);
     const title = entry?.title ?? 'Unknown';
 

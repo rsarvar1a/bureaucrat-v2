@@ -31,6 +31,7 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "scripts": {
+    "check": "bunx tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "docker": "bun --watch run docker/entrypoint.ts",

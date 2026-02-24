@@ -13,7 +13,7 @@ import { createView } from '../../frameworks/views/create-view';
 import { destroyView } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 import { modal, field } from '../components/modal';
-import type { ViewRow } from '../../frameworks/views/types';
+
 import { getQueueEntry } from '../../../drizzle/queue-entries';
 import { insertSignup, updateSignup, deleteSignup } from '../../../drizzle/queue-entry-signups';
 import { QueueEntryEvents } from './events';
@@ -26,9 +26,9 @@ type SignupState = {
   selectedRole?: 'Player' | 'Storyteller' | 'Kibitzer';
 };
 
-const dismiss = dismissButton<SignupState>();
+const dismiss = dismissButton<SignupState>()({ action: 'dismiss' });
 
-const messageModal = modal<SignupState>({
+const messageModal = modal<SignupState>()({
   action: 'message',
   title: 'Sign Up',
   fields: {
@@ -61,7 +61,7 @@ const messageModal = modal<SignupState>({
   },
 });
 
-const editSignupModal = modal<SignupState>({
+const editSignupModal = modal<SignupState>()({
   action: 'edit',
   title: 'Edit Signup',
   fields: {
@@ -84,14 +84,14 @@ const editSignupModal = modal<SignupState>({
   },
 });
 
-export default createView<SignupState>({
+export default createView<SignupState>()({
   id: 'qsignup',
   idParams: [],
   events: {},
   defaultState: { mode: 'new', signupId: null, entryId: '', queueId: '' },
   subscribesTo: [],
 
-  render: async (view: ViewRow<SignupState>) => {
+  render: async (view) => {
     const state = view.state;
 
     if (state.mode === 'existing' && state.signupId) {

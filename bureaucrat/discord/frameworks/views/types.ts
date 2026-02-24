@@ -19,12 +19,6 @@ import type { SpawnTarget, SpawnOptions } from './lifecycle';
 export type EventTemplate = Record<string, string>;
 
 /**
- * Extracts explicitly-declared keys from a type, filtering out index signatures.
- * Used to infer interaction action names from the `interactions` object in `createView`.
- */
-export type NamedKeys<T> = { [K in keyof T]: string extends K ? never : K }[keyof T];
-
-/**
  * The DB row for a View with its state typed.
  *
  * The `A` parameter constrains which action strings `customId()` accepts.

@@ -28,8 +28,8 @@ export const field = {
   paragraph: makeField(TextInputStyle.Paragraph),
 };
 
-type ModalOptions<S> = {
-  action: string;
+type ModalOptions<S, A extends string> = {
+  action: A;
   title: string;
   fields: Record<string, FieldDefinition>;
   onSubmit: (
@@ -39,53 +39,64 @@ type ModalOptions<S> = {
   ) => Promise<HandlerResult>;
 };
 
-export const modal = <S = unknown>(options: ModalOptions<S>) => {
-  const { action, title, fields, onSubmit } = options;
-  const submitAction = `${action}-submit`;
-
-  const show = async (
+type Modal<S, A extends string> = {
+  show: (
     interaction: { showModal(modal: ModalBuilder): Promise<void> },
     ctx: ViewContext<S>,
     overrides?: Record<string, string> & { title?: string },
-  ) => {
-    const modalBuilder = new ModalBuilder()
-      .setCustomId(ctx.view.customId(submitAction))
-      .setTitle(overrides?.title ?? title);
-
-    for (const [customId, fieldDef] of Object.entries(fields)) {
-      const input = new TextInputBuilder()
-        .setCustomId(customId)
-        .setStyle(fieldDef.style)
-        .setRequired(fieldDef.required ?? true);
-      if (fieldDef.maxLength != null) input.setMaxLength(fieldDef.maxLength);
-      if (fieldDef.minLength != null) input.setMinLength(fieldDef.minLength);
-      if (fieldDef.placeholder) input.setPlaceholder(fieldDef.placeholder);
-
-      const val = overrides?.[customId] ?? fieldDef.value;
-      if (val != null) input.setValue(val);
-
-      const label = new LabelBuilder().setLabel(fieldDef.label).setTextInputComponent(input);
-      if (fieldDef.description) label.setDescription(fieldDef.description);
-
-      modalBuilder.addLabelComponents(label);
-    }
-
-    await interaction.showModal(modalBuilder);
-  };
-
-  const handler: InteractionHandler<S> = async (interaction, ctx) => {
-    if (!interaction.isModalSubmit()) return;
-
-    const values: Record<string, string> = {};
-    for (const key of Object.keys(fields)) {
-      values[key] = interaction.fields.getTextInputValue(key);
-    }
-
-    return onSubmit(values, interaction, ctx);
-  };
-
-  return {
-    show,
-    interactions: { [submitAction]: handler } as Record<string, InteractionHandler<S>>,
-  };
+  ) => Promise<void>;
+  interactions: Record<`${A}-submit`, InteractionHandler<S>>;
 };
+
+export const modal =
+  <S>() =>
+  <A extends string>(options: ModalOptions<S, A>): Modal<S, A> => {
+    const { action, title, fields, onSubmit } = options;
+    const submitAction = `${action}-submit`;
+
+    const show = async (
+      interaction: { showModal(modal: ModalBuilder): Promise<void> },
+      ctx: ViewContext<S>,
+      overrides?: Record<string, string> & { title?: string },
+    ) => {
+      const modalBuilder = new ModalBuilder()
+        .setCustomId(ctx.view.customId(submitAction))
+        .setTitle(overrides?.title ?? title);
+
+      for (const [customId, fieldDef] of Object.entries(fields)) {
+        const input = new TextInputBuilder()
+          .setCustomId(customId)
+          .setStyle(fieldDef.style)
+          .setRequired(fieldDef.required ?? true);
+        if (fieldDef.maxLength != null) input.setMaxLength(fieldDef.maxLength);
+        if (fieldDef.minLength != null) input.setMinLength(fieldDef.minLength);
+        if (fieldDef.placeholder) input.setPlaceholder(fieldDef.placeholder);
+
+        const val = overrides?.[customId] ?? fieldDef.value;
+        if (val != null) input.setValue(val);
+
+        const label = new LabelBuilder().setLabel(fieldDef.label).setTextInputComponent(input);
+        if (fieldDef.description) label.setDescription(fieldDef.description);
+
+        modalBuilder.addLabelComponents(label);
+      }
+
+      await interaction.showModal(modalBuilder);
+    };
+
+    const handler: InteractionHandler<S> = async (interaction, ctx) => {
+      if (!interaction.isModalSubmit()) return;
+
+      const values: Record<string, string> = {};
+      for (const key of Object.keys(fields)) {
+        values[key] = interaction.fields.getTextInputValue(key);
+      }
+
+      return onSubmit(values, interaction, ctx);
+    };
+
+    return {
+      show,
+      interactions: { [submitAction]: handler } as Record<string, InteractionHandler<S>>,
+    };
+  };

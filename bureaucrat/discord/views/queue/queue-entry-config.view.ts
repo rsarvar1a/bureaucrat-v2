@@ -11,7 +11,7 @@ import {
 import { createView } from '../../frameworks/views/create-view';
 import { dismissButton } from '../components/dismiss';
 import { modal, field } from '../components/modal';
-import type { ViewRow } from '../../frameworks/views/types';
+
 import { getQueueEntry, updateQueueEntry } from '../../../drizzle/queue-entries';
 import { QueueEvents, QueueEntryEvents } from './events';
 
@@ -20,9 +20,9 @@ type ConfigState = {
   queueId: string;
 };
 
-const dismiss = dismissButton<ConfigState>();
+const dismiss = dismissButton<ConfigState>()({ action: 'dismiss' });
 
-const editModal = modal<ConfigState>({
+const editModal = modal<ConfigState>()({
   action: 'edit',
   title: 'Edit Entry',
   fields: {
@@ -49,14 +49,14 @@ const editModal = modal<ConfigState>({
   },
 });
 
-export default createView<ConfigState>({
+export default createView<ConfigState>()({
   id: 'qconfig',
   idParams: [],
   events: {},
   defaultState: { entryId: '', queueId: '' },
   subscribesTo: [],
 
-  render: async (view: ViewRow<ConfigState>) => {
+  render: async (view) => {
     const entry = await getQueueEntry(view.state.entryId);
 
     const title = entry?.title ?? 'Unknown';

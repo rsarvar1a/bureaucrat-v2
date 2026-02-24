@@ -19,9 +19,22 @@ import type { SpawnTarget, SpawnOptions } from './lifecycle';
 export type EventTemplate = Record<string, string>;
 
 /**
- * The DB row for a View with its state typed.
+ * Extracts explicitly-declared keys from a type, filtering out index signatures.
+ * Used to infer interaction action names from the `interactions` object in `createView`.
  */
-export type ViewRow<S = unknown> = typeof View.$inferSelect & { state: S };
+export type NamedKeys<T> = { [K in keyof T]: string extends K ? never : K }[keyof T];
+
+/**
+ * The DB row for a View with its state typed.
+ *
+ * The `A` parameter constrains which action strings `customId()` accepts.
+ * In `render`, `A` is inferred from the view's interaction keys, catching
+ * dangling routes at compile time. Components and handlers default to `string`.
+ */
+export type ViewRow<S = unknown, A extends string = string> = typeof View.$inferSelect & {
+  state: S;
+  customId(action: A, ...extraIds: string[]): string;
+};
 
 /**
  * The Discord message payload that `render()` produces.

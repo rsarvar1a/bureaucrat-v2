@@ -4,24 +4,106 @@ import {
   ButtonStyle,
   ContainerBuilder,
   MessageFlags,
-  ModalBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
   TextDisplayBuilder,
-  TextInputBuilder,
-  TextInputStyle,
+  type TextBasedChannel,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import type { ViewRow } from '../../frameworks/views/types';
 import { getQueue, updateQueue } from '../../../drizzle/queues';
 import { insertQueueEntry, listQueueEntries, countEntriesByStoryteller } from '../../../drizzle/queue-entries';
 import { ensureEntryThread } from './thread';
 import { QueueEvents } from './events';
+import { safeParseInt } from '../../../utilities/parse-int';
+import { modal, field } from '../components/modal';
 
 type QueueState = {
   threadId: string | null;
 };
+
+const enterModal = modal<QueueState>({
+  action: 'enter',
+  title: 'Enter Queue',
+  fields: {
+    title: field.short('Game Title', { maxLength: 100 }),
+    description: field.paragraph('Description', { maxLength: 1000 }),
+  },
+  async onSubmit(values, interaction, ctx) {
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    const queue = await getQueue(ctx.view.entityId!);
+    if (!queue) return;
+
+    if (queue.entriesPerStoryteller !== null) {
+      const existing = await countEntriesByStoryteller(queue.id, BigInt(interaction.user.id));
+      if (existing >= queue.entriesPerStoryteller) {
+        await interaction.editReply({
+          content: `You already have ${existing} ${existing === 1 ? 'entry' : 'entries'} in this queue (limit: ${queue.entriesPerStoryteller}).`,
+        });
+        return;
+      }
+    }
+
+    const entry = await insertQueueEntry({
+      queue: queue.id,
+      storyteller: BigInt(interaction.user.id),
+      title: values['title']!,
+      description: values['description']!,
+    });
+
+    const thread = await ensureEntryThread(
+      interaction.client,
+      String(ctx.view.channel),
+      String(ctx.view.message),
+      queue.name,
+    );
+
+    await ctx.updateState({ threadId: thread.id });
+
+    await ctx.spawnView(
+      'qentry',
+      { interaction, channel: thread as unknown as TextBasedChannel },
+      {
+        ids: { qentry: entry.id, queue: queue.id },
+        entityId: entry.id,
+      },
+    );
+
+    await ctx.notifyAll(QueueEvents.EntriesChanged);
+
+    await interaction.deleteReply();
+  },
+});
+
+const manageModal = modal<QueueState>({
+  action: 'manage',
+  title: 'Manage Queue',
+  fields: {
+    name: field.short('Queue Name', { maxLength: 100 }),
+    description: field.paragraph('Description', { required: false, maxLength: 1000 }),
+    concurrency: field.short('Concurrency', { required: false }),
+    entriesPerStoryteller: field.short('Entries per Storyteller', { required: false }),
+  },
+  async onSubmit(values, interaction, ctx) {
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    const description = values['description'] || null;
+    const concurrency = safeParseInt(values['concurrency']!);
+    const entriesPerStoryteller = safeParseInt(values['entriesPerStoryteller']!);
+
+    await updateQueue(ctx.view.entityId!, {
+      name: values['name']!,
+      description,
+      concurrency,
+      entriesPerStoryteller,
+    });
+
+    await ctx.notifyAll(QueueEvents.EntriesChanged);
+
+    await interaction.deleteReply();
+  },
+});
 
 export default createView<QueueState, typeof QueueEvents>({
   id: 'queue',
@@ -66,12 +148,9 @@ export default createView<QueueState, typeof QueueEvents>({
       .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
       .addActionRowComponents(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder().setCustomId(view.customId('enter')).setLabel('Enter').setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId(buildCustomId('view::queue', 'enter', view.id))
-            .setLabel('Enter')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId(buildCustomId('view::queue', 'manage', view.id))
+            .setCustomId(view.customId('manage'))
             .setLabel('Manage Queue')
             .setStyle(ButtonStyle.Secondary),
         ),
@@ -87,81 +166,10 @@ export default createView<QueueState, typeof QueueEvents>({
   interactions: {
     enter: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
-
-      const modal = new ModalBuilder()
-        .setCustomId(buildCustomId('view::queue', 'enter-submit', ctx.view.id))
-        .setTitle('Enter Queue')
-        .addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('title')
-              .setLabel('Game Title')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(true)
-              .setMaxLength(100),
-          ),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('description')
-              .setLabel('Description')
-              .setStyle(TextInputStyle.Paragraph)
-              .setRequired(true)
-              .setMaxLength(1000),
-          ),
-        );
-
-      await interaction.showModal(modal);
+      await enterModal.show(interaction, ctx);
     },
 
-    'enter-submit': async (interaction, ctx) => {
-      if (!interaction.isModalSubmit()) return;
-      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-      const title = interaction.fields.getTextInputValue('title');
-      const description = interaction.fields.getTextInputValue('description');
-      const queue = await getQueue(ctx.view.entityId!);
-      if (!queue) return;
-
-      if (queue.entriesPerStoryteller !== null) {
-        const existing = await countEntriesByStoryteller(queue.id, BigInt(interaction.user.id));
-        if (existing >= queue.entriesPerStoryteller) {
-          await interaction.editReply({
-            content: `You already have ${existing} ${existing === 1 ? 'entry' : 'entries'} in this queue (limit: ${queue.entriesPerStoryteller}).`,
-          });
-          return;
-        }
-      }
-
-      const entry = await insertQueueEntry({
-        queue: queue.id,
-        storyteller: BigInt(interaction.user.id),
-        title,
-        description,
-      });
-
-      const thread = await ensureEntryThread(
-        interaction.client,
-        String(ctx.view.channel),
-        String(ctx.view.message),
-        queue.name,
-      );
-
-      await ctx.updateState({ threadId: thread.id });
-
-      await ctx.spawnView(
-        'qentry',
-        { interaction, channel: thread as unknown as import('discord.js').TextBasedChannel },
-        {
-          ids: { qeid: entry.id, qid: queue.id },
-          entityId: entry.id,
-        },
-      );
-
-      ctx.ids['qid'] = ctx.view.entityId!;
-      await ctx.notifyAll(QueueEvents.EntriesChanged);
-
-      await interaction.deleteReply();
-    },
+    ...enterModal.interactions,
 
     manage: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
@@ -169,72 +177,14 @@ export default createView<QueueState, typeof QueueEvents>({
       const queue = await getQueue(ctx.view.entityId!);
       if (!queue) return;
 
-      const modal = new ModalBuilder()
-        .setCustomId(buildCustomId('view::queue', 'manage-submit', ctx.view.id))
-        .setTitle('Manage Queue')
-        .addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('name')
-              .setLabel('Queue Name')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(true)
-              .setValue(queue.name)
-              .setMaxLength(100),
-          ),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('description')
-              .setLabel('Description')
-              .setStyle(TextInputStyle.Paragraph)
-              .setRequired(false)
-              .setValue(queue.description ?? '')
-              .setMaxLength(1000),
-          ),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('concurrency')
-              .setLabel('Concurrency')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(false)
-              .setValue(queue.concurrency?.toString() ?? ''),
-          ),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('entriesPerStoryteller')
-              .setLabel('Entries per Storyteller')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(false)
-              .setValue(queue.entriesPerStoryteller?.toString() ?? ''),
-          ),
-        );
-
-      await interaction.showModal(modal);
-    },
-
-    'manage-submit': async (interaction, ctx) => {
-      if (!interaction.isModalSubmit()) return;
-      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-      const name = interaction.fields.getTextInputValue('name');
-      const description = interaction.fields.getTextInputValue('description') || null;
-      const concurrencyStr = interaction.fields.getTextInputValue('concurrency');
-      const epsStr = interaction.fields.getTextInputValue('entriesPerStoryteller');
-
-      const concurrency = concurrencyStr ? parseInt(concurrencyStr, 10) : null;
-      const entriesPerStoryteller = epsStr ? parseInt(epsStr, 10) : null;
-
-      await updateQueue(ctx.view.entityId!, {
-        name,
-        description,
-        ...(concurrency !== null ? { concurrency } : {}),
-        ...(entriesPerStoryteller !== null ? { entriesPerStoryteller } : {}),
+      await manageModal.show(interaction, ctx, {
+        name: queue.name,
+        description: queue.description ?? '',
+        concurrency: queue.concurrency?.toString() ?? '',
+        entriesPerStoryteller: queue.entriesPerStoryteller?.toString() ?? '',
       });
-
-      ctx.ids['qid'] = ctx.view.entityId!;
-      await ctx.notifyAll(QueueEvents.EntriesChanged);
-
-      await interaction.deleteReply();
     },
+
+    ...manageModal.interactions,
   },
 });

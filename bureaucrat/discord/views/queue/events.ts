@@ -1,8 +1,8 @@
 export const QueueEvents = {
-  EntriesChanged: 'queue::${qid}::entries',
+  EntriesChanged: 'queue::${queue}::entries',
 } as const;
 
 export const QueueEntryEvents = {
-  SignupsChanged: 'qentry::${qeid}::signups',
-  QueueDiscovery: 'queue::${qid}',
+  SignupsChanged: 'qentry::${qentry}::signups',
+  QueueDiscovery: 'queue::${queue}',
 } as const;

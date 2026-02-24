@@ -1,5 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import { destroyView } from '../../frameworks/views/lifecycle';
 import { confirmButton } from './confirm';
 import type { ViewRow, ViewContext, ViewInteraction, InteractionHandler } from '../../frameworks/views/types';
@@ -45,10 +44,7 @@ export const dismissButton = <S = unknown>(options?: DismissOptions<S>) => {
   }
 
   const button = (view: ViewRow<S>) =>
-    new ButtonBuilder()
-      .setCustomId(buildCustomId('view::' + view.route, action, view.id))
-      .setLabel(label)
-      .setStyle(style);
+    new ButtonBuilder().setCustomId(view.customId(action)).setLabel(label).setStyle(style);
 
   const row = (view: ViewRow<S>) => new ActionRowBuilder<ButtonBuilder>().addComponents(button(view));
 

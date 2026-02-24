@@ -10,7 +10,6 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import { dismissButton } from '../components/dismiss';
 import type { ViewRow } from '../../frameworks/views/types';
 import { listSignups, updateSignup, deleteSignup } from '../../../drizzle/queue-entry-signups';
@@ -54,7 +53,7 @@ export default createView<ManageSignupsState>({
     container.addActionRowComponents(
       new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new StringSelectMenuBuilder()
-          .setCustomId(buildCustomId('view::qmsignups', 'select', view.id))
+          .setCustomId(view.customId('select'))
           .setPlaceholder('Select a signup to manage')
           .addOptions(
             signups.map((s) => ({
@@ -80,16 +79,10 @@ export default createView<ManageSignupsState>({
 
       container.addActionRowComponents(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder().setCustomId(view.customId('accept')).setLabel('Accept').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId(view.customId('decline')).setLabel('Decline').setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qmsignups', 'accept', view.id))
-            .setLabel('Accept')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qmsignups', 'decline', view.id))
-            .setLabel('Decline')
-            .setStyle(ButtonStyle.Danger),
-          new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qmsignups', 'reset', view.id))
+            .setCustomId(view.customId('reset'))
             .setLabel('Reset to Pending')
             .setStyle(ButtonStyle.Secondary),
         ),
@@ -124,8 +117,8 @@ export default createView<ManageSignupsState>({
 
       await updateSignup(state.selectedSignupId, { accepted: true });
 
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
+      ctx.ids['qentry'] = state.entryId;
+      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };
@@ -141,8 +134,8 @@ export default createView<ManageSignupsState>({
       await deleteSignup(state.selectedSignupId);
       await ctx.updateState({ selectedSignupId: null });
 
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
+      ctx.ids['qentry'] = state.entryId;
+      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };
@@ -157,8 +150,8 @@ export default createView<ManageSignupsState>({
 
       await updateSignup(state.selectedSignupId, { accepted: false });
 
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
+      ctx.ids['qentry'] = state.entryId;
+      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };

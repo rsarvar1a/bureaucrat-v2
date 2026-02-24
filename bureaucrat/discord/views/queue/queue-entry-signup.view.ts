@@ -4,18 +4,15 @@ import {
   ButtonStyle,
   ContainerBuilder,
   MessageFlags,
-  ModalBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
   StringSelectMenuBuilder,
   TextDisplayBuilder,
-  TextInputBuilder,
-  TextInputStyle,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import { destroyView } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
+import { modal, field } from '../components/modal';
 import type { ViewRow } from '../../frameworks/views/types';
 import { getQueueEntry } from '../../../drizzle/queue-entries';
 import { insertSignup, updateSignup, deleteSignup } from '../../../drizzle/queue-entry-signups';
@@ -30,6 +27,62 @@ type SignupState = {
 };
 
 const dismiss = dismissButton<SignupState>();
+
+const messageModal = modal<SignupState>({
+  action: 'message',
+  title: 'Sign Up',
+  fields: {
+    message: field.paragraph('Message (optional)', { required: false, maxLength: 500 }),
+  },
+  async onSubmit(values, interaction, ctx) {
+    await interaction.deferUpdate();
+
+    const state = ctx.view.state!;
+    const message = values['message'] || undefined;
+    const entry = await getQueueEntry(state.entryId);
+    if (!entry) return;
+
+    const accepted = entry.public && state.selectedRole !== 'Storyteller';
+
+    await insertSignup({
+      member: BigInt(interaction.user.id),
+      entry: state.entryId,
+      role: state.selectedRole!,
+      message,
+      accepted,
+    });
+
+    ctx.ids['qentry'] = state.entryId;
+    ctx.ids['queue'] = state.queueId;
+    await ctx.notify(QueueEntryEvents.SignupsChanged);
+
+    await destroyView(ctx.view.id);
+    await interaction.deleteReply();
+  },
+});
+
+const editSignupModal = modal<SignupState>({
+  action: 'edit',
+  title: 'Edit Signup',
+  fields: {
+    message: field.paragraph('Message (optional)', { required: false, maxLength: 500 }),
+  },
+  async onSubmit(values, interaction, ctx) {
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    const state = ctx.view.state!;
+    if (!state.signupId) return;
+
+    const message = values['message'] || undefined;
+    await updateSignup(state.signupId, { message });
+
+    ctx.ids['qentry'] = state.entryId;
+    ctx.ids['queue'] = state.queueId;
+    await ctx.notify(QueueEntryEvents.SignupsChanged);
+
+    await interaction.deleteReply();
+  },
+});
 
 export default createView<SignupState>({
   id: 'qsignup',
@@ -49,14 +102,8 @@ export default createView<SignupState>({
         .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
         .addActionRowComponents(
           new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-              .setCustomId(buildCustomId('view::qsignup', 'edit', view.id))
-              .setLabel('Edit')
-              .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-              .setCustomId(buildCustomId('view::qsignup', 'delete', view.id))
-              .setLabel('Delete')
-              .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId(view.customId('edit')).setLabel('Edit').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId(view.customId('delete')).setLabel('Delete').setStyle(ButtonStyle.Danger),
           ),
         )
         .addActionRowComponents(dismiss.row(view));
@@ -74,7 +121,7 @@ export default createView<SignupState>({
       .addActionRowComponents(
         new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
           new StringSelectMenuBuilder()
-            .setCustomId(buildCustomId('view::qsignup', 'role-select', view.id))
+            .setCustomId(view.customId('role-select'))
             .setPlaceholder('Select a role')
             .addOptions(
               { label: 'Player', value: 'Player', description: 'Play in the game' },
@@ -100,86 +147,17 @@ export default createView<SignupState>({
       const role = interaction.values[0] as 'Player' | 'Storyteller' | 'Kibitzer';
       await ctx.updateState({ selectedRole: role });
 
-      const modal = new ModalBuilder()
-        .setCustomId(buildCustomId('view::qsignup', 'message-submit', ctx.view.id))
-        .setTitle(`Sign Up as ${role}`)
-        .addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('message')
-              .setLabel('Message (optional)')
-              .setStyle(TextInputStyle.Paragraph)
-              .setRequired(false)
-              .setMaxLength(500),
-          ),
-        );
-
-      await interaction.showModal(modal);
+      await messageModal.show(interaction, ctx, { title: `Sign Up as ${role}` });
     },
 
-    'message-submit': async (interaction, ctx) => {
-      if (!interaction.isModalSubmit()) return;
-      await interaction.deferUpdate();
-
-      const state = ctx.view.state!;
-      const message = interaction.fields.getTextInputValue('message') || undefined;
-      const entry = await getQueueEntry(state.entryId);
-      if (!entry) return;
-
-      const accepted = entry.public && state.selectedRole !== 'Storyteller';
-
-      await insertSignup({
-        member: BigInt(interaction.user.id),
-        entry: state.entryId,
-        role: state.selectedRole!,
-        message,
-        accepted,
-      });
-
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
-      await ctx.notify(QueueEntryEvents.SignupsChanged);
-
-      await destroyView(ctx.view.id);
-      await interaction.deleteReply();
-    },
+    ...messageModal.interactions,
 
     edit: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
-
-      const modal = new ModalBuilder()
-        .setCustomId(buildCustomId('view::qsignup', 'edit-submit', ctx.view.id))
-        .setTitle('Edit Signup')
-        .addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('message')
-              .setLabel('Message (optional)')
-              .setStyle(TextInputStyle.Paragraph)
-              .setRequired(false)
-              .setMaxLength(500),
-          ),
-        );
-
-      await interaction.showModal(modal);
+      await editSignupModal.show(interaction, ctx);
     },
 
-    'edit-submit': async (interaction, ctx) => {
-      if (!interaction.isModalSubmit()) return;
-      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-      const state = ctx.view.state!;
-      if (!state.signupId) return;
-
-      const message = interaction.fields.getTextInputValue('message') || undefined;
-      await updateSignup(state.signupId, { message });
-
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
-      await ctx.notify(QueueEntryEvents.SignupsChanged);
-
-      await interaction.deleteReply();
-    },
+    ...editSignupModal.interactions,
 
     delete: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
@@ -190,8 +168,8 @@ export default createView<SignupState>({
 
       await deleteSignup(state.signupId);
 
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
+      ctx.ids['qentry'] = state.entryId;
+      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       await interaction.deleteReply();

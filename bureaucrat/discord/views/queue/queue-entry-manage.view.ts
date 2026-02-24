@@ -10,7 +10,6 @@ import {
 } from 'discord.js';
 import { eq, and } from 'drizzle-orm';
 import { createView } from '../../frameworks/views/create-view';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import { destroyView } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 import { confirmButton } from '../components/confirm';
@@ -56,7 +55,7 @@ const del = confirmButton<ManageState>({
 
     await deleteQueueEntry(state.entryId);
 
-    ctx.ids['qid'] = state.queueId;
+    ctx.ids['queue'] = state.queueId;
     await ctx.notify(QueueEvents.EntriesChanged);
 
     await destroyView(ctx.view.id);
@@ -95,11 +94,11 @@ export default createView<ManageState>({
       .addActionRowComponents(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qmanage', 'configure', view.id))
+            .setCustomId(view.customId('configure'))
             .setLabel('Configure')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qmanage', 'signups', view.id))
+            .setCustomId(view.customId('signups'))
             .setLabel('Manage Signups')
             .setStyle(ButtonStyle.Secondary),
         ),

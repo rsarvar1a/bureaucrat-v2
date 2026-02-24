@@ -11,6 +11,10 @@ type InsertQueueEntry = {
   minimumStartDate?: Date;
 };
 
+type UpdateQueueEntry = Partial<Omit<InsertQueueEntry, 'minimumStartDate'>> & {
+  minimumStartDate?: Date | null;
+};
+
 export const insertQueueEntry = async (data: InsertQueueEntry) => {
   const [row] = await db.insert(QueueEntry).values(data).returning();
   return row!;
@@ -25,7 +29,7 @@ export const listQueueEntries = async (queueId: string) => {
   return db.select().from(QueueEntry).where(eq(QueueEntry.queue, queueId)).orderBy(asc(QueueEntry.createdAt));
 };
 
-export const updateQueueEntry = async (entryId: string, patch: Partial<InsertQueueEntry>) => {
+export const updateQueueEntry = async (entryId: string, patch: UpdateQueueEntry) => {
   await db.update(QueueEntry).set(patch).where(eq(QueueEntry.id, entryId));
 };
 

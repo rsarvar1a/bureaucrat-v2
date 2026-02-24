@@ -9,7 +9,6 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import type { ViewRow } from '../../frameworks/views/types';
 import { getQueueEntry } from '../../../drizzle/queue-entries';
 import { listAcceptedSignups, getSignupByMemberAndEntry } from '../../../drizzle/queue-entry-signups';
@@ -74,14 +73,8 @@ export default createView<QueueEntryState, typeof QueueEntryEvents>({
       .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
       .addActionRowComponents(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qentry', 'signup', view.id))
-            .setLabel('Signup')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qentry', 'manage', view.id))
-            .setLabel('Manage')
-            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder().setCustomId(view.customId('signup')).setLabel('Signup').setStyle(ButtonStyle.Primary),
+          new ButtonBuilder().setCustomId(view.customId('manage')).setLabel('Manage').setStyle(ButtonStyle.Secondary),
         ),
       )
       .setAccentColor(0x57f287);

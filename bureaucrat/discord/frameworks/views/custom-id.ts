@@ -1,3 +1,5 @@
+import type { ViewRow } from './types';
+
 const MAX_LENGTH = 100;
 
 export type ParsedCustomId = {
@@ -51,4 +53,15 @@ export const parseCustomId = (id: string): ParsedCustomId | null => {
   const ids = lastSegment.split(':');
 
   return { path, action, ids };
+};
+
+/**
+ * Injects the `customId()` method onto a plain DB row, turning it into a full `ViewRow`.
+ */
+export const injectCustomId = <S>(row: Omit<ViewRow<S>, 'customId'>): ViewRow<S> => {
+  const viewRow = row as ViewRow<S>;
+  if (row.state) viewRow.state = row.state;
+  viewRow.customId = (action: string, ...extraIds: string[]) =>
+    buildCustomId(`view::${row.route}`, action, row.id, ...extraIds);
+  return viewRow;
 };

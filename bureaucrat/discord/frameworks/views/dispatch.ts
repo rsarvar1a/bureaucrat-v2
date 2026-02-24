@@ -5,7 +5,7 @@ import {
   type MessageComponentInteraction,
   type ModalSubmitInteraction,
 } from 'discord.js';
-import { parseCustomId } from './custom-id';
+import { injectCustomId, parseCustomId } from './custom-id';
 import { notifyContexts, resolveEventTemplate } from './notify';
 import { spawnView as spawnViewFn } from './lifecycle';
 import type { InteractionHandler, ViewContext, ViewDefinition, ViewRow } from './types';
@@ -45,6 +45,7 @@ export const dispatch = async (
   }
 
   const ids: Record<string, string> = { [viewDef.id]: viewInstanceId };
+  if (viewRow.entityId) ids[viewDef.id] = viewRow.entityId;
   for (let i = 0; i < viewDef.idParams.length; i++) {
     const paramName = viewDef.idParams[i]!;
     const value = parsed.ids[i + 1];
@@ -54,14 +55,14 @@ export const dispatch = async (
   const resolve = (...templates: string[]): string[] => templates.map((t) => resolveEventTemplate(t, ids));
 
   const ctx: ViewContext<unknown> = {
-    view: viewRow as ViewRow,
+    view: injectCustomId(viewRow),
     ids,
     async updateState(patch) {
       const currentState = (viewRow.state ?? {}) as Record<string, unknown>;
       const newState = { ...currentState, ...patch };
       await db.update(View).set({ state: newState }).where(eq(View.id, viewRow.id));
       (viewRow as ViewRow).state = newState;
-      ctx.view = { ...viewRow, state: newState } as ViewRow;
+      ctx.view = injectCustomId({ ...viewRow, state: newState });
     },
     async notify(...templates) {
       await notifyContexts(interaction.client, definitions, resolve(...templates), { excludeViewId: viewRow.id });

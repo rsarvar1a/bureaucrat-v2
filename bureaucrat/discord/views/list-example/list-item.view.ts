@@ -4,17 +4,15 @@ import {
   ButtonStyle,
   ContainerBuilder,
   MessageFlags,
-  ModalBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
   TextDisplayBuilder,
-  TextInputBuilder,
-  TextInputStyle,
   type TextChannel,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
 import { buildCustomId } from '../../frameworks/views/custom-id';
 import { destroyView } from '../../frameworks/views/lifecycle';
+import { modal, field } from '../components/modal';
 import type { ViewRow } from '../../frameworks/views/types';
 import { ListEvents } from './list.view';
 
@@ -22,6 +20,18 @@ type ListItemState = {
   description: string;
   completed?: boolean;
 };
+
+const editModal = modal<ListItemState>({
+  action: 'edit',
+  title: 'Edit Item',
+  fields: {
+    description: field.short('Description'),
+  },
+  async onSubmit(values, _interaction, ctx) {
+    await ctx.mutateAndNotify({ description: values['description']! }, ListEvents.ItemChanged);
+    return { action: 'rerender' };
+  },
+});
 
 export default createView<ListItemState, typeof ListEvents>({
   id: 'li',
@@ -68,31 +78,10 @@ export default createView<ListItemState, typeof ListEvents>({
       if (!interaction.isMessageComponent()) return;
 
       const currentDescription = ctx.view.state?.description ?? '';
-      const modal = new ModalBuilder()
-        .setCustomId(buildCustomId('view::li', 'edit-ok', ctx.view.id, ctx.ids['list'] ?? ''))
-        .setTitle('Edit Item')
-        .addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('description')
-              .setLabel('Description')
-              .setStyle(TextInputStyle.Short)
-              .setValue(currentDescription)
-              .setRequired(true),
-          ),
-        );
-
-      await interaction.showModal(modal);
+      await editModal.show(interaction, ctx, { description: currentDescription });
     },
 
-    'edit-ok': async (interaction, ctx) => {
-      if (!interaction.isModalSubmit()) return;
-
-      await interaction.deferUpdate();
-      const description = interaction.fields.getTextInputValue('description');
-      await ctx.mutateAndNotify({ description }, ListEvents.ItemChanged);
-      return { action: 'rerender' };
-    },
+    ...editModal.interactions,
 
     del: async (interaction, ctx) => {
       await interaction.deferUpdate();

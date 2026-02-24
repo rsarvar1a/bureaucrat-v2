@@ -1,5 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import type { ViewRow, ViewContext, ViewInteraction, InteractionHandler } from '../../frameworks/views/types';
 
 type ConfirmOptions<S> = {
@@ -13,10 +12,7 @@ export const confirmButton = <S = unknown>(options: ConfirmOptions<S>) => {
   const { action, label, style = ButtonStyle.Danger, onConfirm } = options;
 
   const button = (view: ViewRow<S>) =>
-    new ButtonBuilder()
-      .setCustomId(buildCustomId('view::' + view.route, action, view.id))
-      .setLabel(label)
-      .setStyle(style);
+    new ButtonBuilder().setCustomId(view.customId(action)).setLabel(label).setStyle(style);
 
   const row = (view: ViewRow<S>) => new ActionRowBuilder<ButtonBuilder>().addComponents(button(view));
 
@@ -26,11 +22,11 @@ export const confirmButton = <S = unknown>(options: ConfirmOptions<S>) => {
   const confirmRow = (view: ViewRow<S>) =>
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId(buildCustomId('view::' + view.route, `${action}-confirm`, view.id))
+        .setCustomId(view.customId(`${action}-confirm`))
         .setLabel('Confirm')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
-        .setCustomId(buildCustomId('view::' + view.route, `${action}-cancel`, view.id))
+        .setCustomId(view.customId(`${action}-cancel`))
         .setLabel('Cancel')
         .setStyle(ButtonStyle.Secondary),
     );

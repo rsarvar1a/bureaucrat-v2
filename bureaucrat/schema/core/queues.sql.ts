@@ -1,5 +1,5 @@
-import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
-import { automaticTimestamp, primary, snowflake, snowflakes, timestamps } from '../helpers';
+import { boolean, integer, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import { primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { Role } from './enums.sql';
 import { fk } from '../helpers/foreign-key';
@@ -49,7 +49,7 @@ export const QueueEntry = core.table('QueueEntry', {
   storyteller: snowflake().notNull(),
   title: text().notNull(),
   description: text().notNull(),
-  minimumStartDate: automaticTimestamp(),
+  minimumStartDate: timestamp(),
   public: boolean().notNull().default(true),
   ...timestamps(),
 });

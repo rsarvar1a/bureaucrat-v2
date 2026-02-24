@@ -10,6 +10,7 @@ import type {
 import { db } from '../../../utilities/db';
 import { View, Subscription } from '../../../schema/abc/views.sql';
 import type { ViewDefinition, ViewRow } from './types';
+import { injectCustomId } from './custom-id';
 import { resolveEventTemplate } from './notify';
 import { logger } from '../../../utilities/logger';
 
@@ -63,21 +64,22 @@ export const spawnView = async (
   } = options;
 
   const viewId = crypto.randomUUID();
-  const ids = { [viewDef.id]: viewId, ...callerIds };
+  const ids = { [viewDef.id]: entityId ?? viewId, ...callerIds };
+  const resolvedWebhookToken = webhookToken ?? (visibility === 'ephemeral' ? target.interaction.webhook.token : null);
 
-  const tempView = {
+  const tempView = injectCustomId({
     id: viewId,
     route: viewDef.id,
     state: state ?? null,
     entityId: entityId ?? null,
     visibility,
     expiresAt: expiresAt ?? null,
-    webhookToken: webhookToken ?? null,
+    webhookToken: resolvedWebhookToken ?? null,
     channel: 0n,
     message: 0n,
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as ViewRow;
+  });
 
   const payload = (await viewDef.render(tempView, db)) as MessagePayload;
   const { interaction, messageId, channel } = target;
@@ -125,7 +127,7 @@ export const spawnView = async (
     );
   }
 
-  return { ...row!, state: state ?? null } as ViewRow;
+  return injectCustomId({ ...row!, state: state ?? null });
 };
 
 /**

@@ -4,16 +4,13 @@ import {
   ButtonStyle,
   ContainerBuilder,
   MessageFlags,
-  ModalBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
   TextDisplayBuilder,
-  TextInputBuilder,
-  TextInputStyle,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import { buildCustomId } from '../../frameworks/views/custom-id';
 import { dismissButton } from '../components/dismiss';
+import { modal, field } from '../components/modal';
 import type { ViewRow } from '../../frameworks/views/types';
 import { getQueueEntry, updateQueueEntry } from '../../../drizzle/queue-entries';
 import { QueueEvents, QueueEntryEvents } from './events';
@@ -24,6 +21,33 @@ type ConfigState = {
 };
 
 const dismiss = dismissButton<ConfigState>();
+
+const editModal = modal<ConfigState>({
+  action: 'edit',
+  title: 'Edit Entry',
+  fields: {
+    title: field.short('Title', { maxLength: 100 }),
+    description: field.paragraph('Description', { maxLength: 1000 }),
+    minimumStartDate: field.short('Minimum Start Date (YYYY-MM-DD)', { required: false }),
+  },
+  async onSubmit(values, interaction, ctx) {
+    await interaction.deferUpdate();
+
+    const state = ctx.view.state!;
+    const title = values['title']!;
+    const description = values['description']!;
+    const dateStr = values['minimumStartDate'];
+    const minimumStartDate = dateStr ? new Date(dateStr) : null;
+
+    await updateQueueEntry(state.entryId, { title, description, minimumStartDate });
+
+    ctx.ids['queue'] = state.queueId;
+    ctx.ids['qentry'] = state.entryId;
+    await ctx.notify(QueueEvents.EntriesChanged, QueueEntryEvents.SignupsChanged);
+
+    return { action: 'rerender' };
+  },
+});
 
 export default createView<ConfigState>({
   id: 'qconfig',
@@ -55,12 +79,9 @@ export default createView<ConfigState>({
       .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
       .addActionRowComponents(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder().setCustomId(view.customId('edit')).setLabel('Edit').setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qconfig', 'edit', view.id))
-            .setLabel('Edit')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId(buildCustomId('view::qconfig', 'toggle-public', view.id))
+            .setCustomId(view.customId('toggle-public'))
             .setLabel(entry?.public ? 'Make Private' : 'Make Public')
             .setStyle(ButtonStyle.Secondary),
         ),
@@ -82,59 +103,14 @@ export default createView<ConfigState>({
       const entry = await getQueueEntry(ctx.view.state!.entryId);
       if (!entry) return;
 
-      const modal = new ModalBuilder()
-        .setCustomId(buildCustomId('view::qconfig', 'edit-submit', ctx.view.id))
-        .setTitle('Edit Entry')
-        .addComponents(
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('title')
-              .setLabel('Title')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(true)
-              .setValue(entry.title)
-              .setMaxLength(100),
-          ),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('description')
-              .setLabel('Description')
-              .setStyle(TextInputStyle.Paragraph)
-              .setRequired(true)
-              .setValue(entry.description)
-              .setMaxLength(1000),
-          ),
-          new ActionRowBuilder<TextInputBuilder>().addComponents(
-            new TextInputBuilder()
-              .setCustomId('minimumStartDate')
-              .setLabel('Minimum Start Date (YYYY-MM-DD)')
-              .setStyle(TextInputStyle.Short)
-              .setRequired(false)
-              .setValue(entry.minimumStartDate ? entry.minimumStartDate.toISOString().split('T')[0]! : ''),
-          ),
-        );
-
-      await interaction.showModal(modal);
+      await editModal.show(interaction, ctx, {
+        title: entry.title,
+        description: entry.description,
+        minimumStartDate: entry.minimumStartDate ? entry.minimumStartDate.toISOString().split('T')[0]! : '',
+      });
     },
 
-    'edit-submit': async (interaction, ctx) => {
-      if (!interaction.isModalSubmit()) return;
-      await interaction.deferUpdate();
-
-      const state = ctx.view.state!;
-      const title = interaction.fields.getTextInputValue('title');
-      const description = interaction.fields.getTextInputValue('description');
-      const dateStr = interaction.fields.getTextInputValue('minimumStartDate');
-      const minimumStartDate = dateStr ? new Date(dateStr) : undefined;
-
-      await updateQueueEntry(state.entryId, { title, description, minimumStartDate });
-
-      ctx.ids['qid'] = state.queueId;
-      ctx.ids['qeid'] = state.entryId;
-      await ctx.notify(QueueEvents.EntriesChanged, QueueEntryEvents.SignupsChanged);
-
-      return { action: 'rerender' };
-    },
+    ...editModal.interactions,
 
     'toggle-public': async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
@@ -146,8 +122,8 @@ export default createView<ConfigState>({
 
       await updateQueueEntry(state.entryId, { public: !entry.public });
 
-      ctx.ids['qeid'] = state.entryId;
-      ctx.ids['qid'] = state.queueId;
+      ctx.ids['qentry'] = state.entryId;
+      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };

@@ -2,7 +2,8 @@ import { eq, inArray } from 'drizzle-orm';
 import type { Client, MessagePayload, TextChannel } from 'discord.js';
 import { db } from '../../../utilities/db';
 import { View, Subscription } from '../../../schema/abc/views.sql';
-import type { ViewDefinition, ViewRow } from './types';
+import type { ViewDefinition } from './types';
+import { injectCustomId } from './custom-id';
 import { logger } from '../../../utilities/logger';
 
 /**
@@ -57,7 +58,7 @@ export const notifyContexts = async (
       }
 
       try {
-        const payload = (await viewDef.render(view as ViewRow<unknown>, db)) as MessagePayload;
+        const payload = (await viewDef.render(injectCustomId(view), db)) as MessagePayload;
 
         if (view.visibility === 'public') {
           const channel = (await client.channels.fetch(String(view.channel))) as TextChannel | null;

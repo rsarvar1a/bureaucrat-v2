@@ -1,12 +1,21 @@
+import type { Client } from 'discord.js';
 import type { Postgres } from '../../../utilities/db';
-import type { EventTemplate, InteractionHandler, MessagePayload, ViewDefinition, ViewRow } from './types';
+import type {
+  EventTemplate,
+  InteractionHandler,
+  LifecycleAction,
+  MessagePayload,
+  ViewDefinition,
+  ViewRow,
+} from './types';
 
 type CreateViewInput<S, E extends EventTemplate, I extends string> = {
   id: string;
   idParams?: readonly string[];
   events?: E;
-  subscribesTo?: (keyof E & string)[];
+  subscribesTo?: Partial<Record<LifecycleAction, string[]>>;
   defaultState?: S;
+  destroy?: (view: ViewRow<S>, client: Client) => Promise<void>;
   render: (view: ViewRow<S, I>, db: Postgres) => Promise<MessagePayload>;
   interactions?: Record<I, InteractionHandler<S>>;
 };
@@ -34,8 +43,9 @@ export const createView =
       id: def.id,
       idParams: def.idParams ?? [],
       events: def.events ?? ({} as E),
-      subscribesTo: def.subscribesTo ?? [],
+      subscribesTo: def.subscribesTo ?? {},
       defaultState: def.defaultState,
+      destroy: def.destroy as ViewDefinition<S, E>['destroy'],
       render: def.render as ViewDefinition<S, E>['render'],
       interactions: def.interactions ?? {},
     };

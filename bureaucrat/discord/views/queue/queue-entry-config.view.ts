@@ -9,16 +9,14 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
+import { deleteViewMessage } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 import { modal, field } from '../components/modal';
 
 import { getQueueEntry, updateQueueEntry } from '../../../drizzle/queue-entries';
 import { QueueEvents, QueueEntryEvents } from './events';
 
-type ConfigState = {
-  entryId: string;
-  queueId: string;
-};
+type ConfigState = Record<string, never>;
 
 const dismiss = dismissButton<ConfigState>()({ action: 'dismiss' });
 
@@ -33,16 +31,14 @@ const editModal = modal<ConfigState>()({
   async onSubmit(values, interaction, ctx) {
     await interaction.deferUpdate();
 
-    const state = ctx.view.state!;
+    const entryId = ctx.ids['qentry']!;
     const title = values['title']!;
     const description = values['description']!;
     const dateStr = values['minimumStartDate'];
     const minimumStartDate = dateStr ? new Date(dateStr) : null;
 
-    await updateQueueEntry(state.entryId, { title, description, minimumStartDate });
+    await updateQueueEntry(entryId, { title, description, minimumStartDate });
 
-    ctx.ids['queue'] = state.queueId;
-    ctx.ids['qentry'] = state.entryId;
     await ctx.notify(QueueEvents.EntriesChanged, QueueEntryEvents.SignupsChanged);
 
     return { action: 'rerender' };
@@ -53,11 +49,15 @@ export default createView<ConfigState>()({
   id: 'qconfig',
   idParams: [],
   events: {},
-  defaultState: { entryId: '', queueId: '' },
-  subscribesTo: [],
+  defaultState: {},
+  subscribesTo: { destroy: [QueueEvents.Destroyed, QueueEntryEvents.Destroyed] },
+
+  destroy: async (view, client) => {
+    await deleteViewMessage(view, client);
+  },
 
   render: async (view) => {
-    const entry = await getQueueEntry(view.state.entryId);
+    const entry = await getQueueEntry(view.entityId!);
 
     const title = entry?.title ?? 'Unknown';
     const description = entry?.description
@@ -100,7 +100,7 @@ export default createView<ConfigState>()({
     edit: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
 
-      const entry = await getQueueEntry(ctx.view.state!.entryId);
+      const entry = await getQueueEntry(ctx.ids['qentry']!);
       if (!entry) return;
 
       await editModal.show(interaction, ctx, {
@@ -118,14 +118,12 @@ export default createView<ConfigState>()({
       if (!interaction.isMessageComponent()) return;
       await interaction.deferUpdate();
 
-      const state = ctx.view.state!;
-      const entry = await getQueueEntry(state.entryId);
+      const entryId = ctx.ids['qentry']!;
+      const entry = await getQueueEntry(entryId);
       if (!entry) return;
 
-      await updateQueueEntry(state.entryId, { public: !entry.public });
+      await updateQueueEntry(entryId, { public: !entry.public });
 
-      ctx.ids['qentry'] = state.entryId;
-      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };

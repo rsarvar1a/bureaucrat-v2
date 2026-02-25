@@ -1,6 +1,7 @@
 import type {
   APIEmbed,
   ActionRowBuilder,
+  Client,
   MessageActionRowComponentBuilder,
   MessageComponentInteraction,
   MessageFlags,
@@ -11,6 +12,11 @@ import type { JSONEncodable, APIMessageTopLevelComponent } from 'discord.js';
 import type { View } from '../../../schema/abc/views.sql';
 import type { Postgres } from '../../../utilities/db';
 import type { SpawnTarget, SpawnOptions } from './lifecycle';
+
+/**
+ * The lifecycle action that a subscription triggers.
+ */
+export type LifecycleAction = 'render' | 'destroy';
 
 /**
  * A record where values contain `${placeholder}` patterns.
@@ -51,7 +57,7 @@ export type MessagePayload = {
 /**
  * Result returned by an interaction handler.
  */
-export type HandlerResult = { action: 'rerender' } | { action: 'noop' } | void;
+export type HandlerResult = { action: 'rerender' } | { action: 'destroy' } | { action: 'noop' } | void;
 
 /**
  * The union of interaction types that view handlers receive.
@@ -91,8 +97,9 @@ export type ViewDefinition<S = unknown, E extends EventTemplate = EventTemplate>
   id: string;
   idParams: readonly string[];
   events: E;
-  subscribesTo: (keyof E & string)[];
+  subscribesTo: Partial<Record<LifecycleAction, string[]>>;
   defaultState?: S;
+  destroy?: (view: ViewRow<S>, client: Client) => Promise<void>;
   render: (view: ViewRow<S>, db: Postgres) => Promise<MessagePayload>;
   interactions: Record<string, InteractionHandler<S>>;
 };

@@ -10,15 +10,14 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
+import { deleteViewMessage } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 
 import { listSignups, updateSignup, deleteSignup } from '../../../drizzle/queue-entry-signups';
-import { QueueEntryEvents } from './events';
+import { QueueEvents, QueueEntryEvents } from './events';
 
 type ManageSignupsState = {
   selectedSignupId: string | null;
-  entryId: string;
-  queueId: string;
   memberNames: Record<string, string>;
 };
 
@@ -28,12 +27,16 @@ export default createView<ManageSignupsState>()({
   id: 'qmsignups',
   idParams: [],
   events: {},
-  defaultState: { selectedSignupId: null, entryId: '', queueId: '', memberNames: {} },
-  subscribesTo: [],
+  defaultState: { selectedSignupId: null, memberNames: {} },
+  subscribesTo: { destroy: [QueueEvents.Destroyed, QueueEntryEvents.Destroyed] },
+
+  destroy: async (view, client) => {
+    await deleteViewMessage(view, client);
+  },
 
   render: async (view) => {
     const state = view.state;
-    const signups = await listSignups(state.entryId);
+    const signups = await listSignups(view.entityId!);
 
     const container = new ContainerBuilder()
       .addTextDisplayComponents(new TextDisplayBuilder().setContent('### Manage Signups'))
@@ -118,8 +121,6 @@ export default createView<ManageSignupsState>()({
 
       await updateSignup(state.selectedSignupId, { accepted: true });
 
-      ctx.ids['qentry'] = state.entryId;
-      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };
@@ -135,8 +136,6 @@ export default createView<ManageSignupsState>()({
       await deleteSignup(state.selectedSignupId);
       await ctx.updateState({ selectedSignupId: null });
 
-      ctx.ids['qentry'] = state.entryId;
-      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };
@@ -151,8 +150,6 @@ export default createView<ManageSignupsState>()({
 
       await updateSignup(state.selectedSignupId, { accepted: false });
 
-      ctx.ids['qentry'] = state.entryId;
-      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       return { action: 'rerender' };

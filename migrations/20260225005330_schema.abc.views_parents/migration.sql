@@ -1,0 +1,2 @@
+ALTER TABLE "abc"."View" ADD COLUMN "parent" uuid;--> statement-breakpoint
+ALTER TABLE "abc"."View" ADD CONSTRAINT "View_parent_View_id_fkey" FOREIGN KEY ("parent") REFERENCES "abc"."View"("id") ON DELETE CASCADE;

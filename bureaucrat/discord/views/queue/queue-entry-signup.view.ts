@@ -10,19 +10,17 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
-import { destroyView } from '../../frameworks/views/lifecycle';
+import { destroyView, deleteViewMessage } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 import { modal, field } from '../components/modal';
 
 import { getQueueEntry } from '../../../drizzle/queue-entries';
 import { insertSignup, updateSignup, deleteSignup } from '../../../drizzle/queue-entry-signups';
-import { QueueEntryEvents } from './events';
+import { QueueEvents, QueueEntryEvents } from './events';
 
 type SignupState = {
   mode: 'new' | 'existing';
   signupId: string | null;
-  entryId: string;
-  queueId: string;
   selectedRole?: 'Player' | 'Storyteller' | 'Kibitzer';
 };
 
@@ -38,22 +36,21 @@ const messageModal = modal<SignupState>()({
     await interaction.deferUpdate();
 
     const state = ctx.view.state!;
+    const entryId = ctx.ids['qentry']!;
     const message = values['message'] || undefined;
-    const entry = await getQueueEntry(state.entryId);
+    const entry = await getQueueEntry(entryId);
     if (!entry) return;
 
     const accepted = entry.public && state.selectedRole !== 'Storyteller';
 
     await insertSignup({
       member: BigInt(interaction.user.id),
-      entry: state.entryId,
+      entry: entryId,
       role: state.selectedRole!,
       message,
       accepted,
     });
 
-    ctx.ids['qentry'] = state.entryId;
-    ctx.ids['queue'] = state.queueId;
     await ctx.notify(QueueEntryEvents.SignupsChanged);
 
     await destroyView(ctx.view.id);
@@ -76,8 +73,6 @@ const editSignupModal = modal<SignupState>()({
     const message = values['message'] || undefined;
     await updateSignup(state.signupId, { message });
 
-    ctx.ids['qentry'] = state.entryId;
-    ctx.ids['queue'] = state.queueId;
     await ctx.notify(QueueEntryEvents.SignupsChanged);
 
     await interaction.deleteReply();
@@ -88,8 +83,12 @@ export default createView<SignupState>()({
   id: 'qsignup',
   idParams: [],
   events: {},
-  defaultState: { mode: 'new', signupId: null, entryId: '', queueId: '' },
-  subscribesTo: [],
+  defaultState: { mode: 'new', signupId: null },
+  subscribesTo: { destroy: [QueueEvents.Destroyed, QueueEntryEvents.Destroyed] },
+
+  destroy: async (view, client) => {
+    await deleteViewMessage(view, client);
+  },
 
   render: async (view) => {
     const state = view.state;
@@ -168,8 +167,6 @@ export default createView<SignupState>()({
 
       await deleteSignup(state.signupId);
 
-      ctx.ids['qentry'] = state.entryId;
-      ctx.ids['queue'] = state.queueId;
       await ctx.notify(QueueEntryEvents.SignupsChanged);
 
       await interaction.deleteReply();

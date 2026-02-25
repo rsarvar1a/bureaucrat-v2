@@ -10,12 +10,12 @@ import {
   type TextBasedChannel,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
+import { deleteViewMessage } from '../../frameworks/views/lifecycle';
 
-import { getQueue, updateQueue } from '../../../drizzle/queues';
+import { getQueue, deleteQueue } from '../../../drizzle/queues';
 import { insertQueueEntry, listQueueEntries, countEntriesByStoryteller } from '../../../drizzle/queue-entries';
 import { ensureEntryThread } from './thread';
 import { QueueEvents } from './events';
-import { safeParseInt } from '../../../utilities/parse-int';
 import { modal, field } from '../components/modal';
 
 type QueueState = {
@@ -63,41 +63,11 @@ const enterModal = modal<QueueState>()({
 
     await ctx.spawnView(
       'qentry',
-      { interaction, channel: thread as unknown as TextBasedChannel },
+      { interaction, channel: thread as TextBasedChannel },
       {
-        ids: { qentry: entry.id, queue: queue.id },
         entityId: entry.id,
       },
     );
-
-    await ctx.notifyAll(QueueEvents.EntriesChanged);
-
-    await interaction.deleteReply();
-  },
-});
-
-const manageModal = modal<QueueState>()({
-  action: 'manage',
-  title: 'Manage Queue',
-  fields: {
-    name: field.short('Queue Name', { maxLength: 100 }),
-    description: field.paragraph('Description', { required: false, maxLength: 1000 }),
-    concurrency: field.short('Concurrency', { required: false }),
-    entriesPerStoryteller: field.short('Entries per Storyteller', { required: false }),
-  },
-  async onSubmit(values, interaction, ctx) {
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
-    const description = values['description'] || null;
-    const concurrency = safeParseInt(values['concurrency']!);
-    const entriesPerStoryteller = safeParseInt(values['entriesPerStoryteller']!);
-
-    await updateQueue(ctx.view.entityId!, {
-      name: values['name']!,
-      description,
-      concurrency,
-      entriesPerStoryteller,
-    });
 
     await ctx.notifyAll(QueueEvents.EntriesChanged);
 
@@ -110,7 +80,20 @@ export default createView<QueueState, typeof QueueEvents>()({
   idParams: [],
   events: QueueEvents,
   defaultState: { threadId: null },
-  subscribesTo: ['EntriesChanged'],
+  subscribesTo: { render: [QueueEvents.EntriesChanged], destroy: [QueueEvents.Destroyed] },
+
+  destroy: async (view, client) => {
+    if (view.state.threadId) {
+      try {
+        const thread = await client.channels.fetch(view.state.threadId);
+        if (thread) await thread.delete();
+      } catch {
+        // Thread may already be deleted
+      }
+    }
+    await deleteViewMessage(view, client);
+    await deleteQueue(view.entityId!);
+  },
 
   render: async (view) => {
     const queue = await getQueue(view.entityId!);
@@ -174,19 +157,7 @@ export default createView<QueueState, typeof QueueEvents>()({
     manage: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
 
-      const queue = await getQueue(ctx.view.entityId!);
-      if (!queue) return;
-
-      await manageModal.show(interaction, ctx, {
-        values: {
-          name: queue.name,
-          description: queue.description ?? '',
-          concurrency: queue.concurrency?.toString() ?? '',
-          entriesPerStoryteller: queue.entriesPerStoryteller?.toString() ?? '',
-        },
-      });
+      await ctx.spawnView('queuemanage', { interaction }, { visibility: 'ephemeral' });
     },
-
-    ...manageModal.interactions,
   },
 });

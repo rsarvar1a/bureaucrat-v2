@@ -7,7 +7,8 @@ import {
 } from 'discord.js';
 import { injectCustomId, parseCustomId } from './custom-id';
 import { notifyContexts, resolveEventTemplate } from './notify';
-import { spawnView as spawnViewFn } from './lifecycle';
+import { resolveAncestry } from './ancestry';
+import { spawnView as spawnViewFn, destroyView } from './lifecycle';
 import type { InteractionHandler, ViewContext, ViewDefinition, ViewRow } from './types';
 import { db } from '../../../utilities/db';
 import { View } from '../../../schema/abc/views.sql';
@@ -44,7 +45,9 @@ export const dispatch = async (
     return;
   }
 
-  const ids: Record<string, string> = { [viewDef.id]: viewInstanceId };
+  // Resolve ancestry IDs (root → self), then overlay self + idParams on top
+  const ancestry = await resolveAncestry(viewRow.id);
+  const ids: Record<string, string> = { ...ancestry.ids, [viewDef.id]: viewInstanceId };
   if (viewRow.entityId) ids[viewDef.id] = viewRow.entityId;
   for (let i = 0; i < viewDef.idParams.length; i++) {
     const paramName = viewDef.idParams[i]!;
@@ -77,14 +80,19 @@ export const dispatch = async (
     async spawnView(viewId, target, options) {
       const def = definitions.get(viewId);
       if (!def) throw new Error(`Unknown view "${viewId}"`);
-      return spawnViewFn(def, target, options);
+      return spawnViewFn(def, target, { parent: viewRow.id, ...options });
     },
   };
 
   try {
     const result = await handler(interaction, ctx);
 
-    if (result && result.action === 'rerender') {
+    if (result && result.action === 'destroy') {
+      if (viewDef.destroy) {
+        await viewDef.destroy(ctx.view, interaction.client);
+      }
+      await destroyView(viewRow.id);
+    } else if (result && result.action === 'rerender') {
       const payload = await viewDef.render(ctx.view, db);
       if (!interaction.deferred && !interaction.replied) {
         await interaction.deferUpdate();

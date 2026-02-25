@@ -1,17 +1,21 @@
 import { lt, eq, and, isNotNull } from 'drizzle-orm';
-import type {
-  Message,
-  MessagePayload,
-  MessageComponentInteraction,
-  ModalSubmitInteraction,
-  RepliableInteraction,
-  TextBasedChannel,
+import {
+  type Client,
+  type Message,
+  type MessagePayload,
+  type MessageComponentInteraction,
+  type ModalSubmitInteraction,
+  type RepliableInteraction,
+  type TextBasedChannel,
+  type TextChannel,
+  WebhookClient,
 } from 'discord.js';
 import { db } from '../../../utilities/db';
 import { View, Subscription } from '../../../schema/abc/views.sql';
 import type { ViewDefinition, ViewRow } from './types';
 import { injectCustomId } from './custom-id';
 import { resolveEventTemplate } from './notify';
+import { resolveAncestry } from './ancestry';
 import { logger } from '../../../utilities/logger';
 
 const SWEEP_INTERVAL_MS = 60_000; // 1 minute
@@ -41,6 +45,7 @@ export type SpawnOptions = {
   webhookToken?: string;
   member?: bigint;
   persistent?: boolean;
+  parent?: string;
 };
 
 /**
@@ -65,10 +70,15 @@ export const spawnView = async (
     webhookToken,
     member: explicitMember,
     persistent,
+    parent,
   } = options;
 
   const viewId = crypto.randomUUID();
-  const ids = { [viewDef.id]: entityId ?? viewId, ...callerIds };
+  const ancestry = parent ? await resolveAncestry(parent) : null;
+  const ancestorIds = ancestry?.ids ?? {};
+  const parentEntityId = ancestry?.entityId ?? null;
+  const resolvedEntityId = entityId ?? parentEntityId ?? null;
+  const ids = { ...ancestorIds, [viewDef.id]: resolvedEntityId ?? viewId, ...callerIds };
   const resolvedWebhookToken = webhookToken ?? (visibility === 'ephemeral' ? target.interaction.webhook.url : null);
   const member = explicitMember ?? (visibility === 'ephemeral' ? BigInt(target.interaction.user.id) : null);
 
@@ -94,7 +104,8 @@ export const spawnView = async (
     id: viewId,
     route: viewDef.id,
     state: state ?? null,
-    entityId: entityId ?? null,
+    entityId: resolvedEntityId,
+    parent: parent ?? null,
     visibility,
     expiresAt,
     webhookToken: resolvedWebhookToken ?? null,
@@ -131,7 +142,8 @@ export const spawnView = async (
       id: viewId,
       route: viewDef.id,
       state: state ?? null,
-      entityId: entityId ?? null,
+      entityId: resolvedEntityId,
+      parent: parent ?? null,
       visibility,
       expiresAt,
       webhookToken: resolvedWebhookToken ?? null,
@@ -141,18 +153,40 @@ export const spawnView = async (
     })
     .returning();
 
-  const contextLabels = viewDef.subscribesTo.map((key) => resolveEventTemplate(viewDef.events[key]!, ids));
-
-  if (contextLabels.length > 0) {
-    await db.insert(Subscription).values(
-      contextLabels.map((label) => ({
+  const subscriptionRows: { view: string; contextLabel: string; action: 'render' | 'destroy' }[] = [];
+  for (const [action, templates] of Object.entries(viewDef.subscribesTo) as ['render' | 'destroy', string[]][]) {
+    for (const template of templates) {
+      subscriptionRows.push({
         view: row!.id,
-        contextLabel: label,
-      })),
-    );
+        contextLabel: resolveEventTemplate(template, ids),
+        action,
+      });
+    }
+  }
+
+  if (subscriptionRows.length > 0) {
+    await db.insert(Subscription).values(subscriptionRows);
   }
 
   return injectCustomId({ ...row!, state: state ?? null });
+};
+
+/**
+ * Deletes the Discord message associated with a view.
+ * Handles both public (channel message) and ephemeral (webhook) views.
+ */
+export const deleteViewMessage = async (view: ViewRow, client: Client): Promise<void> => {
+  try {
+    if (view.visibility === 'ephemeral' && view.webhookToken) {
+      const webhook = new WebhookClient({ url: view.webhookToken });
+      await webhook.deleteMessage(String(view.message));
+    } else {
+      const channel = (await client.channels.fetch(String(view.channel))) as TextChannel | null;
+      if (channel) await channel.messages.delete(String(view.message));
+    }
+  } catch {
+    // Best-effort: message may already be deleted or token may be stale
+  }
 };
 
 /**

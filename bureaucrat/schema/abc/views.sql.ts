@@ -1,4 +1,4 @@
-import { jsonb, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import { foreignKey, jsonb, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 import { fk, primary, snowflakes, timestamps } from '../helpers';
 import { abc } from './.schema.sql';
 
@@ -11,18 +11,23 @@ import { abc } from './.schema.sql';
  * - a renderer
  * - a set of interactions (mutations)
  */
-export const View = abc.table('View', {
-  id: primary.uuid(),
-  route: text().notNull(),
-  state: jsonb(),
-  entityId: text(),
-  visibility: text().notNull().$type<'public' | 'ephemeral'>(),
-  expiresAt: timestamp(),
-  webhookToken: text(),
-  ...snowflakes('channel', 'message'),
-  ...snowflakes(true, 'member'),
-  ...timestamps(),
-});
+export const View = abc.table(
+  'View',
+  {
+    id: primary.uuid(),
+    route: text().notNull(),
+    state: jsonb(),
+    entityId: text(),
+    parent: uuid(),
+    visibility: text().notNull().$type<'public' | 'ephemeral'>(),
+    expiresAt: timestamp(),
+    webhookToken: text(),
+    ...snowflakes('channel', 'message'),
+    ...snowflakes(true, 'member'),
+    ...timestamps(),
+  },
+  (table) => [foreignKey({ columns: [table.parent], foreignColumns: [table.id] }).onDelete('cascade')],
+);
 
 /**
  * The dependency graph in which the effect of a view can
@@ -40,6 +45,7 @@ export const Subscription = abc.table(
     id: primary.uuid(),
     view: fk(View.id, { onDelete: 'cascade' }),
     contextLabel: text().notNull(),
+    action: text().notNull().$type<'render' | 'destroy'>().default('render'),
     ...timestamps(),
   },
   (table) => [unique().on(table.view, table.contextLabel)],

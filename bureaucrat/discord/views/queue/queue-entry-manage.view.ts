@@ -8,22 +8,17 @@ import {
   SeparatorSpacingSize,
   TextDisplayBuilder,
 } from 'discord.js';
-import { eq, and } from 'drizzle-orm';
+
 import { createView } from '../../frameworks/views/create-view';
-import { destroyView } from '../../frameworks/views/lifecycle';
+import { deleteViewMessage } from '../../frameworks/views/lifecycle';
 import { dismissButton } from '../components/dismiss';
 import { confirmButton, type ConfirmState } from '../components/confirm';
 
-import { db } from '../../../utilities/db';
-import { View } from '../../../schema/abc/views.sql';
-import { getQueueEntry, deleteQueueEntry } from '../../../drizzle/queue-entries';
+import { getQueueEntry } from '../../../drizzle/queue-entries';
 import { listSignups } from '../../../drizzle/queue-entry-signups';
-import { QueueEvents } from './events';
+import { QueueEntryEvents, QueueEvents } from './events';
 
-type ManageState = ConfirmState<'delete'> & {
-  entryId: string;
-  queueId: string;
-};
+type ManageState = ConfirmState<'delete'>;
 
 const dismiss = dismissButton<ManageState>()({ action: 'dismiss' });
 
@@ -31,33 +26,7 @@ const del = confirmButton<ManageState>()({
   action: 'delete',
   label: 'Delete',
   onConfirm: async (ctx, interaction) => {
-    const state = ctx.view.state!;
-
-    // Find and destroy the QueueEntry view in the thread
-    const [entryView] = await db
-      .select()
-      .from(View)
-      .where(and(eq(View.route, 'qentry'), eq(View.entityId, state.entryId)));
-
-    if (entryView) {
-      try {
-        const channel = await interaction.client.channels.fetch(String(entryView.channel));
-        if (channel && 'messages' in channel) {
-          const message = await channel.messages.fetch(String(entryView.message));
-          await message.delete();
-        }
-      } catch {
-        // Message may already be deleted
-      }
-      await destroyView(entryView.id);
-    }
-
-    await deleteQueueEntry(state.entryId);
-
-    ctx.ids['queue'] = state.queueId;
-    await ctx.notify(QueueEvents.EntriesChanged);
-
-    await destroyView(ctx.view.id);
+    await ctx.notifyAll(QueueEvents.EntriesChanged, QueueEntryEvents.Destroyed);
     await interaction.deleteReply();
   },
 });
@@ -66,11 +35,15 @@ export default createView<ManageState>()({
   id: 'qmanage',
   idParams: [],
   events: {},
-  defaultState: { entryId: '', queueId: '' },
-  subscribesTo: [],
+  defaultState: {},
+  subscribesTo: { destroy: [QueueEvents.Destroyed, QueueEntryEvents.Destroyed] },
+
+  destroy: async (view, client) => {
+    await deleteViewMessage(view, client);
+  },
 
   render: async (view) => {
-    const entry = await getQueueEntry(view.state.entryId);
+    const entry = await getQueueEntry(view.entityId!);
     const title = entry?.title ?? 'Unknown';
 
     if (del.isConfirming(view)) {
@@ -119,25 +92,14 @@ export default createView<ManageState>()({
     configure: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
 
-      const state = ctx.view.state!;
-      await ctx.spawnView(
-        'qconfig',
-        { interaction },
-        {
-          visibility: 'ephemeral',
-          state: {
-            entryId: state.entryId,
-            queueId: state.queueId,
-          },
-        },
-      );
+      await ctx.spawnView('qconfig', { interaction }, { visibility: 'ephemeral' });
     },
 
     signups: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
 
-      const state = ctx.view.state!;
-      const signups = await listSignups(state.entryId);
+      const entryId = ctx.ids['qentry']!;
+      const signups = await listSignups(entryId);
 
       const memberNames: Record<string, string> = {};
       if (interaction.guild) {
@@ -155,12 +117,7 @@ export default createView<ManageState>()({
         { interaction },
         {
           visibility: 'ephemeral',
-          state: {
-            selectedSignupId: null,
-            entryId: state.entryId,
-            queueId: state.queueId,
-            memberNames,
-          },
+          state: { selectedSignupId: null, memberNames },
         },
       );
     },

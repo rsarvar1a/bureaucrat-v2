@@ -1,0 +1,1 @@
+ALTER TABLE "abc"."Subscription" ADD COLUMN "action" text DEFAULT 'render' NOT NULL;

@@ -36,7 +36,7 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
 
     const viewDef = viewDefinitions.get('queue')!;
 
-    await spawnView(viewDef, { interaction, channel: targetChannel }, { ids: { qid: queue.id }, entityId: queue.id });
+    await spawnView(viewDef, { interaction, channel: targetChannel }, { entityId: queue.id });
 
     await interaction.reply({ content: `Queue **${params.name}** created!`, ephemeral: true });
   });

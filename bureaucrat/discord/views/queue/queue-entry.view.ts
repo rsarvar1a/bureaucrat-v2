@@ -9,10 +9,11 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import { createView } from '../../frameworks/views/create-view';
+import { deleteViewMessage } from '../../frameworks/views/lifecycle';
 
-import { getQueueEntry } from '../../../drizzle/queue-entries';
+import { deleteQueueEntry, getQueueEntry } from '../../../drizzle/queue-entries';
 import { listAcceptedSignups, getSignupByMemberAndEntry } from '../../../drizzle/queue-entry-signups';
-import { QueueEntryEvents } from './events';
+import { QueueEvents, QueueEntryEvents } from './events';
 
 type QueueEntryState = Record<string, never>;
 
@@ -21,7 +22,15 @@ export default createView<QueueEntryState, typeof QueueEntryEvents>()({
   idParams: [],
   events: QueueEntryEvents,
   defaultState: {},
-  subscribesTo: ['SignupsChanged'],
+  subscribesTo: {
+    render: [QueueEntryEvents.SignupsChanged],
+    destroy: [QueueEvents.Destroyed, QueueEntryEvents.Destroyed],
+  },
+
+  destroy: async (view, client) => {
+    await deleteViewMessage(view, client);
+    await deleteQueueEntry(view.entityId!);
+  },
 
   render: async (view) => {
     const entry = await getQueueEntry(view.entityId!);
@@ -102,8 +111,6 @@ export default createView<QueueEntryState, typeof QueueEntryEvents>()({
           state: {
             mode: existing ? 'existing' : 'new',
             signupId: existing?.id ?? null,
-            entryId: entry.id,
-            queueId: entry.queue,
           },
         },
       );
@@ -123,17 +130,7 @@ export default createView<QueueEntryState, typeof QueueEntryEvents>()({
         return;
       }
 
-      await ctx.spawnView(
-        'qmanage',
-        { interaction },
-        {
-          visibility: 'ephemeral',
-          state: {
-            entryId: entry.id,
-            queueId: entry.queue,
-          },
-        },
-      );
+      await ctx.spawnView('qmanage', { interaction }, { visibility: 'ephemeral' });
     },
   },
 });

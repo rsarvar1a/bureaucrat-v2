@@ -1,6 +1,7 @@
 import { MessageFlags, type ChatInputCommandInteraction } from 'discord.js';
 import { commandHandlers } from '../../commands';
 import { logger } from '../../../utilities/logger';
+import { replySafely } from '../../../utilities/reply';
 
 const resolve = (interaction: ChatInputCommandInteraction): string => {
   const cmd = interaction.commandName;
@@ -26,16 +27,9 @@ export default async function onChatInputCommand(interaction: ChatInputCommandIn
     await func(interaction);
   } catch (error) {
     logger.error({ message: `Encountered error in command ${path}.`, error });
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: 'An error occurred while executing this command.',
-        flags: [MessageFlags.Ephemeral],
-      });
-    } else {
-      await interaction.reply({
-        content: 'An error occurred while executing this command.',
-        flags: [MessageFlags.Ephemeral],
-      });
-    }
+    await replySafely(interaction, {
+      content: 'An error occurred while executing this command.',
+      flags: [MessageFlags.Ephemeral],
+    });
   }
 }

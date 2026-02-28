@@ -2,6 +2,8 @@ import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { $ } from 'bun';
 
+const CONSOLE_LEVEL = process.env.LOG_LEVEL ?? 'info';
+
 const consoleErrorFormat = winston.format((info) => {
   if (info['error'] instanceof Error) {
     info.message = `${info.message}\n${info['error'].stack}`;
@@ -57,5 +59,8 @@ const dailyRotateFileTransport = new DailyRotateFile({
 });
 
 export const logger = winston.createLogger({
-  transports: [new winston.transports.Console({ level: 'info', format: consoleFormat() }), dailyRotateFileTransport],
+  transports: [
+    new winston.transports.Console({ level: CONSOLE_LEVEL, format: consoleFormat() }),
+    dailyRotateFileTransport,
+  ],
 });

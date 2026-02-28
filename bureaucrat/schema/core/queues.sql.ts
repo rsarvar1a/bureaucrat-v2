@@ -1,5 +1,5 @@
-import { boolean, integer, text, unique } from 'drizzle-orm/pg-core';
-import { automaticTimestamp, primary, snowflake, snowflakes, timestamps } from '../helpers';
+import { boolean, integer, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import { primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { Role } from './enums.sql';
 import { fk } from '../helpers/foreign-key';
@@ -23,6 +23,7 @@ import { fk } from '../helpers/foreign-key';
 export const Queue = core.table('Queue', {
   id: primary.uuid(),
   name: text().notNull(),
+  description: text(),
   concurrency: integer(),
   entriesPerStoryteller: integer(),
   ...snowflakes('guild', 'category'),
@@ -48,8 +49,9 @@ export const QueueEntry = core.table('QueueEntry', {
   storyteller: snowflake().notNull(),
   title: text().notNull(),
   description: text().notNull(),
-  minimumStartDate: automaticTimestamp(),
+  minimumStartDate: timestamp(),
   public: boolean().notNull().default(true),
+  position: integer().notNull().default(0),
   ...timestamps(),
 });
 
@@ -75,7 +77,7 @@ export const QueueEntrySignup = core.table(
     entry: fk(QueueEntry.id, { onDelete: 'cascade' }),
     role: Role().notNull(),
     message: text(),
-    accepted: boolean().notNull().default(false),
+    accepted: boolean(),
     ...timestamps(),
   },
   (table) => [unique().on(table.member, table.entry)],

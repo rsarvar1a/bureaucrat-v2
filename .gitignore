@@ -37,3 +37,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .vscode/
 
 docs/**
+# The ADRs are part of the codebase; the rest of docs/ is scratch.
+!docs/interactions/
+!docs/interactions/**

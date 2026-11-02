@@ -1,0 +1,1 @@
+ALTER TABLE "core"."GameSettings" DROP COLUMN "privateVotes";

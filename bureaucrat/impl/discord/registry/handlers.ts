@@ -1,0 +1,35 @@
+import { Client, Events, type ClientEvents } from 'discord.js';
+
+import onInteractionCreate from '../handlers/onInteractionCreate';
+import onMessageDelete from '../handlers/onMessageDelete';
+import onClientReady from '../handlers/onClientReady';
+import onClientError from '../handlers/onClientError';
+import { logger } from '../../../utilities/logger';
+
+/**
+ * Allows for the creation of top-level handlers in a declarative way.
+ */
+class TopLevelHandlerDefinition<E extends keyof ClientEvents> {
+  constructor(
+    public as: 'on' | 'once',
+    public event: E,
+    public handler: (...args: ClientEvents[E]) => void,
+  ) {}
+
+  registerTo(client: Client) {
+    client[this.as](this.event, (...args) => {
+      Promise.resolve(this.handler(...args)).catch((e) => {
+        logger.error({ message: `Encountered uncaught error in ${this.event}.`, error: e });
+      });
+    });
+  }
+}
+
+export const handlers = [
+  new TopLevelHandlerDefinition('once', Events.ClientReady, onClientReady),
+  new TopLevelHandlerDefinition('on', Events.Error, onClientError),
+  new TopLevelHandlerDefinition('on', Events.InteractionCreate, onInteractionCreate),
+
+  // State that changes outside the bot: view messages deleted by hand.
+  new TopLevelHandlerDefinition('on', Events.MessageDelete, onMessageDelete),
+] as const;

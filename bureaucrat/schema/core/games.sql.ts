@@ -1,39 +1,22 @@
-import { integer, unique } from 'drizzle-orm/pg-core';
+import { boolean, integer, jsonb, text, timestamp, unique } from 'drizzle-orm/pg-core';
 import { primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
-import { GameState, Phase } from './enums.sql';
+import { Alignment, GameState, Phase, PlayerState, WhisperMode } from './enums.sql';
 import { Queue } from './queues.sql';
 import { fk } from '../helpers/foreign-key';
 
-/**
- * A Game is the central reference for all parts of its constituent state.
- *
- * If a Game was created from a Queue, it aids in tracking the concurrency
- * of that queue by backreferencing to it.
- *
- * Games are in one of three states:
- * - signups: collecting signups, advertising
- * - running: after initializing seating and starting the game
- * - completed: after the Storyteller explicitly declares a winning team
- */
 export const Game = core.table('Game', {
   id: primary.uuid(),
   queue: fk(Queue.id, { nullable: true, onDelete: 'set null' }),
   creator: snowflake().notNull(),
+  name: text().notNull(),
   state: GameState().notNull().default('signups'),
+  winner: Alignment(),
+  endedAt: timestamp(),
   ...snowflakes('guild', 'channel'),
   ...timestamps(),
 });
 
-/**
- * A GamePhase represents a day or night in a running Game. The
- * phase can be connected to another type of state, particularly:
- * - day phases are connected to nominations
- * - night phases are connected to night actions
- *
- * We can fairly easily determine the current day by taking the
- * phase on a given Game with the ordering (on, phase) desc.
- */
 export const GamePhase = core.table(
   'GamePhase',
   {
@@ -41,7 +24,50 @@ export const GamePhase = core.table(
     game: fk(Game.id, { onDelete: 'cascade' }),
     phase: Phase().notNull(),
     on: integer().notNull(),
+    nominationsOpenedAt: timestamp(),
+    nominationsClosedAt: timestamp(),
     ...timestamps(),
   },
   (table) => [unique().on(table.game, table.phase, table.on), unique().on(table.game, table.id)],
 );
+
+export const GameSettings = core.table('GameSettings', {
+  id: primary.uuid(),
+  game: fk(Game.id, { onDelete: 'cascade' }).unique(),
+  plannedThreads: text().array().notNull().default([]),
+  playerCount: integer(),
+  /** Null means by the table: as many as the base counts give evil for the players seated. */
+  whispersPerDay: integer(),
+  whisperMode: WhisperMode().notNull().default('sync'),
+  asyncWhispersPerDay: integer().notNull().default(0),
+  groupWhispers: boolean().notNull().default(false),
+  travelerWhispers: boolean().notNull().default(false),
+  neighbourWhispers: boolean().notNull().default(false),
+  preciseWhisperTracking: boolean().notNull().default(false),
+  nominationThread: text().default('Nominations'),
+  nominateStoryteller: boolean().notNull().default(false),
+  nominationsAfter: integer(),
+  scriptThread: text().default('Script & Seating'),
+  seatingThread: text().default('Script & Seating'),
+  whisperThread: text().default('Whispers'),
+  exposeRoles: boolean().notNull().default(false),
+  rolesLive: boolean().notNull().default(true),
+  publishedSeating: jsonb().$type<PublishedSeat[]>(),
+  publishedAt: timestamp(),
+  liveSeatMap: jsonb().$type<Record<string, string | null>>(),
+  ...timestamps(),
+});
+
+export type PublishedSeat = {
+  id: string;
+  player: string | null;
+  member: string | null;
+  seat: number;
+  nickname: string | null;
+  state: (typeof PlayerState.enumValues)[number];
+  traveler: boolean;
+  trueRole: string | null;
+  trueAlignment: (typeof Alignment.enumValues)[number] | null;
+  apparentRole: string | null;
+  apparentAlignment: (typeof Alignment.enumValues)[number] | null;
+};

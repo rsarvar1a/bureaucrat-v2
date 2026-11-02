@@ -1,0 +1,1261 @@
+[
+  {
+    "id": "steward",
+    "name": "Steward",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point to the player marked *KNOW*."
+  },
+  {
+    "id": "knight",
+    "name": "Knight",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point to the 2 players marked *KNOW*."
+  },
+  {
+    "id": "chef",
+    "name": "Chef",
+    "team": "townsfolk",
+    "edition": "tb",
+    "firstNightReminder": "Give a finger signal."
+  },
+  {
+    "id": "noble",
+    "name": "Noble",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point to the 3 players marked *KNOW*."
+  },
+  {
+    "id": "investigator",
+    "name": "Investigator",
+    "team": "townsfolk",
+    "edition": "tb",
+    "firstNightReminder": "Show the Minion character token. Point to both the *MINION* and *WRONG* players."
+  },
+  {
+    "id": "washerwoman",
+    "name": "Washerwoman",
+    "team": "townsfolk",
+    "edition": "tb",
+    "firstNightReminder": "Show the Townsfolk character token. Point to both the *TOWNSFOLK* and *WRONG* players."
+  },
+  {
+    "id": "clockmaker",
+    "name": "Clockmaker",
+    "team": "townsfolk",
+    "edition": "snv",
+    "firstNightReminder": "Give a finger signal."
+  },
+  {
+    "id": "grandmother",
+    "name": "Grandmother",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "firstNightReminder": "Point to the grandchild player & show their character token.",
+    "otherNightReminder": "If the grandchild was killed by the Demon, the Grandmother dies too. :reminder:"
+  },
+  {
+    "id": "librarian",
+    "name": "Librarian",
+    "team": "townsfolk",
+    "edition": "tb",
+    "firstNightReminder": "Show the Outsider character token. Point to both the *OUTSIDER* and *WRONG* players."
+  },
+  {
+    "id": "shugenja",
+    "name": "Shugenja",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point clockwise or anticlockwise."
+  },
+  {
+    "id": "pixie",
+    "name": "Pixie",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Show the Townsfolk character token marked *MAD*."
+  },
+  {
+    "id": "bountyhunter",
+    "name": "Bounty Hunter",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point to the player marked *KNOW*. ",
+    "otherNightReminder": "If the player marked *KNOW* died today or tonight, point to the new player marked *KNOW*."
+  },
+  {
+    "id": "empath",
+    "name": "Empath",
+    "team": "townsfolk",
+    "edition": "tb",
+    "firstNightReminder": "Give a finger signal.",
+    "otherNightReminder": "Give a finger signal."
+  },
+  {
+    "id": "highpriestess",
+    "name": "High Priestess",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point to a player.",
+    "otherNightReminder": "Point to a player."
+  },
+  {
+    "id": "sailor",
+    "name": "Sailor",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "firstNightReminder": "The Sailor chooses a living player. :reminder:",
+    "otherNightReminder": "The Sailor chooses a living player. :reminder:"
+  },
+  {
+    "id": "balloonist",
+    "name": "Balloonist",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Point to any player. :reminder:",
+    "otherNightReminder": "Point to a player with a different character type to the previously shown player. :reminder:"
+  },
+  {
+    "id": "general",
+    "name": "General",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Give a thumb signal.",
+    "otherNightReminder": "Give a thumb signal."
+  },
+  {
+    "id": "preacher",
+    "name": "Preacher",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "The Preacher chooses a player. :reminder: If they chose a Minion: Put the Preacher to sleep. Wake the target. Show the *THIS CHARACTER SELECTED YOU* & Preacher tokens.",
+    "otherNightReminder": "The Preacher chooses a player. :reminder: If they chose a Minion: Put the Preacher to sleep. Wake the target. Show the *THIS CHARACTER SELECTED YOU* & Preacher tokens."
+  },
+  {
+    "id": "chambermaid",
+    "name": "Chambermaid",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "firstNightReminder": "The Chambermaid chooses 2 living players. Give a finger signal.",
+    "otherNightReminder": "The Chambermaid chooses 2 living players. Give a finger signal."
+  },
+  {
+    "id": "villageidiot",
+    "name": "Village Idiot",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "If there are multiple Village Idiots, mark one as *DRUNK*. :reminder: Wake the Village Idiots one at a time to choose a player. Give a thumb signal.",
+    "otherNightReminder": "Wake the Village Idiots one at a time to choose a player. Give a thumb signal."
+  },
+  {
+    "id": "snakecharmer",
+    "name": "Snake Charmer",
+    "team": "townsfolk",
+    "edition": "snv",
+    "firstNightReminder": "The Snake Charmer chooses a player. If they chose the Demon: Show the *YOU ARE* & Demon tokens. Give a thumbs down. Swap the Snake Charmer & Demon tokens. Put the old Snake Charmer to sleep. Wake the old Demon. Show the *YOU ARE* and Snake Charmer tokens & give a thumbs up. :reminder:",
+    "otherNightReminder": "The Snake Charmer chooses a player. If they chose the Demon: Show the *YOU ARE* & Demon tokens. Give a thumbs down. Swap the Snake Charmer & Demon tokens. Put the old Snake Charmer to sleep. Wake the old Demon. Show the *YOU ARE* and Snake Charmer tokens & give a thumbs up. :reminder:"
+  },
+  {
+    "id": "mathematician",
+    "name": "Mathematician",
+    "team": "townsfolk",
+    "edition": "snv",
+    "firstNightReminder": "Give a finger signal.",
+    "otherNightReminder": "Give a finger signal."
+  },
+  {
+    "id": "king",
+    "name": "King",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Wake the Demon: Show the *THIS PLAYER IS* & King tokens, then point to the King.",
+    "otherNightReminder": "If the dead equal or outnumber the living, show the character token of a living player."
+  },
+  {
+    "id": "dreamer",
+    "name": "Dreamer",
+    "team": "townsfolk",
+    "edition": "snv",
+    "firstNightReminder": "The Dreamer points to a player. Show 1 good & 1 evil character token, 1 of which is their character.",
+    "otherNightReminder": "The Dreamer points to a player. Show 1 good & 1 evil character token, 1 of which is their character."
+  },
+  {
+    "id": "fortuneteller",
+    "name": "Fortune Teller",
+    "team": "townsfolk",
+    "edition": "tb",
+    "firstNightReminder": "The Fortune Teller chooses 2 players. Nod if either is the Demon (or the *RED HERRING*).",
+    "otherNightReminder": "The Fortune Teller chooses 2 players. Nod if either is the Demon (or the *RED HERRING*)."
+  },
+  {
+    "id": "cultleader",
+    "name": "Cult Leader",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "The Cult Leader might change alignment. If so, show the *YOU ARE* info token & give a thumb signal.",
+    "otherNightReminder": "The Cult Leader might change alignment. If so, show the *YOU ARE* info token & give a thumb signal."
+  },
+  {
+    "id": "flowergirl",
+    "name": "Flowergirl",
+    "team": "townsfolk",
+    "edition": "snv",
+    "otherNightReminder": "Either nod or shake your head."
+  },
+  {
+    "id": "towncrier",
+    "name": "Town Crier",
+    "team": "townsfolk",
+    "edition": "snv",
+    "otherNightReminder": "Either nod or shake your head."
+  },
+  {
+    "id": "oracle",
+    "name": "Oracle",
+    "team": "townsfolk",
+    "edition": "snv",
+    "otherNightReminder": "Give a finger signal."
+  },
+  {
+    "id": "undertaker",
+    "name": "Undertaker",
+    "team": "townsfolk",
+    "edition": "tb",
+    "otherNightReminder": "If a player was executed today, show their character token."
+  },
+  {
+    "id": "innkeeper",
+    "name": "Innkeeper",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "otherNightReminder": "The Innkeeper chooses 2 players. :reminder: :reminder: :reminder:"
+  },
+  {
+    "id": "monk",
+    "name": "Monk",
+    "team": "townsfolk",
+    "edition": "tb",
+    "otherNightReminder": "The Monk chooses a player. :reminder:"
+  },
+  {
+    "id": "gambler",
+    "name": "Gambler",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "otherNightReminder": "The Gambler chooses a player & a character. :reminder:"
+  },
+  {
+    "id": "acrobat",
+    "name": "Acrobat",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "otherNightReminder": "The Acrobat chooses a player. :reminder:"
+  },
+  {
+    "id": "exorcist",
+    "name": "Exorcist",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "otherNightReminder": "The Exorcist chooses a player. :reminder: Put the Exorcist to sleep. If the Exorcist chose the Demon: Wake the Demon. Show the *THIS CHARACTER SELECTED YOU* & Exorcist tokens. Point to the Exorcist."
+  },
+  {
+    "id": "lycanthrope",
+    "name": "Lycanthrope",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "otherNightReminder": "The Lycanthrope chooses a player. :reminder:"
+  },
+  {
+    "id": "gossip",
+    "name": "Gossip",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "otherNightReminder": "If the Gossip is due to kill a player, they die. :reminder:"
+  },
+  {
+    "id": "savant",
+    "name": "Savant",
+    "team": "townsfolk",
+    "edition": "snv"
+  },
+  {
+    "id": "alsaahir",
+    "name": "Alsaahir",
+    "team": "townsfolk",
+    "edition": "carousel"
+  },
+  {
+    "id": "engineer",
+    "name": "Engineer",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "The Engineer might choose Minions or Demons. Put the Engineer to sleep. Wake the target(s) one at a time. Show the *YOU ARE* info token & their new character token. :reminder:",
+    "otherNightReminder": "The Engineer might choose Minions or Demons. Put the Engineer to sleep. Wake the target(s) one at a time. Show the *YOU ARE* info token & their new character token. :reminder:"
+  },
+  {
+    "id": "nightwatchman",
+    "name": "Nightwatchman",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "The Nightwatchman might choose a player. Put the Nightwatchman to sleep. Wake the target. Show the *THIS PLAYER IS* & Nightwatchman tokens, then point to the Nightwatchman. :reminder:",
+    "otherNightReminder": "The Nightwatchman might choose a player. Put the Nightwatchman to sleep. Wake the target. Show the *THIS PLAYER IS* & Nightwatchman tokens, then point to the Nightwatchman. :reminder:"
+  },
+  {
+    "id": "courtier",
+    "name": "Courtier",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "firstNightReminder": "The Courtier might choose a character. :reminder: :reminder:",
+    "otherNightReminder": "The Courtier might choose a character. :reminder: :reminder:"
+  },
+  {
+    "id": "seamstress",
+    "name": "Seamstress",
+    "team": "townsfolk",
+    "edition": "snv",
+    "firstNightReminder": "The Seamstress might choose 2 players. Nod or shake your head. :reminder:",
+    "otherNightReminder": "The Seamstress might choose 2 players. Nod or shake your head. :reminder:"
+  },
+  {
+    "id": "philosopher",
+    "name": "Philosopher",
+    "team": "townsfolk",
+    "edition": "snv",
+    "firstNightReminder": "The Philosopher might choose a character. If necessary, swap their character token. :reminder:",
+    "otherNightReminder": "The Philosopher might choose a character. If necessary, swap their character token. :reminder:"
+  },
+  {
+    "id": "huntsman",
+    "name": "Huntsman",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "The Huntsman might choose a player. :reminder: If they chose the Damsel: Put the Huntsman to sleep. Wake the target. Show the *YOU ARE* info token & their new character token.",
+    "otherNightReminder": "The Huntsman might choose a player. :reminder: If they chose the Damsel: Put the Huntsman to sleep. Wake the target. Show the *YOU ARE* info token & their new character token."
+  },
+  {
+    "id": "professor",
+    "name": "Professor",
+    "team": "townsfolk",
+    "edition": "bmr",
+    "otherNightReminder": "The Professor might choose a dead player. :reminder: :reminder:"
+  },
+  {
+    "id": "artist",
+    "name": "Artist",
+    "team": "townsfolk",
+    "edition": "snv"
+  },
+  {
+    "id": "slayer",
+    "name": "Slayer",
+    "team": "townsfolk",
+    "edition": "tb"
+  },
+  {
+    "id": "fisherman",
+    "name": "Fisherman",
+    "team": "townsfolk",
+    "edition": "carousel"
+  },
+  {
+    "id": "princess",
+    "name": "Princess",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "otherNightReminder": "If the Princess nominated the player who was executed today, wake the Demon as normal, but no one dies to the Demon's ability. :reminder:"
+  },
+  {
+    "id": "juggler",
+    "name": "Juggler",
+    "team": "townsfolk",
+    "edition": "snv",
+    "otherNightReminder": "Give a finger signal."
+  },
+  {
+    "id": "soldier",
+    "name": "Soldier",
+    "team": "townsfolk",
+    "edition": "tb"
+  },
+  {
+    "id": "alchemist",
+    "name": "Alchemist",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Show the *YOU ARE* info token and a Minion token."
+  },
+  {
+    "id": "cannibal",
+    "name": "Cannibal",
+    "team": "townsfolk",
+    "edition": "carousel"
+  },
+  {
+    "id": "amnesiac",
+    "name": "Amnesiac",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Do whatever needs to be done to satisfy the Amnesiac's ability.",
+    "otherNightReminder": "Do whatever needs to be done to satisfy the Amnesiac's ability."
+  },
+  {
+    "id": "farmer",
+    "name": "Farmer",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "otherNightReminder": "If the Farmer died tonight, wake a living good player. Show the *YOU ARE* info token and a Farmer token."
+  },
+  {
+    "id": "minstrel",
+    "name": "Minstrel",
+    "team": "townsfolk",
+    "edition": "bmr"
+  },
+  {
+    "id": "ravenkeeper",
+    "name": "Ravenkeeper",
+    "team": "townsfolk",
+    "edition": "tb",
+    "otherNightReminder": "If the Ravenkeeper died tonight, the Ravenkeeper chooses a player. Show that player's character token."
+  },
+  {
+    "id": "sage",
+    "name": "Sage",
+    "team": "townsfolk",
+    "edition": "snv",
+    "otherNightReminder": "If the Demon killed the Sage, wake the Sage and point to 2 players, 1 of which is the Demon."
+  },
+  {
+    "id": "choirboy",
+    "name": "Choirboy",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "otherNightReminder": "If the Demon killed the King, point to the Demon player."
+  },
+  {
+    "id": "banshee",
+    "name": "Banshee",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "otherNightReminder": "If the Banshee was killed by the Demon tonight, announce that the Banshee has died. :reminder:"
+  },
+  {
+    "id": "tealady",
+    "name": "Tea Lady",
+    "team": "townsfolk",
+    "edition": "bmr"
+  },
+  {
+    "id": "mayor",
+    "name": "Mayor",
+    "team": "townsfolk",
+    "edition": "tb"
+  },
+  {
+    "id": "fool",
+    "name": "Fool",
+    "team": "townsfolk",
+    "edition": "bmr"
+  },
+  {
+    "id": "virgin",
+    "name": "Virgin",
+    "team": "townsfolk",
+    "edition": "tb"
+  },
+  {
+    "id": "magician",
+    "name": "Magician",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "During Minion Info, point to the Magician and the Demon. During Demon Info, point to the Magician and the Minions."
+  },
+  {
+    "id": "poppygrower",
+    "name": "Poppy Grower",
+    "team": "townsfolk",
+    "edition": "carousel",
+    "firstNightReminder": "Skip Minion Info and Demon Info. Wake the Demon. Show the *THESE CHARACTERS ARE NOT IN PLAY* token. Show 3 not-in-play good character tokens.",
+    "otherNightReminder": "If the Poppy Grower died today or tonight, wake all Minions. Show the *THIS IS THE DEMON* token. Point to the Demon. Put the Minions to sleep. Wake the Demon. Show the *THESE ARE YOUR MINIONS* token. Point to the Minions."
+  },
+  {
+    "id": "pacifist",
+    "name": "Pacifist",
+    "team": "townsfolk",
+    "edition": "bmr"
+  },
+  {
+    "id": "atheist",
+    "name": "Atheist",
+    "team": "townsfolk",
+    "edition": "carousel"
+  },
+  {
+    "id": "hermit",
+    "name": "Hermit",
+    "team": "outsider",
+    "edition": "carousel"
+  },
+  {
+    "id": "butler",
+    "name": "Butler",
+    "team": "outsider",
+    "edition": "tb",
+    "firstNightReminder": "The Butler chooses a player. :reminder:",
+    "otherNightReminder": "The Butler chooses a player. :reminder:"
+  },
+  {
+    "id": "goon",
+    "name": "Goon",
+    "team": "outsider",
+    "edition": "bmr"
+  },
+  {
+    "id": "ogre",
+    "name": "Ogre",
+    "team": "outsider",
+    "edition": "carousel",
+    "firstNightReminder": "The Ogre chooses a player. :reminder:"
+  },
+  {
+    "id": "lunatic",
+    "name": "Lunatic",
+    "team": "outsider",
+    "edition": "bmr",
+    "firstNightReminder": "If there are 7 or more players, wake the Lunatic: Show the *THESE ARE YOUR MINIONS* token. Point to any players. Show the *THESE CHARACTERS ARE NOT IN PLAY* token. Show 3 good character tokens. Put the Lunatic to sleep. Wake the Demon. Show the *YOU ARE* info token and the Demon token. Show the *THIS PLAYER IS* info token and the Lunatic token, then point to the Lunatic.",
+    "otherNightReminder": "Do whatever needs to be done to simulate the Demon acting. Put the Lunatic to sleep. Wake the Demon. Show the Lunatic token & point to them, then their target(s)."
+  },
+  {
+    "id": "drunk",
+    "name": "Drunk",
+    "team": "outsider",
+    "edition": "tb"
+  },
+  {
+    "id": "tinker",
+    "name": "Tinker",
+    "team": "outsider",
+    "edition": "bmr",
+    "otherNightReminder": "The Tinker might die. :reminder:"
+  },
+  {
+    "id": "recluse",
+    "name": "Recluse",
+    "team": "outsider",
+    "edition": "tb"
+  },
+  {
+    "id": "golem",
+    "name": "Golem",
+    "team": "outsider",
+    "edition": "carousel"
+  },
+  {
+    "id": "sweetheart",
+    "name": "Sweetheart",
+    "team": "outsider",
+    "edition": "snv",
+    "otherNightReminder": "If the Sweetheart died, a player became drunk immediately. If you haven't done this yet, do so now. :reminder:"
+  },
+  {
+    "id": "plaguedoctor",
+    "name": "Plague Doctor",
+    "team": "outsider",
+    "edition": "carousel",
+    "otherNightReminder": "If the Plague Doctor died, the Storyteller gained a Minion ability. If you haven’t done this yet, do so now. :reminder:"
+  },
+  {
+    "id": "klutz",
+    "name": "Klutz",
+    "team": "outsider",
+    "edition": "snv"
+  },
+  {
+    "id": "moonchild",
+    "name": "Moonchild",
+    "team": "outsider",
+    "edition": "bmr",
+    "otherNightReminder": "If the Moonchild is due to kill a good player, they die. :reminder:"
+  },
+  {
+    "id": "saint",
+    "name": "Saint",
+    "team": "outsider",
+    "edition": "tb"
+  },
+  {
+    "id": "barber",
+    "name": "Barber",
+    "team": "outsider",
+    "edition": "snv",
+    "otherNightReminder": "If the Barber died today or tonight, show the Demon the *THIS CHARACTER SELECTED YOU* & Barber tokens. If the Demon chose 2 players, wake one at a time. Show the *YOU ARE* token & their new character token."
+  },
+  {
+    "id": "hatter",
+    "name": "Hatter",
+    "team": "outsider",
+    "edition": "carousel",
+    "otherNightReminder": "If the Hatter died, wake the Minions & Demons. Each may choose a new character. If they do, show the *YOU ARE* token & their new character token."
+  },
+  {
+    "id": "mutant",
+    "name": "Mutant",
+    "team": "outsider",
+    "edition": "snv"
+  },
+  {
+    "id": "politician",
+    "name": "Politician",
+    "team": "outsider",
+    "edition": "carousel"
+  },
+  {
+    "id": "zealot",
+    "name": "Zealot",
+    "team": "outsider",
+    "edition": "carousel"
+  },
+  {
+    "id": "damsel",
+    "name": "Damsel",
+    "team": "outsider",
+    "edition": "carousel",
+    "firstNightReminder": "During Minion Info, show the Minions the Damsel token. If you haven't done this yet, do so now. If the Damsel was chosen by the Huntsman, show the *YOU ARE* info token & their new character token.",
+    "otherNightReminder": "If the Damsel was chosen by the Huntsman, show the *YOU ARE* info token & their new character token."
+  },
+  {
+    "id": "snitch",
+    "name": "Snitch",
+    "team": "outsider",
+    "edition": "carousel",
+    "firstNightReminder": "Wake each Minion. Show the *THESE CHARACTERS ARE NOT IN PLAY* token. Show 3 not-in-play character tokens."
+  },
+  {
+    "id": "heretic",
+    "name": "Heretic",
+    "team": "outsider",
+    "edition": "carousel"
+  },
+  {
+    "id": "puzzlemaster",
+    "name": "Puzzlemaster",
+    "team": "outsider",
+    "edition": "carousel"
+  },
+  {
+    "id": "mezepheles",
+    "name": "Mezepheles",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Show the secret word.",
+    "otherNightReminder": "If a good player said the secret word, wake the player. Show the *YOU ARE* info token & give a thumbs-down. :reminder: :reminder:"
+  },
+  {
+    "id": "godfather",
+    "name": "Godfather",
+    "team": "minion",
+    "edition": "bmr",
+    "firstNightReminder": "Show the character tokens of all in-play Outsiders.",
+    "otherNightReminder": "If an Outsider died today, the Godfather chooses a player. :reminder:"
+  },
+  {
+    "id": "poisoner",
+    "name": "Poisoner",
+    "team": "minion",
+    "edition": "tb",
+    "firstNightReminder": "The Poisoner chooses a player. :reminder:",
+    "otherNightReminder": "The Poisoner chooses a player. :reminder:"
+  },
+  {
+    "id": "devilsadvocate",
+    "name": "Devil's Advocate",
+    "team": "minion",
+    "edition": "bmr",
+    "firstNightReminder": "The Devil's Advocate chooses a living player. :reminder:",
+    "otherNightReminder": "The Devil's Advocate chooses a living player. :reminder:"
+  },
+  {
+    "id": "spy",
+    "name": "Spy",
+    "team": "minion",
+    "edition": "tb",
+    "firstNightReminder": "Show the Grimoire for as long as the Spy needs.",
+    "otherNightReminder": "Show the Grimoire for as long as the Spy needs."
+  },
+  {
+    "id": "harpy",
+    "name": "Harpy",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "The Harpy chooses 2 players. :reminder: :reminder: Put the Harpy to sleep. Wake the 1st target. Show the *THIS CHARACTER SELECTED YOU* token, the Harpy token, then point to the 2nd target.",
+    "otherNightReminder": "The Harpy chooses 2 players. :reminder: :reminder: Put the Harpy to sleep. Wake the 1st target. Show the *THIS CHARACTER SELECTED YOU* token, the Harpy token, then point to the 2nd target."
+  },
+  {
+    "id": "witch",
+    "name": "Witch",
+    "team": "minion",
+    "edition": "snv",
+    "firstNightReminder": "The Witch chooses a player. :reminder:",
+    "otherNightReminder": "The Witch chooses a player. :reminder:"
+  },
+  {
+    "id": "cerenovus",
+    "name": "Cerenovus",
+    "team": "minion",
+    "edition": "snv",
+    "firstNightReminder": "The Cerenovus chooses a player & a character. :reminder: Put the Cerenovus to sleep. Wake the target. Show the *THIS CHARACTER SELECTED YOU* token, the Cerenovus token, then the madness-character token.",
+    "otherNightReminder": "The Cerenovus chooses a player & a character. :reminder: Put the Cerenovus to sleep. Wake the target. Show the *THIS CHARACTER SELECTED YOU* token, the Cerenovus token, then the madness-character token."
+  },
+  {
+    "id": "fearmonger",
+    "name": "Fearmonger",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "The Fearmonger chooses a player. :reminder: Announce that the Fearmonger has chosen a player.",
+    "otherNightReminder": "The Fearmonger chooses a player. :reminder: If the target is different to last night, announce that the Fearmonger has chosen a player."
+  },
+  {
+    "id": "pithag",
+    "name": "Pit-Hag",
+    "team": "minion",
+    "edition": "snv",
+    "otherNightReminder": "The Pit-Hag chooses a player & a character. If they chose a character that is not in play: Put the Pit-Hag to sleep. Wake the target. Show the *YOU ARE* token & their new character token."
+  },
+  {
+    "id": "psychopath",
+    "name": "Psychopath",
+    "team": "minion",
+    "edition": "carousel"
+  },
+  {
+    "id": "assassin",
+    "name": "Assassin",
+    "team": "minion",
+    "edition": "bmr",
+    "otherNightReminder": "The Assassin might choose a player. :reminder: :reminder:"
+  },
+  {
+    "id": "wizard",
+    "name": "Wizard",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Do whatever needs to be done to satisfy the Wizard's ability.",
+    "otherNightReminder": "Do whatever needs to be done to satisfy the Wizard's ability."
+  },
+  {
+    "id": "widow",
+    "name": "Widow",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Show the Grimoire for as long as the Widow needs. The Widow chooses a player. :reminder: Put the Widow to sleep. Wake the player marked *KNOW* & show the Widow token. :reminder:"
+  },
+  {
+    "id": "xaan",
+    "name": "Xaan",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "If X is 1, mark the Xaan with the *X* reminder token. :reminder: :reminder:",
+    "otherNightReminder": "Change the Xaan reminder token to the relevant night. If it is night X, mark the Xaan with the *X* reminder token. :reminder: :reminder:"
+  },
+  {
+    "id": "marionette",
+    "name": "Marionette",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Wake the Demon. Show the *THIS PLAYER IS* & Marionette tokens. Point to the Marionette."
+  },
+  {
+    "id": "wraith",
+    "name": "Wraith",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Wake the Wraith whenever other evil players wake.",
+    "otherNightReminder": "Wake the Wraith whenever other evil players wake."
+  },
+  {
+    "id": "summoner",
+    "name": "Summoner",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Show the *THESE CHARACTERS ARE NOT IN PLAY* token. Show 3 not-in-play good character tokens.",
+    "otherNightReminder": "Change the Summoner reminder token to the relevant night. :reminder: If it is night 3, the Summoner chooses a player & a Demon character. Put the Summoner to sleep. Wake the target. Show the *YOU ARE* and Demon tokens & give a thumbs-down."
+  },
+  {
+    "id": "eviltwin",
+    "name": "Evil Twin",
+    "team": "minion",
+    "edition": "snv",
+    "firstNightReminder": "Wake both twins. Allow eye contact. Show the good twin's character token to the Evil Twin & vice versa."
+  },
+  {
+    "id": "goblin",
+    "name": "Goblin",
+    "team": "minion",
+    "edition": "carousel"
+  },
+  {
+    "id": "boomdandy",
+    "name": "Boomdandy",
+    "team": "minion",
+    "edition": "carousel"
+  },
+  {
+    "id": "mastermind",
+    "name": "Mastermind",
+    "team": "minion",
+    "edition": "bmr"
+  },
+  {
+    "id": "scarletwoman",
+    "name": "Scarlet Woman",
+    "team": "minion",
+    "edition": "tb",
+    "otherNightReminder": "If the Scarlet Woman became the Demon today, show them the *YOU ARE* token, then the Demon token."
+  },
+  {
+    "id": "vizier",
+    "name": "Vizier",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Announce which player is the Vizier."
+  },
+  {
+    "id": "organgrinder",
+    "name": "Organ Grinder",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "The Organ Grinder either nods their head yes to be drunk, or shakes their head no to be sober. :reminder:",
+    "otherNightReminder": "The Organ Grinder either nods their head yes to be drunk, or shakes their head no to be sober. :reminder:"
+  },
+  {
+    "id": "boffin",
+    "name": "Boffin",
+    "team": "minion",
+    "edition": "carousel",
+    "firstNightReminder": "Wake the Boffin and the Demon. Show the *THIS CHARACTER SELECTED YOU* & Boffin tokens, then the not-in-play good character token."
+  },
+  {
+    "id": "baron",
+    "name": "Baron",
+    "team": "minion",
+    "edition": "tb"
+  },
+  {
+    "id": "yaggababble",
+    "name": "Yaggababble",
+    "team": "demon",
+    "edition": "carousel",
+    "firstNightReminder": "Show the Yaggababble their secret phrase.",
+    "otherNightReminder": "For each time the Yaggababble said their phrase today, a player might die. :reminder:"
+  },
+  {
+    "id": "pukka",
+    "name": "Pukka",
+    "team": "demon",
+    "edition": "bmr",
+    "firstNightReminder": "The Pukka chooses a player. :reminder:",
+    "otherNightReminder": "The Pukka chooses a player. :reminder: The previously poisoned player dies then becomes healthy. :reminder:"
+  },
+  {
+    "id": "lilmonsta",
+    "name": "Lil' Monsta",
+    "team": "demon",
+    "edition": "carousel",
+    "firstNightReminder": "Wake the Minions. They choose a player. :reminder: Put the Minions to sleep. Wake the target. Show the *YOU ARE* & Lil' Monsta tokens.",
+    "otherNightReminder": "Wake the Minions. They choose a player. :reminder: Put the Minions to sleep. Wake the target. Show the *YOU ARE* & Lil' Monsta tokens. A player might die. :reminder:"
+  },
+  {
+    "id": "nodashii",
+    "name": "No Dashii",
+    "team": "demon",
+    "edition": "snv",
+    "otherNightReminder": "The No Dashii chooses a player. :reminder:"
+  },
+  {
+    "id": "imp",
+    "name": "Imp",
+    "team": "demon",
+    "edition": "tb",
+    "otherNightReminder": "The Imp chooses a player. :reminder: If the Imp chose themselves: Replace 1 alive Minion token with a spare Imp token. Put the old Imp to sleep. Wake the new Imp. Show the *YOU ARE* token, then show the Imp token."
+  },
+  {
+    "id": "shabaloth",
+    "name": "Shabaloth",
+    "team": "demon",
+    "edition": "bmr",
+    "otherNightReminder": "A previously chosen player might be resurrected. :reminder: The Shabaloth chooses 2 players. :reminder: :reminder:"
+  },
+  {
+    "id": "ojo",
+    "name": "Ojo",
+    "team": "demon",
+    "edition": "carousel",
+    "otherNightReminder": "The Ojo chooses a character. :reminder:"
+  },
+  {
+    "id": "kazali",
+    "name": "Kazali",
+    "team": "demon",
+    "edition": "carousel",
+    "firstNightReminder": "The Kazali chooses which players are which Minions. Wake each target. Show the *YOU ARE* and Minion tokens & give a thumbs-down.",
+    "otherNightReminder": "The Kazali chooses a player. :reminder:"
+  },
+  {
+    "id": "po",
+    "name": "Po",
+    "team": "demon",
+    "edition": "bmr",
+    "otherNightReminder": "The Po may choose a player OR chooses 3 players if they chose no-one last night. :reminder: or :reminder: :reminder: :reminder:"
+  },
+  {
+    "id": "zombuul",
+    "name": "Zombuul",
+    "team": "demon",
+    "edition": "bmr",
+    "otherNightReminder": "If no one died today, the Zombuul chooses a player. :reminder:"
+  },
+  {
+    "id": "vigormortis",
+    "name": "Vigormortis",
+    "team": "demon",
+    "edition": "snv",
+    "otherNightReminder": "The Vigormortis chooses a player. :reminder: If that player is a Minion, poison a neighboring Townsfolk. :reminder: :reminder:"
+  },
+  {
+    "id": "vortox",
+    "name": "Vortox",
+    "team": "demon",
+    "edition": "snv",
+    "otherNightReminder": "The Vortox chooses a player. :reminder:"
+  },
+  {
+    "id": "legion",
+    "name": "Legion",
+    "team": "demon",
+    "edition": "carousel",
+    "otherNightReminder": "A player might die. :reminder:"
+  },
+  {
+    "id": "fanggu",
+    "name": "Fang Gu",
+    "team": "demon",
+    "edition": "snv",
+    "otherNightReminder": "The Fang Gu chooses a player. :reminder: If they chose an Outsider (once only): Replace the Outsider token with the spare Fang Gu token. Put the Fang Gu to sleep. Wake the target. Show the *YOU ARE* and Fang Gu tokens & give a thumbs-down. :reminder:"
+  },
+  {
+    "id": "lordoftyphon",
+    "name": "Lord of Typhon",
+    "team": "demon",
+    "edition": "carousel",
+    "firstNightReminder": "Wake the Lord of Typhon's neighbors. Show the *YOU ARE* and Minion tokens & give a thumbs-down.",
+    "otherNightReminder": "The Lord of Typhon chooses a player. :reminder:"
+  },
+  {
+    "id": "lleech",
+    "name": "Lleech",
+    "team": "demon",
+    "edition": "carousel",
+    "firstNightReminder": "The Lleech chooses a player. :reminder:",
+    "otherNightReminder": "The Lleech chooses a player. :reminder:"
+  },
+  {
+    "id": "alhadikhia",
+    "name": "Al-Hadikhia",
+    "team": "demon",
+    "edition": "carousel",
+    "otherNightReminder": "The Al-Hadikhia chooses 3 players. :reminder: :reminder: :reminder: In order, wake each target. They nod or shake their head. Put them to sleep before waking the next target."
+  },
+  {
+    "id": "riot",
+    "name": "Riot",
+    "team": "demon",
+    "edition": "carousel",
+    "otherNightReminder": "Change the Riot reminder token to the relevant day. :reminder: If it is night 3, you may wake the Minions. Show the *YOU ARE* & Riot tokens."
+  },
+  {
+    "id": "leviathan",
+    "name": "Leviathan",
+    "team": "demon",
+    "edition": "carousel",
+    "firstNightReminder": "Announce that the Leviathan is in play. :reminder:",
+    "otherNightReminder": "Change the Leviathan reminder token to the relevant day. :reminder: You may announce that the Leviathan is in play."
+  },
+  {
+    "id": "thief",
+    "name": "Thief",
+    "team": "traveller",
+    "edition": "tb",
+    "firstNightReminder": "The Thief chooses a player. :reminder:",
+    "otherNightReminder": "The Thief chooses a player. :reminder:"
+  },
+  {
+    "id": "bureaucrat",
+    "name": "Bureaucrat",
+    "team": "traveller",
+    "edition": "tb",
+    "firstNightReminder": "The Bureaucrat chooses a player. :reminder:",
+    "otherNightReminder": "The Bureaucrat chooses a player. :reminder:"
+  },
+  {
+    "id": "barista",
+    "name": "Barista",
+    "team": "traveller",
+    "edition": "snv",
+    "firstNightReminder": "Choose a player. Wake them, show the *THIS CHARACTER SELECTED YOU* & Barista tokens, then give a finger signal. :reminder:",
+    "otherNightReminder": "Choose a player. Wake them, show the *THIS CHARACTER SELECTED YOU* & Barista tokens, then give a finger signal. :reminder:"
+  },
+  {
+    "id": "harlot",
+    "name": "Harlot",
+    "team": "traveller",
+    "edition": "snv",
+    "otherNightReminder": "The Harlot chooses a living player. Put the Harlot to sleep. Wake the chosen player, show them the *THIS CHARACTER SELECTED YOU* token, then the Harlot token. If that player nods their head, wake the Harlot and show them the chosen player's character token. Both players might die. :reminder: :reminder:"
+  },
+  {
+    "id": "butcher",
+    "name": "Butcher",
+    "team": "traveller",
+    "edition": "snv"
+  },
+  {
+    "id": "cacklejack",
+    "name": "Cacklejack",
+    "team": "traveller",
+    "edition": "carousel",
+    "otherNightReminder": "Before dawn, choose a player not marked *NOT ME*. Wake the target. Show the *YOU ARE* info token & their new character token."
+  },
+  {
+    "id": "gunslinger",
+    "name": "Gunslinger",
+    "team": "traveller",
+    "edition": "tb"
+  },
+  {
+    "id": "matron",
+    "name": "Matron",
+    "team": "traveller",
+    "edition": "bmr"
+  },
+  {
+    "id": "gangster",
+    "name": "Gangster",
+    "team": "traveller",
+    "edition": "carousel"
+  },
+  {
+    "id": "bonecollector",
+    "name": "Bone Collector",
+    "team": "traveller",
+    "edition": "snv",
+    "otherNightReminder": "The Bone Collector might choose a dead player. :reminder: If necessary, wake the chosen player to use their ability."
+  },
+  {
+    "id": "judge",
+    "name": "Judge",
+    "team": "traveller",
+    "edition": "bmr"
+  },
+  {
+    "id": "apprentice",
+    "name": "Apprentice",
+    "team": "traveller",
+    "edition": "bmr",
+    "firstNightReminder": "Show the *YOU ARE* info token, then a Townsfolk or Minion token. Swap the Apprentice & Townsfolk or Minion tokens. :reminder:"
+  },
+  {
+    "id": "beggar",
+    "name": "Beggar",
+    "team": "traveller",
+    "edition": "tb"
+  },
+  {
+    "id": "deviant",
+    "name": "Deviant",
+    "team": "traveller",
+    "edition": "snv"
+  },
+  {
+    "id": "scapegoat",
+    "name": "Scapegoat",
+    "team": "traveller",
+    "edition": "tb"
+  },
+  {
+    "id": "gnome",
+    "name": "Gnome",
+    "team": "traveller",
+    "edition": "carousel"
+  },
+  {
+    "id": "bishop",
+    "name": "Bishop",
+    "team": "traveller",
+    "edition": "bmr"
+  },
+  {
+    "id": "voudon",
+    "name": "Voudon",
+    "team": "traveller",
+    "edition": "bmr"
+  },
+  {
+    "id": "angel",
+    "name": "Angel",
+    "team": "fabled",
+    "edition": "fabled",
+    "firstNightReminder": "Announce which players are protected by the Angel. :reminder:"
+  },
+  {
+    "id": "buddhist",
+    "name": "Buddhist",
+    "team": "fabled",
+    "edition": "fabled",
+    "firstNightReminder": "Announce which players are affected by the Buddhist."
+  },
+  {
+    "id": "deusexfiasco",
+    "name": "Deus ex Fiasco",
+    "team": "fabled",
+    "edition": "carousel"
+  },
+  {
+    "id": "djinn",
+    "name": "Djinn",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "doomsayer",
+    "name": "Doomsayer",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "duchess",
+    "name": "Duchess",
+    "team": "fabled",
+    "edition": "fabled",
+    "otherNightReminder": "One at a time: Wake each player marked *VISITOR* or *FALSE INFO*. Show the *THIS CHARACTER SELECTED YOU* & Duchess tokens, then give a finger signal."
+  },
+  {
+    "id": "ferryman",
+    "name": "Ferryman",
+    "team": "fabled",
+    "edition": "carousel"
+  },
+  {
+    "id": "fibbin",
+    "name": "Fibbin",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "fiddler",
+    "name": "Fiddler",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "hellslibrarian",
+    "name": "Hell's Librarian",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "revolutionary",
+    "name": "Revolutionary",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "sentinel",
+    "name": "Sentinel",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "spiritofivory",
+    "name": "Spirit of Ivory",
+    "team": "fabled",
+    "edition": "fabled"
+  },
+  {
+    "id": "toymaker",
+    "name": "Toymaker",
+    "team": "fabled",
+    "edition": "fabled",
+    "firstNightReminder": "Resolve Minion Info and Demon Info, even though there are fewer than 7 players.",
+    "otherNightReminder": "If a Demon attack could end the game, and the Demon is marked *FINAL NIGHT: NO ATTACK*, do not wake the Demon."
+  },
+  {
+    "id": "bigwig",
+    "name": "Big Wig",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "bootlegger",
+    "name": "Bootlegger",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "gardener",
+    "name": "Gardener",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "godofug",
+    "name": "God of Ug",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "hindu",
+    "name": "Hindu",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "knaves",
+    "name": "Knaves",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "pope",
+    "name": "Pope",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "stormcatcher",
+    "name": "Storm Catcher",
+    "team": "loric",
+    "edition": "loric",
+    "firstNightReminder": "Announce which character is stormcaught. If that character is in play, mark that player as *STORMCAUGHT*. Wake each evil player and show them the character token, then the marked player.  If not in play, wake each evil player, show them the *THESE CHARACTERS ARE NOT IN PLAY* token & the relevant character token."
+  },
+  {
+    "id": "tor",
+    "name": "Tor",
+    "team": "loric",
+    "edition": "loric",
+    "firstNightReminder": "Skip Minion Info and Demon Info.",
+    "otherNightReminder": "If a player died tonight, show the *YOU ARE* info token, their character token, & give a thumb signal."
+  },
+  {
+    "id": "ventriloquist",
+    "name": "Ventriloquist",
+    "team": "loric",
+    "edition": "loric"
+  },
+  {
+    "id": "zenomancer",
+    "name": "Zenomancer",
+    "team": "loric",
+    "edition": "loric"
+  }
+]

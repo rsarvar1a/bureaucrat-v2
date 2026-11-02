@@ -1,0 +1,1 @@
+ALTER TABLE "core"."Nomination" ADD COLUMN "finalizedAt" timestamp;

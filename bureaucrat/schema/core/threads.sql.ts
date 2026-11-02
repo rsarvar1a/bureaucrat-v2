@@ -5,12 +5,6 @@ import { ThreadType } from './enums.sql';
 import { Game } from './games.sql';
 import { Participant } from './people.sql';
 
-/**
- * A ManagedThread is a thread for which Bureaucrat controls entry and exit conditions
- * for all users. Various kinds of threads have specific access control (such as KIBITZ)
- * and certain threads (such as ST threads and whispers) allow Kibitzers to programmatically
- * follow certain players around in the game.
- */
 export const ManagedThread = core.table(
   'ManagedThread',
   {
@@ -24,10 +18,6 @@ export const ManagedThread = core.table(
   (table) => [unique().on(table.game, table.id), unique().on(table.thread)],
 );
 
-/**
- * A Participant in the Game can interact with a ManagedThread, and Bureaucrat
- * automatically adds and removes them from relevant threads as needed.
- */
 export const ManagedThreadParticipant = core.table(
   'ManagedThreadParticipant',
   {
@@ -50,12 +40,6 @@ export const ManagedThreadParticipant = core.table(
   ],
 );
 
-/**
- * A Follow is a relationship between a Kibitzer and Player that permits the former
- * to (automatically) enter all threads visible to the target Player. This is
- * useful for a Kibitzer that wants to track the whispers of a subset of Players,
- * for instance.
- */
 export const Follow = core.table(
   'Follow',
   {

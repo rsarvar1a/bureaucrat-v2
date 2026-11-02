@@ -1,0 +1,1 @@
+ALTER TABLE "core"."Game" ADD COLUMN "endedAt" timestamp;

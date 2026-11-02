@@ -1,32 +1,38 @@
-import { boolean, foreignKey, integer, text, unique } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { boolean, foreignKey, integer, text, unique, uniqueIndex, timestamp } from 'drizzle-orm/pg-core';
 import { primary, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { Game, GamePhase } from './games.sql';
 import { Seating } from './seating.sql';
-import { PlayerState } from './enums.sql';
+import { NominationKind, PlayerState } from './enums.sql';
 import { fk } from '../helpers/foreign-key';
 
-/**
- * A Nomination is a collection of each point-in-time voting ballot created
- * for a particular nomination in a phase.
- */
 export const Nomination = core.table(
   'Nomination',
   {
     id: primary.uuid(),
     game: fk(Game.id),
     phase: fk(GamePhase.id),
+    kind: NominationKind().notNull(),
     plaintiff: fk(Seating.id),
-    defendant: fk(Seating.id),
+    defendant: fk(Seating.id, { nullable: true }),
     required: integer().notNull(),
     block: boolean().notNull().default(false),
+    finalizedAt: timestamp(),
     accusation: text(),
     defense: text(),
     ...timestamps(),
   },
   (table) => [
-    unique().on(table.phase, table.plaintiff),
-    unique().on(table.phase, table.defendant),
+    uniqueIndex('Nomination_phase_plaintiff_idx')
+      .on(table.phase, table.plaintiff)
+      .where(sql`"kind" <> 'exile'`),
+    uniqueIndex('Nomination_phase_defendant_idx')
+      .on(table.phase, table.defendant)
+      .where(sql`"kind" <> 'exile'`),
+    uniqueIndex('Nomination_phase_storyteller_idx')
+      .on(table.phase)
+      .where(sql`"kind" = 'storyteller'`),
     unique().on(table.game, table.id),
     foreignKey({
       columns: [table.game, table.phase],
@@ -43,17 +49,6 @@ export const Nomination = core.table(
   ],
 );
 
-/**
- * Each player that existed in the game in a particular state is given a Vote
- * that represents their point-in-time state at the time of the nomination;
- * the states in which the nomination is resolved include those effects that
- * occurred after the end of the nomination.
- *
- * For instance, a plaintiff that is Witch-cursed should be resolved dead
- * in the Seating before the nomination is actually created, which is a hard
- * problem when the creation of the nomination is automatic and the Storyteller's
- * ability to declare the state change is manual.
- */
 export const Vote = core.table(
   'Vote',
   {
@@ -61,14 +56,19 @@ export const Vote = core.table(
     game: fk(Game.id),
     nomination: fk(Nomination.id),
     player: fk(Seating.id),
+    position: integer().notNull(),
     state: PlayerState().notNull(),
-    lock: integer(),
+    locked: boolean().notNull().default(false),
+    yes: boolean(),
+    weight: integer(),
+    spent: boolean().notNull().default(false),
     public: text(),
     private: text(),
     ...timestamps(),
   },
   (table) => [
     unique().on(table.nomination, table.player),
+    unique().on(table.nomination, table.position),
     foreignKey({
       columns: [table.game, table.nomination],
       foreignColumns: [Nomination.game, Nomination.id],

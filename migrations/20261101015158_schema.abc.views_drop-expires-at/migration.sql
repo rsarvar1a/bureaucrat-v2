@@ -1,0 +1,1 @@
+ALTER TABLE "abc"."View" DROP COLUMN "expiresAt";

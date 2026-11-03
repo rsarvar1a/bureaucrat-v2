@@ -1,13 +1,14 @@
 import { eq, and, asc, count, gt, sql } from 'drizzle-orm';
 import { db } from '../utilities/db';
-import { QueueEntry } from '../schema/core/queues.sql';
+import { Queue, QueueEntry } from '../schema/core/queues.sql';
+import { View } from '../schema/abc/views.sql';
 
 type InsertQueueEntry = {
   queue: string;
   storyteller: bigint;
   title: string;
   description: string;
-  public?: boolean;
+  signups?: (typeof QueueEntry.$inferInsert)['signups'];
   minimumStartDate?: Date;
 };
 
@@ -37,6 +38,16 @@ export const getQueueEntry = async (entryId: string) => {
 
 export const listQueueEntries = async (queueId: string) => {
   return db.select().from(QueueEntry).where(eq(QueueEntry.queue, queueId)).orderBy(asc(QueueEntry.position));
+};
+
+/** Where each entry's card is, keyed by entry id: the link target on the queue card. */
+export const listQueueEntryCards = async (queueId: string) => {
+  const rows = await db
+    .select({ entry: QueueEntry.id, channel: View.channel, message: View.message })
+    .from(QueueEntry)
+    .innerJoin(View, and(sql`${View.entityId} = ${QueueEntry.id}::text`, eq(View.route, 'qentry')))
+    .where(eq(QueueEntry.queue, queueId));
+  return new Map(rows.map((r) => [r.entry, { channel: r.channel, message: r.message }]));
 };
 
 export const updateQueueEntry = async (entryId: string, patch: UpdateQueueEntry) => {
@@ -75,3 +86,11 @@ export const bumpEntry = async (entryId: string) => {
 
   return { bumped: entry.id, swappedWith: next.id };
 };
+
+export const listEntriesByStorytellerInGuild = async (storyteller: bigint, guildId: bigint) =>
+  db
+    .select({ entry: QueueEntry, queueName: Queue.name })
+    .from(QueueEntry)
+    .innerJoin(Queue, eq(QueueEntry.queue, Queue.id))
+    .where(and(eq(QueueEntry.storyteller, storyteller), eq(Queue.guild, guildId)))
+    .orderBy(asc(Queue.name), asc(QueueEntry.position));

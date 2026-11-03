@@ -1,4 +1,4 @@
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, isNull } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { Queue, QueueEntry, QueueEntrySignup } from '../schema/core/queues.sql';
 
@@ -60,3 +60,10 @@ export const listSignupsByMemberInGuild = async (member: bigint, guildId: bigint
     .where(and(eq(QueueEntrySignup.member, member), eq(Queue.guild, guildId)))
     .orderBy(asc(Queue.name), asc(QueueEntry.position));
 };
+
+export const listPendingSignups = async (entryId: string) =>
+  db
+    .select()
+    .from(QueueEntrySignup)
+    .where(and(eq(QueueEntrySignup.entry, entryId), isNull(QueueEntrySignup.accepted)))
+    .orderBy(asc(QueueEntrySignup.createdAt));

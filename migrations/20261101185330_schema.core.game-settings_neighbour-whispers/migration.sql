@@ -1,0 +1,1 @@
+ALTER TABLE "core"."GameSettings" ADD COLUMN "neighbourWhispers" boolean DEFAULT false NOT NULL;

@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+#
+# The deployed stack's control surface.
+#
+# One place that knows how the stack is invoked, so nothing else has to
+# remember the `-f` pair. The systemd unit calls `up` and `down`; a human
+# calls `deploy`, `status` and `logs`. Both go through here, which is the
+# point: a release that is a remembered command line is a release that drifts
+# from the one in the playbook.
+#
+# Division of labour, deliberately:
+#
+#   - Docker owns process crashes. `restart: always` is already set on both
+#     services and tuned with log rotation; nothing here second-guesses it.
+#   - systemd owns boot and operator verbs. See bureaucrat.service.
+#   - This script owns installing the unit and releases, which are neither.
+#
+# `psql` is the one verb here that is not about releases. In production the
+# database publishes no ports at all (see the prod overlay), so `exec` into
+# the container is the only way at the data, and the incantation for that is
+# exactly the kind of remembered command line this script exists to abolish.
+#
+set -euo pipefail
+
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+UNIT='bureaucrat'
+UNIT_FILE="/etc/systemd/system/$UNIT.service"
+TEMPLATE="$ROOT/ctl/$UNIT.service"
+
+# The bot's first line after a successful gateway handshake
+# (`impl/discord/handlers/onClientReady.ts`). A container that is "running"
+# has proved nothing: it may be crash-looping inside its restart policy, or up
+# with a rejected token. This string is the earliest honest evidence that the
+# deploy worked.
+READY_MARKER='Logged in as'
+
+READY_TIMEOUT="${BUREAUCRAT_READY_TIMEOUT:-120}"
+
+# What a barebones production `.env` must hold; `ctl/env.example` is the file
+# to copy. The overlay's `:?` markers would catch a missing one eventually, but
+# as separate complaints about individual variables.
+REQUIRED=(DISCORD_TOKEN DISCORD_CLIENT_ID POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB)
+
+die() { printf 'bureaucratctl: %s\n' "$*" >&2; exit 1; }
+say() { printf '==> %s\n' "$*"; }
+
+cd "$ROOT"
+
+compose() { docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"; }
+
+# Reads one value out of `.env` the way compose interpolates it: the last
+# assignment wins and one layer of surrounding quotes comes off.
+#
+# Deliberately not `source`. That file holds the Discord token and arbitrary
+# punctuation, and sourcing it would both execute whatever is in it and dump
+# every secret into this script's environment to reach anything it runs.
+env_value() {
+  local key="$1" line
+  line="$(grep -E "^[[:space:]]*${key}=" .env | tail -n 1)" || return 1
+  [[ -n "$line" ]] || return 1
+
+  line="${line#*=}"
+  line="${line%$'\r'}"
+  if [[ ( "$line" == '"'*'"' || "$line" == "'"*"'" ) && ${#line} -ge 2 ]]; then
+    line="${line:1:${#line}-2}"
+  fi
+
+  printf '%s' "$line"
+}
+
+check_env() {
+  [[ -f .env ]] || die "no .env in $ROOT; copy ctl/env.example to .env and fill it in"
+
+  local missing=() key
+  for key in "${REQUIRED[@]}"; do
+    [[ -n "$(env_value "$key" || true)" ]] || missing+=("$key")
+  done
+
+  (( ${#missing[@]} == 0 )) || die ".env is missing ${missing[*]} (see ctl/env.example)"
+}
+
+need_root() { [[ "$(id -u)" == 0 ]] || die "$1 needs root (it writes $UNIT_FILE)"; }
+
+pg_running() {
+  local id; id="$(compose ps -q postgres 2>/dev/null || true)"
+  [[ -n "$id" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "$id" 2>/dev/null || echo false)" == true ]]
+}
+
+# The bot's container is named in the base file, so it can be inspected directly.
+running() { [[ "$(docker inspect -f '{{.State.Running}}' bureaucrat 2>/dev/null || echo false)" == true ]]; }
+
+# Whether the bot has announced itself since a given moment. Scoped by time
+# because the marker from the *previous* boot is still in the log.
+ready_since() { compose logs --since "$1" bureaucrat 2>/dev/null | grep -q "$READY_MARKER"; }
+
+wait_ready() {
+  local since="$1" deadline=$(( SECONDS + READY_TIMEOUT ))
+
+  while (( SECONDS < deadline )); do
+    if ready_since "$since"; then return 0; fi
+    sleep 2
+  done
+
+  return 1
+}
+
+now() { date -u +%Y-%m-%dT%H:%M:%S; }
+
+# Renders the unit for this checkout, writes it where systemd reads, and
+# enables it for boot. Idempotent: run it again after moving the checkout.
+cmd_install() {
+  need_root install
+  check_env
+  say "Installing $UNIT_FILE for $ROOT."
+  sed -e "s|__ROOT__|$ROOT|g" "$TEMPLATE" > "$UNIT_FILE"
+  systemctl daemon-reload
+  systemctl enable "$UNIT" >/dev/null
+  say "Enabled. Bring the stack up with: systemctl start $UNIT (or $0 deploy for a first build)"
+}
+
+cmd_uninstall() {
+  need_root uninstall
+  [[ -f "$UNIT_FILE" ]] || die "$UNIT is not installed"
+  say "Disabling $UNIT; the stack itself is left as it is."
+  systemctl disable "$UNIT" >/dev/null 2>&1 || true
+  rm -f "$UNIT_FILE"
+  systemctl daemon-reload
+}
+
+cmd_up() {
+  check_env
+  say 'Bringing the stack up.'
+  # No --build: this is also the boot path, and a rebuild at boot is both slow
+  # and a way for a bad build to keep the bot down. Compose still builds when
+  # no image exists at all, so a first boot works.
+  compose up -d
+}
+
+cmd_down() {
+  say 'Stopping the stack.'
+  # Never -v. That volume is the Postgres data.
+  compose down
+}
+
+cmd_restart() {
+  local since; since="$(now)"
+  say 'Restarting the bot.'
+  compose restart bureaucrat
+  wait_ready "$since" && say 'Back up.' || die "restarted, but never announced itself within ${READY_TIMEOUT}s; check: $0 logs"
+}
+
+# Pull, rebuild, start, and prove the bot reconnected. Migrations are not a
+# step here: the entrypoint applies them on every start.
+cmd_deploy() {
+  check_env
+  git diff --quiet HEAD -- || die 'working tree is dirty; commit or discard before deploying'
+
+  local before; before="$(git rev-parse --short HEAD)"
+
+  say 'Fetching.'
+  git pull --ff-only
+
+  local since; since="$(now)"
+  say 'Building and starting.'
+  compose up -d --build
+
+  if wait_ready "$since"; then
+    say "Deployed $(git rev-parse --short HEAD)."
+    return 0
+  fi
+
+  printf '\n'
+  compose logs --since "$since" --tail 40 bureaucrat || true
+  printf '\n'
+  die "the bot never announced itself within ${READY_TIMEOUT}s. Was at $before; roll back with: git checkout $before && $0 deploy"
+}
+
+cmd_status() {
+  compose ps
+  printf '\n'
+
+  if ! running; then
+    printf 'bureaucrat: not running\n'
+    return 1
+  fi
+
+  # The restart count is the tell for a crash loop: `restart: always` means a
+  # bot that dies every ten seconds still reports "running" at any glance.
+  printf 'bureaucrat: running, %s restart(s) since %s\n' \
+    "$(docker inspect -f '{{.RestartCount}}' bureaucrat)" \
+    "$(docker inspect -f '{{.State.StartedAt}}' bureaucrat)"
+}
+
+cmd_logs() { compose logs -f --tail "${1:-100}" bureaucrat; }
+
+# What `.env` configures, without saying what it is set to.
+cmd_env() {
+  [[ -f .env ]] || die "no .env in $ROOT; copy ctl/env.example to .env and fill it in"
+  local key
+  for key in "${REQUIRED[@]}" POSTGRES_HOST POSTGRES_PORT DISCORD_GUILD_ID LOG_LEVEL TEMPORARY_VIEW_TIMEOUT_MS; do
+    if [[ -n "$(env_value "$key" || true)" ]]; then printf '  %-28s set\n' "$key"; else printf '  %-28s -\n' "$key"; fi
+  done
+  check_env
+}
+
+# A psql shell inside the database container.
+#
+#   bureaucratctl psql                  interactive, the bot's database
+#   bureaucratctl psql -c 'select 1'    one shot
+#   bureaucratctl psql < backfill.sql   a script
+#
+# Credentials come from the container's own environment rather than from
+# `.env` here: the password is already in there, and passing it through this
+# script would put it in the process table for anybody on the box to read.
+cmd_psql() {
+  pg_running || die "the database is not running; start the stack with: $0 up"
+
+  # Compose allocates a TTY by default, which breaks a piped script. `-T` when
+  # stdin is not a terminal is what makes `bureaucratctl psql < file.sql` work.
+  local flags=()
+  [[ -t 0 ]] || flags=(-T)
+
+  compose exec "${flags[@]}" postgres sh -c \
+    'PGPASSWORD="$POSTGRES_PASSWORD" exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"' \
+    sh "$@"
+}
+
+case "${1:-}" in
+  install)   cmd_install ;;
+  uninstall) cmd_uninstall ;;
+  up)        cmd_up ;;
+  down)      cmd_down ;;
+  restart)   cmd_restart ;;
+  deploy)    cmd_deploy ;;
+  status)    cmd_status ;;
+  logs)      shift; cmd_logs "$@" ;;
+  env)       cmd_env ;;
+  psql)      shift; cmd_psql "$@" ;;
+  *)
+    cat >&2 <<USAGE
+usage: bureaucratctl <command>
+
+  install    write the systemd unit for this checkout and enable it at boot
+  uninstall  remove the unit; the stack is left running
+  up         start the stack without rebuilding (systemd ExecStart)
+  down       stop the stack, keeping the Postgres volume (systemd ExecStop)
+  restart    restart the bot only, and wait until it has logged in
+  deploy     pull, rebuild, start, and verify the bot logged in
+  status     what is running, and whether the bot is crash-looping
+  logs [n]   follow the bot's logs, starting n lines back
+  env        which configuration keys .env sets (never their values)
+  psql       open psql in the database container; further arguments go to psql
+USAGE
+    exit 64 ;;
+esac

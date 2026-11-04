@@ -82,7 +82,8 @@ in, named by `/archives offsite config`. There it needs View Channel, Manage Cha
 Webhooks, Manage Threads, Send Messages (and in Threads), Create Public Threads, Attach Files,
 Embed Links, Manage Messages and Read Message History on the archive category; the command checks
 and says which are missing. The copy is a background job driven from `GameExport` rows
-(`impl/discord/games/offsite/`), so a restart resumes it. `/archives offsite copy` copies the
+(`impl/discord/games/offsite/`), so a restart resumes it; `OFFSITE_CONCURRENCY` (default 4) says
+how many run at once, each through its own webhook and so its own rate limit. `/archives offsite copy` copies the
 channel it is run in, adopting one the record does not know (an older bot's game) as a bare ended
 game first (`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
 (`GuildSettings.offsiteAuto`, acted on at the end of `endGame`). `/archives offsite sync` queues

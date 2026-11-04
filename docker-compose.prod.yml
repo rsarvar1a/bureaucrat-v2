@@ -42,6 +42,7 @@ services:
       # Blank is safe: each falls back to its own default in code.
       - LOG_LEVEL=${LOG_LEVEL:-}
       - TEMPORARY_VIEW_TIMEOUT_MS=${TEMPORARY_VIEW_TIMEOUT_MS:-}
+      - OFFSITE_CONCURRENCY=${OFFSITE_CONCURRENCY:-}
 
     # A bot that restarts always is a bot that can fill a disk with logs.
     logging: &logging

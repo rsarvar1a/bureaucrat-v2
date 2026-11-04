@@ -86,20 +86,35 @@ const reflowOwed = async (client: Client): Promise<void> => {
   }
 };
 
-/** One job at a time per process: the writes are what take the time, and two would share the limit anyway. */
+/**
+ * How many exports run at once. Each game writes through its own webhook,
+ * and Discord's webhook limit is per webhook, so jobs do not slow each
+ * other down until the global ceiling (about fifty requests a second, of
+ * which one copy uses a twentieth). Four is a comfortable default; the
+ * environment overrides it.
+ */
+export const CONCURRENCY = Math.max(1, Math.floor(Number(process.env.OFFSITE_CONCURRENCY)) || 4);
+
+/**
+ * Claims exports up to the cap and runs each in the background; a running
+ * job's row is still in a claimable state, so the queue counts as drained
+ * only when nothing at all is left to claim.
+ */
 export const tickOffsite = async (client: Client): Promise<void> => {
-  if (running.size > 0) return;
-  const next = (await listClaimableExports()).find((exp) => !running.has(exp.id));
-  if (!next) {
+  const claimable = await listClaimableExports();
+  if (claimable.length === 0) {
     await reflowOwed(client);
     return;
   }
 
-  running.add(next.id);
-  try {
-    await run(client, next);
-  } finally {
-    running.delete(next.id);
+  const open = CONCURRENCY - running.size;
+  if (open <= 0) return;
+
+  for (const exp of claimable.filter((candidate) => !running.has(candidate.id)).slice(0, open)) {
+    running.add(exp.id);
+    void run(client, exp)
+      .catch((error: unknown) => logger.error({ message: `Offsite export ${exp.id} crashed.`, error }))
+      .finally(() => running.delete(exp.id));
   }
 };
 

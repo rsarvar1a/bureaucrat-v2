@@ -1,5 +1,7 @@
 import { test, expect } from 'bun:test';
 import {
+  parseDateStamp,
+  titleFromChannelName,
   channelName,
   dateStamp,
   endedChannelName,
@@ -52,4 +54,14 @@ test("a player's thread is named from what they are called", () => {
   expect(stThreadName('Rohan S.')).toBe('ST Thread - Rohan S.');
   expect(stThreadName('   ')).toBe('ST Thread - player');
   expect(stThreadName('a'.repeat(120)).length).toBe(100);
+});
+
+test('a stamped channel name gives back its date and its title', () => {
+  expect(parseDateStamp('20261101-my-game')).toEqual(new Date(Date.UTC(2026, 10, 1)));
+  expect(parseDateStamp('20261101')).toEqual(new Date(Date.UTC(2026, 10, 1)));
+  expect(parseDateStamp('my-game')).toBeNull();
+  expect(parseDateStamp('2026110-x')).toBeNull();
+  expect(titleFromChannelName('20261101-my-game')).toBe('my game');
+  expect(titleFromChannelName('trouble-brewing')).toBe('trouble brewing');
+  expect(titleFromChannelName('20261101')).toBe('game');
 });

@@ -15,3 +15,12 @@ export const started = (game: string): string =>
   `**${game}** is being archived. The card in its channel follows along.`;
 export const offsiteSet = (guild: string, category: string): string =>
   `Ended games will be copied into **${category}** on **${guild}**.`;
+export const adopted = (game: string): string =>
+  `This channel is now on record as **${game}** and is being archived. The card in it follows along.`;
+export const reflowed = (chains: { base: string; channels: number; links: number }[]): string =>
+  chains
+    .map(
+      ({ base, channels, links }) =>
+        `**${base}**: ${channels.toLocaleString('en')} channel${channels === 1 ? '' : 's'} across ${links} categor${links === 1 ? 'y' : 'ies'}, newest first.`,
+    )
+    .join('\n');

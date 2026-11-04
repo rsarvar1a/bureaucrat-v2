@@ -29,7 +29,8 @@ export const renderCategory = <S>(view: ViewRow<S>, queue: QueueRow) => {
     text('### Category'),
     text(
       `Games claimed from this queue are created ${where(queue.category)}.\n` +
-        `Once ended, \`/game archive\` files them ${filed(queue.archive)}.`,
+        `Once ended, \`/game archive\` files them ${filed(queue.archive)}. ` +
+        'A full category rolls over to the next number and this setting follows it.',
     ),
     separator(),
     picker('category', 'Games are created in…', queue.category),

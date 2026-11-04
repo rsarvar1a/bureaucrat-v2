@@ -25,7 +25,7 @@ import {
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
 import { listGameWinners } from '../../../../drizzle/game-winners';
-import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
+import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../drizzle/guild-settings';
 import { listParticipants } from '../../../../drizzle/participants';
 import { getScriptSummary } from '../../../../drizzle/scripts';
 import { listSeating } from '../../../../drizzle/seating';
@@ -35,6 +35,7 @@ import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
 import { ALIGNMENT_LABEL } from '../script/alignment';
 import { endedChannelName } from '../names';
+import { chainOf, roomIn } from '../archives/categories';
 import { renderMessage, type RenderContext } from './render';
 import { S } from '../../../../strings';
 
@@ -133,10 +134,19 @@ const channelOf = async (
     const existing = await client.channels.fetch(String(exp.channel)).catch(() => null);
     if (existing && existing.type === ChannelType.GuildText) return existing;
   }
+  // A full category rolls the chain over, and the setting follows it.
+  const chain = await chainOf(guild, BigInt(category.id));
+  const parent = chain
+    ? (
+        await roomIn(guild, chain, BigInt(category.id), async (next) => {
+          await updateGuildSettings(game.guild, { offsiteCategory: BigInt(next.id) });
+        })
+      ).category
+    : category;
   const channel = await guild.channels.create({
     name: endedChannelName(game.name, game.endedAt ?? new Date()),
     type: ChannelType.GuildText,
-    parent: category,
+    parent,
     topic: `${game.name} · copied from the game server`.slice(0, 1024),
     reason: `Offsite archive of ${game.name}`,
   });

@@ -60,6 +60,7 @@ export const noArchive =
   "No archive category is set. A server manager can set one with `/archives manage`, or on the queue's Category tab.";
 export const gameAlreadyArchived = 'That game is already in the archive.';
 export const gameNotArchived = 'The game could not be moved.';
+export const archiveGone = 'The archive category could not be found. Set it again.';
 
 /** Rebuilding the config menu deletes what is there, so it is the owner's alone. */
 export const notGameOwner = 'Only the owner of this game can do this.';
@@ -201,7 +202,8 @@ export const noReveal = 'This game has no reveal yet.';
 export const badMark = 'A mark is a whole number from 1 to 5.';
 
 /** The offsite archive: the second server an ended game is copied into. */
-export const noOffsite = 'This server has no archive server set. A manager sets one with `/archives offsite`.';
+export const noOffsite = 'This server has no archive server set. A manager sets one with `/archives offsite config`.';
+export const copyNotAChannel = 'Run this in the text channel to copy, or in one of its threads.';
 export const offsiteSourceGone = "The game's channel could not be found.";
 export const offsiteNotReachable = (missing: string[]): string =>
   missing.length === 0

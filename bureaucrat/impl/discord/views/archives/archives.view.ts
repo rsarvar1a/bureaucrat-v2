@@ -38,7 +38,9 @@ export default createView<ArchivesState>()({
         text('### Archives'),
         text(
           'Once a game has ended, `/game archive` moves its channel to the top of an archive category: ' +
-            "the queue's own if it names one, otherwise this default.\n" +
+            "the queue's own if it names one, otherwise this default. A full category rolls over: " +
+            '**Archives** becomes **Archives 1**, **Archives 2** goes above it and takes over here. ' +
+            '`/archives reflow` puts every archived game in date order across the chain.\n' +
             (settings.archive === null ? '-# No default archive yet.' : `-# Default archive: <#${settings.archive}>`),
         ),
         separator(),

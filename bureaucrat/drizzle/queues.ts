@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { Queue } from '../schema/core/queues.sql';
 import { View } from '../schema/abc/views.sql';
@@ -38,3 +38,11 @@ export const listQueuesByGuild = async (guildId: bigint) => {
     .where(eq(Queue.guild, guildId))
     .orderBy(asc(Queue.name));
 };
+
+/** The queues of a guild that file their games somewhere of their own. */
+export const listQueueArchives = async (guildId: bigint) =>
+  db
+    .select({ id: Queue.id, archive: Queue.archive })
+    .from(Queue)
+    .where(and(eq(Queue.guild, guildId), isNotNull(Queue.archive)))
+    .orderBy(asc(Queue.name));

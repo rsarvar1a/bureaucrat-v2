@@ -31,6 +31,22 @@ export const endedChannelName = (title: string, endedAt: Date): string => {
   return `${stamp}-${channelName(title)}`.slice(0, NAME_LIMIT).replace(/-+$/, '');
 };
 
+const STAMPED = /^(\d{4})(\d{2})(\d{2})(?:-|$)/;
+
+/** The date a channel name files itself under, when it starts with one: the inverse of `endedChannelName`. */
+export const parseDateStamp = (name: string): Date | null => {
+  const match = STAMPED.exec(name);
+  if (!match) return null;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/** A title read back off a channel name: the stamp dropped, the dashes spaces. `game` for a name that was only a stamp. */
+export const titleFromChannelName = (name: string): string => {
+  const title = name.replace(STAMPED, '').replace(/-+/g, ' ').trim();
+  return title || 'game';
+};
+
 /** The three private threads every game opens with, by their `ManagedThread` kind. Capitals mark them as the game's own. */
 export const THREAD_NAMES = {
   storyteller: 'ST PRIVATE',

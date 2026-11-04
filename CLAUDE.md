@@ -78,11 +78,20 @@ waits for the bot's "Logged in as" line). A barebones `.env` is `ctl/env.example
 client id and the Postgres credentials.
 
 The offsite archive (`/game offsite`) copies an ended game into a second server the bot is also
-in, named by `/archives offsite`. There it needs View Channel, Manage Channels, Manage Webhooks,
-Manage Threads, Send Messages (and in Threads), Create Public Threads, Attach Files, Embed Links,
-Manage Messages and Read Message History on the archive category; the command checks and says
-which are missing. The copy is a background job driven from `GameExport` rows
-(`impl/discord/games/offsite/`), so a restart resumes it.
+in, named by `/archives offsite config`. There it needs View Channel, Manage Channels, Manage
+Webhooks, Manage Threads, Send Messages (and in Threads), Create Public Threads, Attach Files,
+Embed Links, Manage Messages and Read Message History on the archive category; the command checks
+and says which are missing. The copy is a background job driven from `GameExport` rows
+(`impl/discord/games/offsite/`), so a restart resumes it. `/archives offsite copy` copies the
+channel it is run in, adopting one the record does not know (an older bot's game) as a bare ended
+game first.
+
+Archive categories, on-server and offsite, are chains (`impl/discord/games/archives/`): the
+configured category is a seed (`Archives`); when it fills, it is renamed `Archives 1`, `Archives 2`
+is created above it with the same overwrites and the setting moves along, and so on upward. The
+chain reads top-down, newest first. `/archives reflow` and `/archives offsite reflow` put every
+channel across a chain in date order (by the record's end date on-server, by the name's stamp
+offsite), making categories as needed.
 
 ## Implementation Guidelines
 

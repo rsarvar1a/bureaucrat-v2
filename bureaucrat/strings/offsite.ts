@@ -24,3 +24,11 @@ export const reflowed = (chains: { base: string; channels: number; links: number
         `**${base}**: ${channels.toLocaleString('en')} channel${channels === 1 ? '' : 's'} across ${links} categor${links === 1 ? 'y' : 'ies'}, newest first.`,
     )
     .join('\n');
+export const synced = (tally: { started: number; adopted: number; copied: number; skipped: number }): string => {
+  const parts = [
+    `${tally.started} queued for copying${tally.adopted > 0 ? ` (${tally.adopted} adopted from before the record)` : ''}`,
+    `${tally.copied} already there`,
+  ];
+  if (tally.skipped > 0) parts.push(`${tally.skipped} skipped (running, unfinished, or another server's)`);
+  return `Archive sync: ${parts.join(', ')}. The archive server is reflowed once the queue drains.`;
+};

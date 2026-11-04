@@ -9,7 +9,9 @@ import {
   updateExport,
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
+import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
 import type { Game } from '../../../../schema/core/games.sql';
+import { logger } from '../../../../utilities/logger';
 import { spawnByRoute } from '../create';
 
 type GameRow = typeof Game.$inferSelect;
@@ -72,4 +74,21 @@ export const stageOf = async (exp: GameExportRow): Promise<'reading' | 'copying'
 export const retryExport = async (exp: GameExportRow): Promise<GameExportRow | undefined> => {
   if (exp.state !== 'failed') return exp;
   return updateExport(exp.id, { state: await stageOf(exp), error: null });
+};
+
+/**
+ * The copy a game gets without being asked, when the server has turned
+ * that on (`/archives manage`): started at the end of the game, the card
+ * placed, and anything wrong logged rather than thrown, since the game has
+ * ended either way.
+ */
+export const autoExport = async (client: Client, game: GameRow): Promise<void> => {
+  try {
+    const settings = await getOrCreateGuildSettings(game.guild);
+    if (!settings.offsiteAuto || settings.offsiteGuild === null) return;
+    const result = await startExport(game, { copy: true, fresh: false });
+    if (result.ok) await placeOffsiteCard(client, game);
+  } catch (error) {
+    logger.warn({ message: `Could not start the automatic offsite copy of game ${game.id}.`, error });
+  }
 };

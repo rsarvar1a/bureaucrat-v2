@@ -84,7 +84,10 @@ Embed Links, Manage Messages and Read Message History on the archive category; t
 and says which are missing. The copy is a background job driven from `GameExport` rows
 (`impl/discord/games/offsite/`), so a restart resumes it. `/archives offsite copy` copies the
 channel it is run in, adopting one the record does not know (an older bot's game) as a bare ended
-game first.
+game first (`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
+(`GuildSettings.offsiteAuto`, acted on at the end of `endGame`). `/archives offsite sync` queues
+every channel across the server's archives that the archive server lacks and flags a reflow, which
+the offsite engine performs once its queue drains (`GuildSettings.offsiteReflowPending`).
 
 Archive categories, on-server and offsite, are chains (`impl/discord/games/archives/`): the
 configured category is a seed (`Archives`); when it fills, it is renamed `Archives 1`, `Archives 2`

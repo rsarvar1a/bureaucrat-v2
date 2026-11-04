@@ -2,9 +2,8 @@ import { ChannelType, MessageFlags, SlashCommandBooleanOption, SlashCommandSubco
 import { Option, Superbuilder } from '../../../../../engine/discord/commands/builders/superbuilder';
 import { accent } from '../../../../../engine/discord/elements';
 import { toast } from '../../../../../engine/discord/reply';
-import { getGameByChannel, insertGame } from '../../../../../drizzle/games';
 import { actorOf } from '../../../access';
-import { parseDateStamp, titleFromChannelName } from '../../../games/names';
+import { gameOfChannel } from '../../../games/offsite/adopt';
 import { placeOffsiteCard, startExport } from '../../../games/offsite/start';
 import { destinationOf } from '../../../games/offsite/write';
 import { S } from '../../../../../strings';
@@ -13,10 +12,9 @@ const REFUSALS = { running: S.errors.exportRunning, done: S.errors.exportDone, n
 
 /**
  * Copies the channel this is run in into the archive server, whether or not
- * the record knows it. A channel from before the record (an older bot's
- * game) is adopted first: a bare ended game named after the channel, dated
- * by the stamp in its name or else by when the channel was made, so the
- * same export engine carries it over. Gated on `server.manage` at the gate.
+ * the record knows it: a channel from before the record is adopted first
+ * (`offsite/adopt.ts`) so the same export engine carries it over. Gated on
+ * `server.manage` at the gate.
  */
 export default new Superbuilder(new SlashCommandSubcommandBuilder())
   .describe('Copy this channel into the archive server, even one the bot did not run.')
@@ -36,10 +34,6 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
     if (!channel || channel.isDMBased() || channel.type !== ChannelType.GuildText)
       return refuse(S.errors.copyNotAChannel);
 
-    let game = await getGameByChannel(BigInt(channel.id));
-    if (game && game.guild !== guildId) return refuse(S.errors.noGameHere);
-    if (game && game.state !== 'completed') return refuse(S.errors.gameNotEnded);
-
     // Checked now, so a missing permission is seen before an hour of work rather than after.
     const destination = await destinationOf(interaction.client, guildId);
     if (!destination.ok) {
@@ -48,15 +42,9 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
       );
     }
 
-    const adopted = !game;
-    game ??= await insertGame({
-      guild: guildId,
-      channel: BigInt(channel.id),
-      creator: actor.id,
-      name: titleFromChannelName(channel.name),
-      state: 'completed',
-      endedAt: parseDateStamp(channel.name) ?? channel.createdAt,
-    });
+    const found = await gameOfChannel(channel, guildId, actor.id);
+    if (found.game === null) return refuse(found.reason === 'elsewhere' ? S.errors.noGameHere : S.errors.gameNotEnded);
+    const { game, adopted } = found;
 
     const result = await startExport(game, { copy: true, fresh: params.fresh ?? false });
     if (!result.ok) {

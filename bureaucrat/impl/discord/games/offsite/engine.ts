@@ -2,10 +2,13 @@ import type { Client } from 'discord.js';
 import { notifyContexts } from '../../../../engine/discord/views/notify';
 import { getExport, listClaimableExports, updateExport, type GameExportRow } from '../../../../drizzle/game-exports';
 import { getGame } from '../../../../drizzle/games';
+import { listGuildsAwaitingReflow, updateGuildSettings } from '../../../../drizzle/guild-settings';
 import { logger } from '../../../../utilities/logger';
 import { offsiteEvents } from '../../views/games/offsite/events';
+import { reflowChain } from '../archives/categories';
+import { stampByName } from '../archives/stamps';
 import { readGame } from './read';
-import { copyGame } from './write';
+import { copyGame, destinationOf } from './write';
 
 /** How often unfinished exports are looked for. */
 export const TICK_MS = 15_000;
@@ -62,11 +65,35 @@ const run = async (client: Client, first: GameExportRow): Promise<void> => {
   await publish(client, game.id).catch(() => undefined);
 };
 
+/**
+ * The reflows `/archives offsite sync` left owing, done once the queue is
+ * empty so the last copy is in place to be ordered. The flag is cleared
+ * before the work, so a reflow that fails is logged rather than repeated
+ * every tick; the next sync sets it again.
+ */
+const reflowOwed = async (client: Client): Promise<void> => {
+  for (const settings of await listGuildsAwaitingReflow()) {
+    await updateGuildSettings(settings.guild, { offsiteReflowPending: false });
+    try {
+      const destination = await destinationOf(client, settings.guild);
+      if (!destination.ok) throw new Error(destination.reason);
+      const done = await reflowChain(destination.guild, BigInt(destination.category.id), stampByName);
+      if (done) await updateGuildSettings(settings.guild, { offsiteCategory: BigInt(done.current.id) });
+      logger.info({ message: `Archive server of guild ${settings.guild} reflowed after a sync.` });
+    } catch (error) {
+      logger.error({ message: `Archive server of guild ${settings.guild} could not be reflowed after a sync.`, error });
+    }
+  }
+};
+
 /** One job at a time per process: the writes are what take the time, and two would share the limit anyway. */
 export const tickOffsite = async (client: Client): Promise<void> => {
   if (running.size > 0) return;
   const next = (await listClaimableExports()).find((exp) => !running.has(exp.id));
-  if (!next) return;
+  if (!next) {
+    await reflowOwed(client);
+    return;
+  }
 
   running.add(next.id);
   try {

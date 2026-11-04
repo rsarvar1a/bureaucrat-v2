@@ -10,6 +10,7 @@ import { gameEvents } from '../views/games/events';
 import { endedChannelName } from './names';
 import { deleteGameRoles } from './roles';
 import { closeAllWhispers } from './whispers/close';
+import { autoExport } from './offsite/start';
 
 type GameRow = typeof Game.$inferSelect;
 
@@ -23,7 +24,8 @@ export type Outcome = { winner: Alignment; winners: WinnerInput[] };
  * renamed with the date in front, ready to be filed.
  *
  * The channel stays - it is the record of the game, and `/game archive`
- * moves it later - and the queue is told separately, by whoever called this,
+ * moves it later; a server that copies games offsite automatically starts
+ * that copy here - and the queue is told separately, by whoever called this,
  * because what a vacancy means is the queue's business rather than the game's.
  *
  * The game's tracked Discord roles (`roles.ts`) are deleted with it; the
@@ -55,6 +57,9 @@ export const endGame = async (client: Client, game: GameRow, outcome: Outcome): 
   } catch (error) {
     logger.warn({ message: `Could not rename channel ${game.channel} of ended game ${game.id}.`, error });
   }
+
+  // Last, after the rename: the copy takes the channel's new name.
+  await autoExport(client, ended);
 
   return ended;
 };

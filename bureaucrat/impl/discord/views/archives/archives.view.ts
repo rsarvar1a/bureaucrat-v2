@@ -1,7 +1,16 @@
-import { ChannelType } from 'discord.js';
+import { ButtonStyle, ChannelType } from 'discord.js';
 import { createView } from '../../../../engine/discord/views/create-view';
 import { dismissButton } from '../../../../engine/discord/components/dismiss';
-import { channelSelect, channelSelectRow, linear, separator, text, v2 } from '../../../../engine/discord/elements';
+import {
+  button,
+  buttonRow,
+  channelSelect,
+  channelSelectRow,
+  linear,
+  separator,
+  text,
+  v2,
+} from '../../../../engine/discord/elements';
 import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../drizzle/guild-settings';
 import { Permissions } from '../../../acl/permissions';
 import { can, inGuild } from '../../guards';
@@ -11,7 +20,8 @@ type ArchivesState = Record<string, never>;
 const dismiss = dismissButton<ArchivesState>()({ action: 'dismiss' });
 
 /**
- * The server's default archive, from `/archives manage`: one category select.
+ * The server's default archive, from `/archives manage`: one category select,
+ * and whether ended games are copied offsite without being asked.
  * Bound to the guild (`entityId`), and the write goes to the guild the actor
  * was checked in, so a custom id carried over from another server changes
  * nothing there.
@@ -22,7 +32,7 @@ export default createView<ArchivesState>()({
   events: {},
   defaultState: {},
   subscribesTo: {},
-  guards: { '*': [inGuild], default: [can(Permissions.Server.Manage)] },
+  guards: { '*': [inGuild], default: [can(Permissions.Server.Manage)], auto: [can(Permissions.Server.Manage)] },
 
   render: async (view) => {
     const settings = await getOrCreateGuildSettings(BigInt(view.entityId!));
@@ -46,6 +56,21 @@ export default createView<ArchivesState>()({
         separator(),
         channelSelectRow(menu),
         separator(),
+        text(
+          'A server named by `/archives offsite config` can take a copy of every game as it ends, ' +
+            'or only when `/game offsite` or `/archives offsite sync` asks.\n' +
+            (settings.offsiteGuild === null
+              ? '-# No archive server yet.'
+              : `-# Archive server: ${settings.offsiteGuild}`),
+        ),
+        buttonRow(
+          button(
+            view.customId('auto'),
+            `Offsite copy · ${settings.offsiteAuto ? 'as games end' : 'on request'}`,
+            settings.offsiteAuto ? ButtonStyle.Success : ButtonStyle.Secondary,
+          ),
+        ),
+        separator(),
         dismiss.row(view),
       ),
     );
@@ -63,6 +88,15 @@ export default createView<ArchivesState>()({
       const chosen = interaction.values[0];
       await updateGuildSettings(BigInt(interaction.guildId!), { archive: chosen ? BigInt(chosen) : null });
 
+      return { action: 'render' };
+    },
+
+    auto: async (interaction, ctx) => {
+      await interaction.deferUpdate();
+      if (ctx.view.entityId !== interaction.guildId) return { action: 'render' };
+
+      const settings = await getOrCreateGuildSettings(BigInt(interaction.guildId!));
+      await updateGuildSettings(BigInt(interaction.guildId!), { offsiteAuto: !settings.offsiteAuto });
       return { action: 'render' };
     },
   },

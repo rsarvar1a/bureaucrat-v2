@@ -41,6 +41,7 @@ const RULES: Record<string, CommandAccess> = {
   'archives::offsite::config': Permissions.Server.Manage,
   'archives::offsite::copy': Permissions.Server.Manage,
   'archives::offsite::reflow': Permissions.Server.Manage,
+  'archives::offsite::sync': Permissions.Server.Manage,
 };
 
 /**

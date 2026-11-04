@@ -120,12 +120,20 @@ export const reflowChain = async (
   }
 
   const { placements, categories } = planReflow(chain.links, stamped);
-  if (categories.length > 1)
+
+  // Discord's bulk position update takes one parent change per request, so
+  // each move is its own call; the ordering within the links is then one batch.
+  const byId = new Map(children.map((channel) => [channel.id, channel]));
+  for (const placement of placements) {
+    const channel = byId.get(placement.channel);
+    if (!channel || channel.isThread() || channel.parentId === placement.parent) continue;
+    await channel.setParent(placement.parent, { lockPermissions: true, reason });
+  }
+  if (categories.length > 1) {
     await guild.channels.setPositions(categories.map((c) => ({ channel: c.id, position: c.position })));
+  }
   if (placements.length > 0) {
-    await guild.channels.setPositions(
-      placements.map((p) => ({ channel: p.channel, parent: p.parent, position: p.position, lockPermissions: true })),
-    );
+    await guild.channels.setPositions(placements.map((p) => ({ channel: p.channel, position: p.position })));
   }
 
   const current = chain.links[Math.min(needed, chain.links.length) - 1]!.item;

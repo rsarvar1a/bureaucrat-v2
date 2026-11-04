@@ -1,0 +1,2 @@
+ALTER TABLE "core"."GuildSettings" ADD COLUMN "offsiteAuto" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "core"."GuildSettings" ADD COLUMN "offsiteReflowPending" boolean DEFAULT false NOT NULL;

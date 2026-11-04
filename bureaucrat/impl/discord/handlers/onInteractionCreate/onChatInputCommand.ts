@@ -33,9 +33,19 @@ const resolve = (interaction: ChatInputCommandInteraction): string => {
   return [cmd, subcmdgroup, subcmd].filter(Boolean).join('::');
 };
 
+/** How old the interaction is by the host's clock; Discord gives three seconds to answer, and a wildly off clock shows here too. */
+const ageOf = (interaction: ChatInputCommandInteraction): number => Date.now() - interaction.createdTimestamp;
+
 export default async function onChatInputCommand(interaction: ChatInputCommandInteraction) {
   const path = resolve(interaction);
   const func = commandHandlers.get(path);
+
+  // An interaction that is already old on arrival points at the gateway or
+  // the box, not the handler; the number says which window was missed.
+  const arrived = ageOf(interaction);
+  if (arrived > 2_000 || arrived < 0) {
+    logger.warn({ message: `Command ${path} reached the handler ${arrived}ms after Discord created it.` });
+  }
 
   if (!func) {
     logger.error({ message: `No command handler found for path ${path}.` });
@@ -58,7 +68,10 @@ export default async function onChatInputCommand(interaction: ChatInputCommandIn
 
     await func(interaction);
   } catch (error) {
-    logger.error({ message: `Encountered error in command ${path}.`, error });
+    logger.error({
+      message: `Encountered error in command ${path} (${ageOf(interaction)}ms after it was created).`,
+      error,
+    });
     await replySafely(interaction, {
       content: S.common.commandFailedExecuting,
       flags: [MessageFlags.Ephemeral],

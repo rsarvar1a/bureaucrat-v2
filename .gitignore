@@ -10,6 +10,9 @@ dist
 coverage
 *.lcov
 
+# database dumps from ctl/bureaucratctl dump
+backups
+
 # logs
 logs
 _.log

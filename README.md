@@ -51,8 +51,9 @@ ctl/bureaucratctl deploy       # pull, build, start, and wait for "Logged in as"
 
 systemd calls `bureaucratctl up` and `down` at boot and shutdown; a human calls `deploy`, `status`
 (which says whether the bot is crash-looping), `logs`, `env` (which keys `.env` sets, never their
-values) and `psql` (a shell inside the database container). Migrations are applied by the bot itself
-on every start.
+values), `psql` (a shell inside the database container), `dump` (the whole database to a file under
+`backups/`) and `restore` (that file back in, the bot stopped meanwhile; a dump from another box
+moves a database wholesale). Migrations are applied by the bot itself on every start.
 
 ## Migrations
 

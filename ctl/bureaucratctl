@@ -15,10 +15,11 @@
 #   - systemd owns boot and operator verbs. See bureaucrat.service.
 #   - This script owns installing the unit and releases, which are neither.
 #
-# `psql` is the one verb here that is not about releases. In production the
-# database publishes no ports at all (see the prod overlay), so `exec` into
-# the container is the only way at the data, and the incantation for that is
-# exactly the kind of remembered command line this script exists to abolish.
+# `psql`, `dump` and `restore` are the verbs here that are not about
+# releases. In production the database publishes no ports at all (see the
+# prod overlay), so `exec` into the container is the only way at the data,
+# and the incantation for that is exactly the kind of remembered command line
+# this script exists to abolish.
 #
 set -euo pipefail
 
@@ -203,26 +204,76 @@ cmd_env() {
   check_env
 }
 
+# Runs a Postgres client inside the database container as the bot's user,
+# with stdin and stdout passed straight through. Credentials come from the
+# container's own environment rather than from `.env` here: the password is
+# already in there, and passing it through this script would put it in the
+# process table for anybody on the box to read.
+in_postgres() {
+  pg_running || die "the database is not running; start the stack with: $0 up"
+  local tool="$1"; shift
+  # Compose allocates a TTY by default, which breaks a piped script or a
+  # binary dump. `-T` whenever stdin is not a terminal.
+  local flags=()
+  [[ -t 0 ]] || flags=(-T)
+  compose exec "${flags[@]}" postgres sh -c \
+    'tool="$1"; shift; PGPASSWORD="$POSTGRES_PASSWORD" exec "$tool" -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"' \
+    sh "$tool" "$@"
+}
+
 # A psql shell inside the database container.
 #
 #   bureaucratctl psql                  interactive, the bot's database
 #   bureaucratctl psql -c 'select 1'    one shot
 #   bureaucratctl psql < backfill.sql   a script
+cmd_psql() { in_postgres psql "$@"; }
+
+# The whole database as one pg_dump custom-format file, which `restore`
+# takes back. Schema and data both, including the migration journal, so a
+# restored box agrees with its checkout about what has been applied.
 #
-# Credentials come from the container's own environment rather than from
-# `.env` here: the password is already in there, and passing it through this
-# script would put it in the process table for anybody on the box to read.
-cmd_psql() {
+#   bureaucratctl dump                  backups/bureaucrat-<utc stamp>.dump
+#   bureaucratctl dump some/where.dump  a path of your own
+cmd_dump() {
+  local out="${1:-$ROOT/backups/bureaucrat-$(date -u +%Y%m%dT%H%M%SZ).dump}"
+  mkdir -p "$(dirname -- "$out")"
+  say "Dumping the database to $out."
+  in_postgres pg_dump -Fc --no-owner --no-privileges < /dev/null > "$out"
+  say "Wrote $(du -h "$out" | cut -f1)."
+}
+
+# Replaces the database with a dump from `dump`, here or on another box.
+# Stops the bot first so nothing writes mid-restore, drops and recreates
+# every object the dump holds, and starts the bot again. Asks first, since
+# what is in the database now is gone afterwards; `--yes` skips the asking.
+cmd_restore() {
+  local yes=0 file=''
+  for arg in "$@"; do
+    case "$arg" in
+      --yes) yes=1 ;;
+      *) file="$arg" ;;
+    esac
+  done
+  [[ -n "$file" ]] || die "usage: $0 restore [--yes] <dump>"
+  [[ -f "$file" ]] || die "no such file: $file"
   pg_running || die "the database is not running; start the stack with: $0 up"
 
-  # Compose allocates a TTY by default, which breaks a piped script. `-T` when
-  # stdin is not a terminal is what makes `bureaucratctl psql < file.sql` work.
-  local flags=()
-  [[ -t 0 ]] || flags=(-T)
+  if (( ! yes )); then
+    printf 'Replace everything in the database on this box with %s? [y/N] ' "$file"
+    local answer; read -r answer
+    [[ "$answer" == y || "$answer" == Y ]] || die 'left as it was'
+  fi
 
-  compose exec "${flags[@]}" postgres sh -c \
-    'PGPASSWORD="$POSTGRES_PASSWORD" exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"' \
-    sh "$@"
+  say 'Stopping the bot so nothing writes during the restore.'
+  compose stop bureaucrat
+
+  say "Restoring $file."
+  in_postgres pg_restore --clean --if-exists --no-owner --no-privileges --exit-on-error < "$file"
+
+  local since; since="$(now)"
+  say 'Starting the bot.'
+  compose up -d bureaucrat
+  wait_ready "$since" && say 'Restored and back up.' || die "restored, but the bot never announced itself within ${READY_TIMEOUT}s; check: $0 logs"
 }
 
 case "${1:-}" in
@@ -236,6 +287,8 @@ case "${1:-}" in
   logs)      shift; cmd_logs "$@" ;;
   env)       cmd_env ;;
   psql)      shift; cmd_psql "$@" ;;
+  dump)      shift; cmd_dump "$@" ;;
+  restore)   shift; cmd_restore "$@" ;;
   *)
     cat >&2 <<USAGE
 usage: bureaucratctl <command>
@@ -250,6 +303,8 @@ usage: bureaucratctl <command>
   logs [n]   follow the bot's logs, starting n lines back
   env        which configuration keys .env sets (never their values)
   psql       open psql in the database container; further arguments go to psql
+  dump [f]   write the whole database to a pg_dump file (default backups/)
+  restore f  replace the database with a dump file, bot stopped meanwhile
 USAGE
     exit 64 ;;
 esac

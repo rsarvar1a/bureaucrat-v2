@@ -1,0 +1,60 @@
+# Production overlay. Applied on top of docker-compose.yml, never alone:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# `ctl/bureaucratctl` is the one place that spells that out; systemd and a
+# human both go through it.
+#
+# The base file is written for development, where the repo is bind-mounted and
+# the bot reloads on every save. Both of those are liabilities on a deployed
+# box: the running code becomes whatever is on disk at that instant, so a `git
+# pull` or a half-finished rsync restarts the bot mid-write. This overlay takes
+# them away and leaves a container that runs what was built.
+
+services:
+  bureaucrat:
+    # The image's own copy of the source, started once. `bun run docker` is the
+    # watch-mode wrapper; `start` is the same entrypoint without it.
+    command: ['bun', 'run', 'start']
+
+    # Replaces the base list rather than adding to it: no source mount, and no
+    # anonymous node_modules volume shadowing the one the image installed. The
+    # bot's own rotated log files outlive a rebuild on a volume of their own.
+    volumes: !override
+      - logs:/app/logs
+
+    # Every variable the bot reads, named explicitly.
+    #
+    # Development reads the mounted `.env` through dotenv, so the base file
+    # passes only what the container needs. Nothing is mounted here and `.env`
+    # is kept out of the image, so this block is the whole configuration, and
+    # interpolation still reads the deploying host's `.env` at `compose up`.
+    #
+    # `:?` on everything without a safe default, so a missing value is a
+    # refusal to start rather than a bot that comes up subtly wrong.
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?required}:${POSTGRES_PASSWORD:?required}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:?required}
+      - DISCORD_TOKEN=${DISCORD_TOKEN:?required}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID:?required}
+      # Unset publishes commands globally, which is the production answer once
+      # the bot serves more than one server.
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID:-}
+      # Blank is safe: each falls back to its own default in code.
+      - LOG_LEVEL=${LOG_LEVEL:-}
+      - TEMPORARY_VIEW_TIMEOUT_MS=${TEMPORARY_VIEW_TIMEOUT_MS:-}
+
+    # A bot that restarts always is a bot that can fill a disk with logs.
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+
+  postgres:
+    # Nothing outside the compose network has any business reaching the
+    # database. `bureaucratctl psql` still works: it execs into the container.
+    ports: !reset []
+    logging: *logging
+
+volumes:
+  logs: {}

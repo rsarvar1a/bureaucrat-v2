@@ -4,3 +4,6 @@
 .notes/
 docs/
 node_modules/
+.env
+.env.*
+logs/

@@ -1,0 +1,39 @@
+# Bureaucrat: the Clocktower bot, as a compose stack.
+#
+# A template: `ctl/bureaucratctl install` fills in __ROOT__ (the checkout,
+# /root/bureaucrat-v2 in production) and writes the result to
+# /etc/systemd/system/bureaucrat.service.
+#
+# systemd owns boot and the operator verbs; Docker owns crash recovery. The
+# compose files already set `restart: always` on both services and rotate the
+# bot's logs, so there is deliberately no Restart= here: two supervisors with
+# opinions about the same process is a bad afternoon.
+#
+# Type=oneshot with RemainAfterExit means `systemctl status bureaucrat` reports
+# the *stack* as declared-up rather than tracking a PID, which is the honest
+# thing for a detached compose project. Use `bureaucratctl status` for the bot.
+#
+[Unit]
+Description=Bureaucrat (Clocktower bot)
+Documentation=https://github.com/rsarvar1a/bureaucrat-v2
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=__ROOT__
+ExecStart=__ROOT__/ctl/bureaucratctl up
+ExecStop=__ROOT__/ctl/bureaucratctl down
+
+# No EnvironmentFile. Compose interpolates from the checkout's .env at `up`
+# time, and a second copy of the configuration here would be a snapshot that
+# silently outranks the file.
+
+# A first boot with no image builds it, which is not fast. Nothing here should
+# be killed for taking a while.
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

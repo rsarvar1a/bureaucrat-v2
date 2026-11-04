@@ -69,8 +69,13 @@ the host; generate migrations from the host instead.
 
 ## Production
 
-Production does not use Docker. The bot runs directly with `bun run start` against an
-externally-managed Postgres. Only `DATABASE_URL` and `DISCORD_TOKEN` need to be set.
+Production is the same compose stack with `docker-compose.prod.yml` laid over it: no source mount,
+no watch mode, Postgres unpublished, logs capped, and every variable the bot reads named there and
+interpolated from the host's `.env` at `up` time (`.env` never enters the image). The checkout lives
+at `/root/bureaucrat-v2`; `ctl/bureaucratctl` is the only way the stack is invoked (`up`/`down`
+from the systemd unit it installs from `ctl/bureaucrat.service`, `deploy` for a release, which
+waits for the bot's "Logged in as" line). A barebones `.env` is `ctl/env.example`: the token, the
+client id and the Postgres credentials.
 
 The offsite archive (`/game offsite`) copies an ended game into a second server the bot is also
 in, named by `/archives offsite`. There it needs View Channel, Manage Channels, Manage Webhooks,

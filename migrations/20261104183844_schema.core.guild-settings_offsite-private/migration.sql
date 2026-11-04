@@ -1,0 +1,1 @@
+ALTER TABLE "core"."GuildSettings" ADD COLUMN "offsitePrivate" boolean DEFAULT false NOT NULL;

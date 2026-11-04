@@ -2,13 +2,10 @@ import { ChannelType, ThreadAutoArchiveDuration, type Client, type TextChannel, 
 import { updateGame } from '../../../drizzle/games';
 import { getOrCreateGameSettings } from '../../../drizzle/game-settings';
 import { insertManagedThread, listManagedThreads } from '../../../drizzle/managed-threads';
-import { listParticipants } from '../../../drizzle/participants';
 import { listSeating } from '../../../drizzle/seating';
 import { logger } from '../../../utilities/logger';
 import type { Game } from '../../../schema/core/games.sql';
-import { displayNames } from '../views/queue/members';
-import { joinThreads } from './membership';
-import { stThreadName } from './names';
+import { ensureStThreads } from './st-threads';
 import { roleMentions, trackedRoles } from './roles';
 
 type GameRow = typeof Game.$inferSelect;
@@ -89,45 +86,10 @@ export const startGame = async (client: Client, game: GameRow): Promise<StartRes
     }
   }
 
-  const storytellers = await listParticipants(game.id, 'Storyteller');
-  const participants = await listParticipants(game.id);
-  const names = await displayNames(
-    client,
-    game.guild,
-    seated.map((s) => s.member),
-  );
-  const haveThread = new Map(existing.filter((t) => t.kind === 'ST thread').map((t) => [t.tag, t]));
-
-  for (const { seat, member } of seated) {
-    // An empty seat's thread is tagged by the seat itself; it opens with the Storytellers alone.
-    const tag = seat.player ?? seat.id;
-    const player = participants.find((p) => p.id === seat.player);
-    const called = seat.nickname ?? names[String(member)] ?? `seat-${seat.seat}`;
-
-    try {
-      let row = haveThread.get(tag);
-      if (!row) {
-        const thread =
-          orphan(stThreadName(called), ChannelType.PrivateThread) ??
-          (await channel.threads.create({
-            name: stThreadName(called),
-            type: ChannelType.PrivateThread,
-            invitable: false,
-            autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-            reason: `Game: ${game.name}`,
-          }));
-        row = await insertManagedThread({ game: game.id, kind: 'ST thread', tag, thread: BigInt(thread.id) });
-        report.playerThreads += 1;
-      }
-      // Joining is idempotent, so a thread whose Start died between the row
-      // and its members is completed here rather than skipped.
-      for (const st of storytellers) await joinThreads(client, st, [row]);
-      if (player) await joinThreads(client, player, [row]);
-    } catch (error) {
-      logger.warn({ message: `Could not create the ST thread for seat ${seat.seat} of game ${game.id}.`, error });
-      report.failed.push(called);
-    }
-  }
+  // Every seat's private thread with the Storytellers; an empty seat's opens with them alone.
+  const threads = await ensureStThreads(client, game, { rejoin: true, orphan });
+  report.playerThreads += threads.created;
+  report.failed.push(...threads.failed);
 
   await updateGame(game.id, { state: 'running' });
 

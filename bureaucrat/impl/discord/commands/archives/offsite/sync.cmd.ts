@@ -2,7 +2,7 @@ import { ChannelType, MessageFlags, SlashCommandSubcommandBuilder } from 'discor
 import { Superbuilder } from '../../../../../engine/discord/commands/builders/superbuilder';
 import { accent } from '../../../../../engine/discord/elements';
 import { toast } from '../../../../../engine/discord/reply';
-import { getExportOfGame } from '../../../../../drizzle/game-exports';
+import { getExportOfGame, listCopiedExportsMissingPrivate, updateExport } from '../../../../../drizzle/game-exports';
 import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../../drizzle/guild-settings';
 import { listQueueArchives } from '../../../../../drizzle/queues';
 import { actorOf } from '../../../access';
@@ -15,8 +15,9 @@ import { S } from '../../../../../strings';
 /**
  * Every channel in every archive on this server that the archive server
  * does not have yet, queued for copying: a channel the record does not know
- * is adopted first, one whose copy failed or stopped halfway is resumed, and
- * one already copied is left alone. The offsite engine reflows the archive
+ * is adopted first, one whose copy failed or stopped halfway is resumed, one
+ * copied without its private threads is sent back for them if the server
+ * now wants them, and one complete is left alone. The offsite engine reflows the archive
  * server once the queue drains. Gated on `server.manage` at the gate.
  */
 export default new Superbuilder(new SlashCommandSubcommandBuilder())
@@ -63,6 +64,11 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
       }
     }
 
+    // A finished copy that left its private threads out is owed them once the server wants them.
+    const owedPrivate = new Set(
+      settings.offsitePrivate ? (await listCopiedExportsMissingPrivate(guildId)).map((exp) => exp.id) : [],
+    );
+
     const tally = { started: 0, adopted: 0, copied: 0, skipped: 0 };
     for (const channel of channels) {
       const found = await gameOfChannel(channel, guildId, actor.id);
@@ -71,14 +77,18 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
         continue;
       }
       const exp = await getExportOfGame(found.game.id);
-      if (exp?.state === 'copied') {
+      if (exp?.state === 'copied' && !owedPrivate.has(exp.id)) {
         tally.copied += 1;
         continue;
       }
-      const result = await startExport(found.game, { copy: true, fresh: false });
-      if (!result.ok) {
-        tally.skipped += 1;
-        continue;
+      if (exp?.state === 'copied') {
+        await updateExport(exp.id, { state: 'copying', copy: true, error: null });
+      } else {
+        const result = await startExport(found.game, { copy: true, fresh: false });
+        if (!result.ok) {
+          tally.skipped += 1;
+          continue;
+        }
       }
       await placeOffsiteCard(interaction.client, found.game);
       tally.started += 1;

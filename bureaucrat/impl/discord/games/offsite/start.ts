@@ -6,9 +6,11 @@ import {
   getExportOfGame,
   insertExport,
   listChannels,
+  listCopiedExportsMissingPrivate,
   updateExport,
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
+import { getGame } from '../../../../drizzle/games';
 import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
@@ -91,4 +93,21 @@ export const autoExport = async (client: Client, game: GameRow): Promise<void> =
   } catch (error) {
     logger.warn({ message: `Could not start the automatic offsite copy of game ${game.id}.`, error });
   }
+};
+
+/**
+ * Sends a guild's finished copies back through the copier for the private
+ * threads they left out, each with its card again. What a server does when
+ * it turns private threads on; `/archives offsite sync` does the same for
+ * any it finds. Returns how many were queued.
+ */
+export const requeueForPrivate = async (client: Client, guild: bigint): Promise<number> => {
+  let queued = 0;
+  for (const exp of await listCopiedExportsMissingPrivate(guild)) {
+    await updateExport(exp.id, { state: 'copying', copy: true, error: null });
+    const game = await getGame(exp.game);
+    if (game) await placeOffsiteCard(client, game);
+    queued += 1;
+  }
+  return queued;
 };

@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { ExportChannel, ExportMember, ExportMessage, GameExport } from '../schema/core/exports.sql';
+import { Game } from '../schema/core/games.sql';
 
 export type GameExportRow = typeof GameExport.$inferSelect;
 export type ExportChannelRow = typeof ExportChannel.$inferSelect;
@@ -196,3 +197,49 @@ export const upsertMembers = async (rows: InsertMember[]): Promise<void> => {
 
 export const listMembers = async (exportId: string): Promise<ExportMemberRow[]> =>
   db.select().from(ExportMember).where(eq(ExportMember.export, exportId));
+
+type ChannelKind = ExportChannelRow['kind'];
+
+/** How many messages the export holds in channels of these kinds; what a copy that takes only those has to send. */
+export const countMessagesOfKinds = async (exportId: string, kinds: ChannelKind[]): Promise<number> => {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ExportMessage)
+    .innerJoin(
+      ExportChannel,
+      and(eq(ExportChannel.export, ExportMessage.export), eq(ExportChannel.channel, ExportMessage.channel)),
+    )
+    .where(and(eq(ExportMessage.export, exportId), inArray(ExportChannel.kind, kinds)));
+  return row?.count ?? 0;
+};
+
+/**
+ * A guild's finished copies that left a private thread behind: what a
+ * server that turns private threads on afterwards owes its archive.
+ */
+export const listCopiedExportsMissingPrivate = async (guild: bigint): Promise<GameExportRow[]> => {
+  const rows = await db
+    .select({ exp: GameExport })
+    .from(GameExport)
+    .innerJoin(Game, eq(Game.id, GameExport.game))
+    .where(
+      and(
+        eq(Game.guild, guild),
+        eq(GameExport.state, 'copied'),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(ExportChannel)
+            .where(
+              and(
+                eq(ExportChannel.export, GameExport.id),
+                eq(ExportChannel.kind, 'private'),
+                isNull(ExportChannel.copiedTo),
+              ),
+            ),
+        ),
+      ),
+    )
+    .orderBy(asc(GameExport.createdAt));
+  return rows.map((r) => r.exp);
+};

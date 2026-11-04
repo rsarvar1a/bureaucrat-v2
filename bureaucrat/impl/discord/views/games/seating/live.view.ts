@@ -23,6 +23,7 @@ import { inGuild } from '../../../guards';
 import { storytells } from '../../../guards/game';
 import { liveSeatPatch, type LiveMap, type LiveSeat } from '../../../games/clocktower-live';
 import { applyLiveState } from '../../../games/live-seating';
+import { ensureStThreadsIfRunning } from '../../../games/st-threads';
 import { displayNames } from '../../queue/members';
 import { GameEvents } from '../events';
 import { characterChoices } from './roles';
@@ -161,6 +162,7 @@ export default createView<LiveState>()({
       }
 
       const written = await applyLiveState(ctx.view.entityId!, seats, map);
+      await ensureStThreadsIfRunning(interaction.client, await getGame(ctx.view.entityId!));
       if (written > 0) await ctx.notify(GameEvents.Changed);
       await toast.followUp(interaction, S.games.liveApplied(written), { accent: accent.success });
       return { action: 'destroy' };

@@ -12,6 +12,7 @@ import {
 } from 'discord.js';
 import {
   countCopied,
+  countMessagesOfKinds,
   lastCopiedTimeOf,
   listChannels,
   listMembers,
@@ -121,7 +122,7 @@ const header = async (client: Client, game: GameRow, ctx: RenderContext): Promis
   return lines.join('\n');
 };
 
-/** The copied channel, made on the first run and found again on a resumed one. */
+/** The copied channel, made on the first run and found again on a resumed one; `created` says which. */
 const channelOf = async (
   client: Client,
   game: GameRow,
@@ -129,10 +130,10 @@ const channelOf = async (
   guild: Guild,
   category: CategoryChannel,
   ctx: RenderContext,
-): Promise<TextChannel> => {
+): Promise<{ channel: TextChannel; created: boolean }> => {
   if (exp.channel !== null) {
     const existing = await client.channels.fetch(String(exp.channel)).catch(() => null);
-    if (existing && existing.type === ChannelType.GuildText) return existing;
+    if (existing && existing.type === ChannelType.GuildText) return { channel: existing, created: false };
   }
   // A full category rolls the chain over, and the setting follows it.
   const chain = await chainOf(guild, BigInt(category.id));
@@ -154,7 +155,7 @@ const channelOf = async (
   ctx.target = BigInt(channel.id);
   const summary = await header(client, game, ctx);
   await channel.send({ content: summary.slice(0, 2000), allowedMentions: { parse: [] } });
-  return channel;
+  return { channel, created: true };
 };
 
 const webhookOf = async (client: Client, exp: GameExportRow, channel: TextChannel): Promise<Webhook> => {
@@ -224,6 +225,11 @@ const send = async (
  * a webhook, a public thread per source thread, then every message not yet
  * copied, oldest first, each recorded as it lands so a restart carries on
  * at the first gap. Threads the source had archived are archived again.
+ *
+ * Private threads (whispers, the Storyteller's, kibitz) go only where the
+ * server has said so (`offsitePrivate`); left out, nothing of theirs is
+ * marked copied, so a server that turns them on later can send a finished
+ * copy back through here for just those.
  */
 export const copyGame = async (
   client: Client,
@@ -239,9 +245,16 @@ export const copyGame = async (
   }
   const { guild, category } = destination;
 
+  const settings = await getOrCreateGuildSettings(game.guild);
+  const kinds: ExportChannelRow['kind'][] = settings.offsitePrivate
+    ? ['channel', 'public', 'private']
+    : ['channel', 'public'];
+
   const members = new Map((await listMembers(exp.id)).map((m) => [String(m.member), m]));
-  const channels = await listChannels(exp.id);
-  const channelMap = new Map(channels.map((c) => [String(c.channel), c]));
+  // Every channel is known to the renderer, so a mention of a thread left out still has its name.
+  const all = await listChannels(exp.id);
+  const channels = all.filter((c) => kinds.includes(c.kind));
+  const channelMap = new Map(all.map((c) => [String(c.channel), c]));
   const parents = new Map<bigint, Awaited<ReturnType<typeof parentOf>>>();
 
   const ctx: RenderContext = {
@@ -255,10 +268,13 @@ export const copyGame = async (
     previous: null,
   };
 
-  const channel = await channelOf(client, game, exp, guild, category, ctx);
+  const { channel, created } = await channelOf(client, game, exp, guild, category, ctx);
   const webhook = await webhookOf(client, exp, channel);
 
-  const progress: CopyProgress = { copied: await countCopied(exp.id), messages: exp.messages };
+  const progress: CopyProgress = {
+    copied: await countCopied(exp.id),
+    messages: await countMessagesOfKinds(exp.id, kinds),
+  };
   await report(progress);
 
   // Threads first, so a mention of one can point at it from the start.
@@ -300,6 +316,7 @@ export const copyGame = async (
     }
   }
 
-  await channel.setPosition(0).catch(() => undefined);
+  // A new channel goes to the top; one revisited for its private threads stays where the reflow put it.
+  if (created) await channel.setPosition(0).catch(() => undefined);
   await updateExport(exp.id, { state: 'copied', copied: progress.copied, finishedAt: new Date(), error: null });
 };

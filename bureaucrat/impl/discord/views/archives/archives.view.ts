@@ -12,6 +12,10 @@ import {
   v2,
 } from '../../../../engine/discord/elements';
 import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../drizzle/guild-settings';
+import { toast } from '../../../../engine/discord/reply';
+import { accent } from '../../../../engine/discord/elements';
+import { requeueForPrivate } from '../../games/offsite/start';
+import { S } from '../../../../strings';
 import { Permissions } from '../../../acl/permissions';
 import { can, inGuild } from '../../guards';
 
@@ -32,7 +36,12 @@ export default createView<ArchivesState>()({
   events: {},
   defaultState: {},
   subscribesTo: {},
-  guards: { '*': [inGuild], default: [can(Permissions.Server.Manage)], auto: [can(Permissions.Server.Manage)] },
+  guards: {
+    '*': [inGuild],
+    default: [can(Permissions.Server.Manage)],
+    auto: [can(Permissions.Server.Manage)],
+    private: [can(Permissions.Server.Manage)],
+  },
 
   render: async (view) => {
     const settings = await getOrCreateGuildSettings(BigInt(view.entityId!));
@@ -58,7 +67,9 @@ export default createView<ArchivesState>()({
         separator(),
         text(
           'A server named by `/archives offsite config` can take a copy of every game as it ends, ' +
-            'or only when `/game offsite` or `/archives offsite sync` asks.\n' +
+            'or only when `/game offsite` or `/archives offsite sync` asks. Private threads (whispers, ' +
+            "the Storyteller's, kibitz) are left out of the copy unless turned on; turning them on sends " +
+            'every finished copy back for them.\n' +
             (settings.offsiteGuild === null
               ? '-# No archive server yet.'
               : `-# Archive server: ${settings.offsiteGuild}`),
@@ -68,6 +79,11 @@ export default createView<ArchivesState>()({
             view.customId('auto'),
             `Offsite copy · ${settings.offsiteAuto ? 'as games end' : 'on request'}`,
             settings.offsiteAuto ? ButtonStyle.Success : ButtonStyle.Secondary,
+          ),
+          button(
+            view.customId('private'),
+            `Private threads · ${settings.offsitePrivate ? 'copied' : 'left out'}`,
+            settings.offsitePrivate ? ButtonStyle.Success : ButtonStyle.Secondary,
           ),
         ),
         separator(),
@@ -97,6 +113,24 @@ export default createView<ArchivesState>()({
 
       const settings = await getOrCreateGuildSettings(BigInt(interaction.guildId!));
       await updateGuildSettings(BigInt(interaction.guildId!), { offsiteAuto: !settings.offsiteAuto });
+      return { action: 'render' };
+    },
+
+    // Turning private threads on owes every finished copy its missing
+    // threads, so they go back on the queue here and now; off leaves what
+    // was copied where it is.
+    private: async (interaction, ctx) => {
+      await interaction.deferUpdate();
+      if (ctx.view.entityId !== interaction.guildId) return { action: 'render' };
+
+      const guild = BigInt(interaction.guildId!);
+      const settings = await getOrCreateGuildSettings(guild);
+      const on = !settings.offsitePrivate;
+      await updateGuildSettings(guild, { offsitePrivate: on });
+      if (on) {
+        const queued = await requeueForPrivate(interaction.client, guild);
+        await toast.followUp(interaction, S.offsite.privateQueued(queued), { accent: accent.success });
+      }
       return { action: 'render' };
     },
   },

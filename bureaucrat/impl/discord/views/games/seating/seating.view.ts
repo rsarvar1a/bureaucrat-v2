@@ -31,6 +31,7 @@ import { matchLiveSeats, parseLiveGameState, rememberedMatch } from '../../../ga
 import { applyLiveState } from '../../../games/live-seating';
 import { moveSeat, swapSeats, type LifeState } from '../../../games/seating';
 import { addEmptySeat, associate, reorder, seatPlayers, seatUnseated, setSeat, unseat } from '../../../games/seats';
+import { ensureStThreads, ensureStThreadsIfRunning } from '../../../games/st-threads';
 import { isPublished } from '../../../games/published';
 import { isJsonUpload } from '../../../games/script/parse';
 import { JSON_LIMIT, refusal } from '../../../games/script/upload';
@@ -148,6 +149,7 @@ const liveForm = modal<SeatingState>()({
     const kept = rememberedMatch(parsed.seats, settings.liveSeatMap, new Set(players.map((p) => p.id)));
     if (kept) {
       const written = await applyLiveState(game.id, parsed.seats, kept);
+      await ensureStThreadsIfRunning(interaction.client, game);
       if (written > 0) await ctx.notify(GameEvents.Changed);
       await toast.ephemeral(interaction, S.games.liveApplied(written), { accent: accent.success });
       return;
@@ -352,6 +354,10 @@ export default createView<SeatingState>()({
             button(view.customId('roles'), 'Set roles', ButtonStyle.Primary),
             button(view.customId('nickname'), 'Set nickname', ButtonStyle.Secondary),
             button(view.customId('associate'), 'Set player', ButtonStyle.Secondary),
+            // Mid-game, a seat added before this existed may have no thread; this makes any missing.
+            ...(game.state === 'running'
+              ? [button(view.customId('st-thread'), 'ST thread', ButtonStyle.Secondary)]
+              : []),
           ),
           // Where the seat is: the movement cursor, and Remove.
           buttonRow(
@@ -398,7 +404,10 @@ export default createView<SeatingState>()({
     'seat-all': async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
       await interaction.deferUpdate();
-      if ((await seatUnseated(ctx.view.entityId!)) > 0) await ctx.notify(GameEvents.Changed);
+      if ((await seatUnseated(ctx.view.entityId!)) > 0) {
+        await ensureStThreadsIfRunning(interaction.client, await getGame(ctx.view.entityId!));
+        await ctx.notify(GameEvents.Changed);
+      }
       return { action: 'render' };
     },
 
@@ -408,7 +417,21 @@ export default createView<SeatingState>()({
       if (!interaction.isMessageComponent()) return;
       await interaction.deferUpdate();
       await addEmptySeat(ctx.view.entityId!);
+      await ensureStThreadsIfRunning(interaction.client, await getGame(ctx.view.entityId!));
       await ctx.notify(GameEvents.Changed);
+      return { action: 'render' };
+    },
+
+    'st-thread': async (interaction, ctx) => {
+      if (!interaction.isMessageComponent()) return;
+      await interaction.deferUpdate();
+
+      const game = await getGame(ctx.view.entityId!);
+      if (!game || game.state !== 'running') return { action: 'render' };
+      const report = await ensureStThreads(interaction.client, game);
+      await toast.followUp(interaction, S.games.stThreadsProvided(report.created, report.failed), {
+        accent: report.failed.length > 0 ? accent.warning : accent.success,
+      });
       return { action: 'render' };
     },
 
@@ -430,7 +453,10 @@ export default createView<SeatingState>()({
       );
 
       await ctx.updateState({ mode: null });
-      if (seated > 0) await ctx.notify(GameEvents.Changed);
+      if (seated > 0) {
+        await ensureStThreadsIfRunning(interaction.client, await getGame(ctx.view.entityId!));
+        await ctx.notify(GameEvents.Changed);
+      }
 
       return { action: 'render' };
     },
@@ -509,7 +535,10 @@ export default createView<SeatingState>()({
       const picked = interaction.values[0];
       if (seat && picked) {
         const result = await associate(interaction.client, seat.seat.id, picked);
-        if (result.ok) await ctx.notify(GameEvents.Changed);
+        if (result.ok) {
+          await ensureStThreadsIfRunning(interaction.client, await getGame(ctx.view.entityId!));
+          await ctx.notify(GameEvents.Changed);
+        }
       }
 
       await ctx.updateState({ mode: null });

@@ -32,3 +32,7 @@ export const synced = (tally: { started: number; adopted: number; copied: number
   if (tally.skipped > 0) parts.push(`${tally.skipped} skipped (running, unfinished, or another server's)`);
   return `Archive sync: ${parts.join(', ')}. The archive server is reflowed once the queue drains.`;
 };
+export const privateQueued = (count: number): string =>
+  count === 0
+    ? 'Private threads will be copied from now on. No finished copy is missing any.'
+    : `Private threads will be copied from now on; ${count} finished cop${count === 1 ? 'y is' : 'ies are'} queued for theirs.`;

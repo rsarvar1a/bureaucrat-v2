@@ -16,3 +16,8 @@ export const liveApplied = (n: number) =>
     ? 'No seat was matched to a player, so nothing changed.'
     : `Copied ${n} ${n === 1 ? 'seat' : 'seats'} from the grimoire.`;
 export const liveNothingMatched = 'Match at least one seat to a player.';
+export const stThreadsProvided = (created: number, failed: string[]): string =>
+  [
+    created === 0 ? 'Every seat already has its ST thread.' : `Opened ${created} ST thread${created === 1 ? '' : 's'}.`,
+    ...(failed.length > 0 ? [`Could not open one for: ${failed.join(', ')}.`] : []),
+  ].join(' ');

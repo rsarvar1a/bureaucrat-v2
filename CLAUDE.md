@@ -86,7 +86,10 @@ and says which are missing. The copy is a background job driven from `GameExport
 how many run at once, each through its own webhook and so its own rate limit. `/archives offsite copy` copies the
 channel it is run in, adopting one the record does not know (an older bot's game) as a bare ended
 game first (`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
-(`GuildSettings.offsiteAuto`, acted on at the end of `endGame`). `/archives offsite sync` queues
+(`GuildSettings.offsiteAuto`, acted on at the end of `endGame`) and whether private threads go into
+the copy (`offsitePrivate`, off by default: the reader always reads them, the writer leaves them
+unmarked, and turning the setting on or a later sync sends finished copies back for just those).
+`/archives offsite sync` queues
 every channel across the server's archives that the archive server lacks and flags a reflow, which
 the offsite engine performs once its queue drains (`GuildSettings.offsiteReflowPending`).
 

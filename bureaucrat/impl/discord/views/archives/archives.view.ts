@@ -55,24 +55,14 @@ export default createView<ArchivesState>()({
     return v2(
       linear(
         text('### Archives'),
-        text(
-          'Once a game has ended, `/game archive` moves its channel to the top of an archive category: ' +
-            "the queue's own if it names one, otherwise this default. A full category rolls over: " +
-            '**Archives** becomes **Archives 1**, **Archives 2** goes above it and takes over here. ' +
-            '`/archives reflow` puts every archived game in date order across the chain.\n' +
-            (settings.archive === null ? '-# No default archive yet.' : `-# Default archive: <#${settings.archive}>`),
-        ),
+        text(settings.archive === null ? 'No archive yet.' : `The archive is <#${settings.archive}>.`),
         separator(),
         channelSelectRow(menu),
         separator(),
         text(
-          'A server named by `/archives offsite config` can take a copy of every game as it ends, ' +
-            'or only when `/game offsite` or `/archives offsite sync` asks. Private threads (whispers, ' +
-            "the Storyteller's, kibitz) are left out of the copy unless turned on; turning them on sends " +
-            'every finished copy back for them.\n' +
-            (settings.offsiteGuild === null
-              ? '-# No archive server yet.'
-              : `-# Archive server: ${settings.offsiteGuild}`),
+          settings.offsiteGuild === null
+            ? 'No archive server yet.'
+            : `The off-server archive (id) is ${settings.offsiteGuild}`,
         ),
         buttonRow(
           button(

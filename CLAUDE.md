@@ -90,9 +90,15 @@ category; the pane checks and says which are missing. The copy is a background j
 `GameExport` rows, one per game and destination (null for the read-only `/game export`), so a
 restart resumes it and a game promoted into a second mapped family gets a second copy; that
 export clones the first one's read in the database rather than reading Discord again.
-`OFFSITE_CONCURRENCY` (default 4) says how many run at once, each through its own webhook and so
-its own rate limit, never two of one game; the database pool (`DATABASE_POOL_SIZE`, else sized from
-the concurrency in `utilities/pool.ts`) follows it. `/archives offsite copy` copies the channel it is run
+Reading and copying have separate slots (`offsite/schedule.ts`): `OFFSITE_READERS` (default 4),
+since reading spends the bot's own request budget, and `OFFSITE_WRITERS` (else the older
+`OFFSITE_CONCURRENCY`, else 4), since each copy writes through its own webhook. Never two jobs of one
+game run at once. Discord lets a server gain only so many threads at a time (about twenty in five
+minutes); a copy that meets the limit fills and closes the threads it has, then is deferred
+(`offsite/gate.ts`, `GameExport.notBefore`) and gives its slot back, so waiting writers never starve
+the rest. The rejection is scoped to that one call (`rest/reject.ts`): everything else still waits a
+limit out. The database pool (`DATABASE_POOL_SIZE`, else sized from both in `utilities/pool.ts`)
+follows them. `/archives offsite copy` copies the channel it is run
 in, adopting one the record does not know (an older bot's game) as a bare ended game first
 (`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
 (`GuildSettings.offsiteAuto`, acted on at the end of `endGame`) and whether private threads go into

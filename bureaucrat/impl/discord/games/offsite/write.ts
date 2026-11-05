@@ -36,6 +36,7 @@ import { listSeating } from '../../../../drizzle/seating';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
 import { fault, swallow } from '../../errors/record';
+import { Deferred, threadGate } from './gate';
 import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
 import { ALIGNMENT_LABEL } from '../script/alignment';
@@ -191,12 +192,15 @@ const bornAt = (row: ExportChannelRow): number => SnowflakeUtil.timestampFrom(St
  */
 const threadOf = async (channel: TextChannel, row: ExportChannelRow, inSequence: boolean): Promise<bigint> => {
   if (row.copiedTo !== null) return row.copiedTo;
-  const thread = await channel.threads.create({
-    name: (row.kind === 'private' ? `🔒 ${row.name}` : row.name).slice(0, 100),
-    type: ChannelType.PublicThread,
-    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-    reason: 'Offsite archive',
-  });
+  // Through the gate: Discord's thread limit defers the copy rather than holding its slot (`gate.ts`).
+  const thread = await threadGate.create(channel.guild.id, () =>
+    channel.threads.create({
+      name: (row.kind === 'private' ? `🔒 ${row.name}` : row.name).slice(0, 100),
+      type: ChannelType.PublicThread,
+      autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+      reason: 'Offsite archive',
+    }),
+  );
   await updateChannel(row.id, { copiedTo: BigInt(thread.id) });
   if (inSequence) return BigInt(thread.id);
   const recent = await channel.messages
@@ -272,7 +276,10 @@ const send = async (
  * as it lands so a restart carries on at the first gap. A public thread per
  * source thread opens among the channel's messages when it began, and is
  * filled once the channel is done. Every thread's copy is archived at the end, whatever it
- * was in the source: an archive has nothing live.
+ * was in the source: an archive has nothing live. Discord lets a server gain
+ * only so many threads at a time; meeting that limit fills and closes the
+ * threads already made and then throws `Deferred`, and the engine claims the
+ * copy again when the window opens, carrying on from the first gap.
  *
  * Private threads (whispers, the Storyteller's, kibitz) go only where the
  * server has said so (`offsitePrivate`); left out, nothing of theirs is
@@ -375,8 +382,21 @@ export const copyGame = async (
   // The channel first, opening threads as it goes; then any begun after its
   // last message; then what the threads hold, every one of them open by now
   // so a mention of one in another can point at it.
-  if (main) await copyRow(main);
-  await openBefore(Infinity);
+  try {
+    if (main) await copyRow(main);
+    await openBefore(Infinity);
+  } catch (error) {
+    if (!(error instanceof Deferred)) throw error;
+    // Discord's thread window is shut. Before giving the slot back, fill and
+    // close the threads already made, so the wait costs nothing it need not;
+    // a mention in them of a thread not yet made keeps its name, not a link.
+    for (const row of threads) {
+      if (row.copiedTo === null) continue;
+      await copyRow(row);
+      await archiveCopy(client, row);
+    }
+    throw error;
+  }
   for (const row of threads) await copyRow(row);
 
   // Sending to an archived thread opens it again, so every copy is closed once all are written.

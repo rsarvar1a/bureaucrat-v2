@@ -2,7 +2,6 @@ import type { Client } from 'discord.js';
 import { notifyContexts } from '../../../../engine/discord/views/notify';
 import {
   cloneRead,
-  getExport,
   listChannels,
   listClaimableExports,
   readSiblingOf,
@@ -10,14 +9,17 @@ import {
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
 import { getGame } from '../../../../drizzle/games';
+import type { Game } from '../../../../schema/core/games.sql';
 import { listDestinationsAwaitingReflow, updateDestination } from '../../../../drizzle/offsite';
 import { logger } from '../../../../utilities/logger';
 import { offsiteEvents } from '../../views/games/offsite/events';
 import { reflowChain } from '../archives/categories';
 import { stampByName } from '../archives/stamps';
 import { readGame } from './read';
+import { Deferred } from './gate';
+import { schedule, type Phase, type Running } from './schedule';
 import { copyGame, destinationOf } from './write';
-import { offsiteConcurrency } from '../../../../utilities/pool';
+import { offsiteReaders, offsiteWriters } from '../../../../utilities/pool';
 import { fault, faultScope, swallow } from '../../errors/record';
 
 /** How often unfinished exports are looked for. */
@@ -26,9 +28,10 @@ export const TICK_MS = 15_000;
 /** The card is redrawn at most this often while a job runs; the final state always gets through. */
 const REPORT_MS = 5_000;
 
-const running = new Set<string>();
-/** Games with an export running: a second export of one waits, so it can clone the first's read. */
-const busyGames = new Set<string>();
+/** Exports running now, by id, with their phase and game (see `schedule.ts`). */
+const running = new Map<string, Running>();
+
+type GameRow = typeof Game.$inferSelect;
 
 const publish = async (client: Client, gameId: string): Promise<void> => {
   const { viewDefinitions } = await import('../../registry/views');
@@ -50,39 +53,51 @@ const reporter = (client: Client, exp: GameExportRow) => {
   };
 };
 
-/** One export, run as far as it goes: reading, then copying if it was asked to. */
-const run = async (client: Client, first: GameExportRow): Promise<void> => {
-  const game = await getGame(first.game);
+/** The read: cloned from a sibling export already read for another destination, else from Discord. */
+const read = async (
+  client: Client,
+  game: GameRow,
+  exp: GameExportRow,
+  report: ReturnType<typeof reporter>,
+): Promise<void> => {
+  if ((await listChannels(exp.id)).length === 0) {
+    const sibling = await readSiblingOf(exp);
+    if (sibling) {
+      await cloneRead(sibling, exp);
+      return;
+    }
+  }
+  await readGame(client, game, exp, (p) => report({ channels: p.channels, messages: p.messages, unread: p.unread }));
+};
+
+/**
+ * One phase of one export: its read, or its copy. A read that ends in
+ * `copying` goes back to the queue for a writer's slot. A copy that meets
+ * Discord's thread limit is deferred, not failed: it keeps everything it
+ * did and is claimed again once the window opens.
+ */
+const run = async (client: Client, exp: GameExportRow): Promise<void> => {
+  const game = await getGame(exp.game);
   if (!game) {
-    await updateExport(first.id, { state: 'failed', error: 'The game is gone.' });
+    await updateExport(exp.id, { state: 'failed', error: 'The game is gone.' });
     return;
   }
-  const report = reporter(client, first);
+  const report = reporter(client, exp);
 
   try {
-    let exp: GameExportRow | undefined = first;
-    // A game already read for another destination is cloned, not read from Discord again.
-    if (exp.state === 'reading' && (await listChannels(exp.id)).length === 0) {
-      const sibling = await readSiblingOf(exp);
-      if (sibling) {
-        await cloneRead(sibling, exp);
-        exp = await getExport(exp.id);
-      }
-    }
-    if (exp?.state === 'reading') {
-      await readGame(client, game, exp, (p) =>
-        report({ channels: p.channels, messages: p.messages, unread: p.unread }),
-      );
-      exp = await getExport(exp.id);
-    }
-    if (exp?.state === 'copying') {
-      await copyGame(client, game, exp, (p) => report({ copied: p.copied, messages: p.messages }));
-    }
+    if (exp.notBefore !== null) await updateExport(exp.id, { notBefore: null });
+    if (exp.state === 'reading') await read(client, game, exp, report);
+    else await copyGame(client, game, exp, (p) => report({ copied: p.copied, messages: p.messages }));
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    logger.error({ message: `Offsite archive of game ${game.id} failed: ${message}`, error });
-    fault('export', 'failed', error, { detail: { state: first.state } });
-    await updateExport(first.id, { state: 'failed', error: message.slice(0, 500) });
+    if (error instanceof Deferred) {
+      logger.debug({ message: `Offsite copy of game ${game.id} deferred until ${error.until.toISOString()}.` });
+      await updateExport(exp.id, { notBefore: error.until });
+    } else {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error({ message: `Offsite archive of game ${game.id} failed: ${message}`, error });
+      fault('export', 'failed', error, { detail: { state: exp.state } });
+      await updateExport(exp.id, { state: 'failed', error: message.slice(0, 500) });
+    }
   }
   await publish(client, game.id).catch(swallow('card.publish', 'ignored', undefined));
 };
@@ -114,38 +129,26 @@ const reflowOwed = async (client: Client): Promise<void> => {
   }
 };
 
-/**
- * How many exports run at once. Each game writes through its own webhook,
- * and Discord's webhook limit is per webhook, so jobs do not slow each
- * other down until the global ceiling (about fifty requests a second, of
- * which one copy uses a twentieth). Copies into one destination meet only
- * at its chain's lock (`placeInChain`). Four is the default
- * (`utilities/pool.ts`); the environment overrides it.
- */
-export const CONCURRENCY = offsiteConcurrency();
+/** Slots per phase (`utilities/pool.ts`): a few readers fill the bot's request budget; writers can run high. */
+export const SLOTS: Record<Phase, number> = { reading: offsiteReaders(), copying: offsiteWriters() };
 
 /**
- * Claims exports up to the cap and runs each in the background; a running
- * job's row is still in a claimable state, so the queue counts as drained
- * only when nothing at all is left to claim.
+ * Starts what `schedule` picks and runs each in the background. A running
+ * or deferred job's row is still unfinished, so the queue counts as drained
+ * only when nothing at all is left, deferred copies included.
  */
 export const tickOffsite = async (client: Client): Promise<void> => {
-  const claimable = await listClaimableExports();
-  if (claimable.length === 0) {
+  const unfinished = await listClaimableExports();
+  if (unfinished.length === 0) {
     await reflowOwed(client);
     return;
   }
 
-  const open = CONCURRENCY - running.size;
-  if (open <= 0) return;
-
-  let started = 0;
-  for (const exp of claimable) {
-    if (started >= open) break;
-    if (running.has(exp.id) || busyGames.has(exp.game)) continue;
-    running.add(exp.id);
-    busyGames.add(exp.game);
-    started += 1;
+  const claimable = unfinished.filter(
+    (exp): exp is GameExportRow & { state: Phase } => exp.state === 'reading' || exp.state === 'copying',
+  );
+  for (const exp of schedule(claimable, running, SLOTS, new Date())) {
+    running.set(exp.id, { phase: exp.state, game: exp.game });
     void faultScope({ area: 'offsite', game: exp.game, export: exp.id }, () => run(client, exp))
       .catch((error: unknown) => {
         logger.error({ message: `Offsite export ${exp.id} crashed.`, error });
@@ -153,17 +156,37 @@ export const tickOffsite = async (client: Client): Promise<void> => {
       })
       .finally(() => {
         running.delete(exp.id);
-        busyGames.delete(exp.game);
+        // A freed slot, or a read handing over to a writer, need not wait for the next tick.
+        kick();
       });
   }
 };
 
+let kick: () => void = () => undefined;
+
 export const startOffsiteEngine = (client: Client): ReturnType<typeof setInterval> => {
-  const tick = () =>
-    faultScope({ area: 'offsite' }, () => tickOffsite(client)).catch((error: unknown) => {
-      logger.error({ message: 'Offsite tick failed.', error });
-      fault('tick', 'failed', error, { area: 'offsite' });
-    });
-  void tick();
-  return setInterval(tick, TICK_MS);
+  // Ticks never overlap: one asked for during a tick runs straight after it.
+  let ticking = false;
+  let again = false;
+  const tick = async (): Promise<void> => {
+    if (ticking) {
+      again = true;
+      return;
+    }
+    ticking = true;
+    try {
+      do {
+        again = false;
+        await faultScope({ area: 'offsite' }, () => tickOffsite(client)).catch((error: unknown) => {
+          logger.error({ message: 'Offsite tick failed.', error });
+          fault('tick', 'failed', error, { area: 'offsite' });
+        });
+      } while (again);
+    } finally {
+      ticking = false;
+    }
+  };
+  kick = () => void tick();
+  kick();
+  return setInterval(kick, TICK_MS);
 };

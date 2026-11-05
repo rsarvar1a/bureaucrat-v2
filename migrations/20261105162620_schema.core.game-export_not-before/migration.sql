@@ -1,0 +1,1 @@
+ALTER TABLE "core"."GameExport" ADD COLUMN "notBefore" timestamp;

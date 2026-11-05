@@ -64,7 +64,12 @@ export const startExport = async (
     }
     // Failed: back to whichever stage it was in.
     const stage = await stageOf(existing);
-    const exp = await updateExport(existing.id, { state: stage, copy: existing.copy || options.copy, error: null });
+    const exp = await updateExport(existing.id, {
+      state: stage,
+      copy: existing.copy || options.copy,
+      error: null,
+      notBefore: null,
+    });
     return { ok: true, exp: exp! };
   }
 
@@ -89,7 +94,7 @@ export const stageOf = async (exp: GameExportRow): Promise<'reading' | 'copying'
 /** Retry from the card: the same as starting again, without the fresh option. */
 export const retryExport = async (exp: GameExportRow): Promise<GameExportRow | undefined> => {
   if (exp.state !== 'failed') return exp;
-  return updateExport(exp.id, { state: await stageOf(exp), error: null });
+  return updateExport(exp.id, { state: await stageOf(exp), error: null, notBefore: null });
 };
 
 /**

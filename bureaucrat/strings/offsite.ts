@@ -5,6 +5,9 @@ export const read = (messages: number, channels: number): string =>
   `Read: ${messages.toLocaleString('en')} messages in ${channels} channel${channels === 1 ? '' : 's'}. Run \`/game offsite\` to copy them.`;
 export const copying = (copied: number, messages: number): string =>
   `Copying… ${copied.toLocaleString('en')} of ${messages.toLocaleString('en')} messages.`;
+/** A copy deferred by Discord's thread limit (`games/offsite/gate.ts`). */
+export const paused = (until: Date): string =>
+  `-# Paused for Discord's thread limit; carries on <t:${Math.ceil(until.getTime() / 1000)}:R>.`;
 export const copied = (channel: bigint, messages: number): string =>
   `Copied ${messages.toLocaleString('en')} messages to <#${channel}>.`;
 export const failed = (error: string): string => `**Stopped:** ${error}`;

@@ -61,6 +61,10 @@ is down for the build's length; a failed build starts it again as it was). `depl
 deploys the checkout as it stands, which is how a rollback goes: `git checkout <commit>` and then
 `bureaucratctl deploy --no-pull`, and `git switch main` before the next ordinary deploy.
 
+From a local checkout, `bun prodsql < queries/offsite-phases.sql` runs a query file against
+production over SSH, through `bureaucratctl psql` on the box (`ctl/prodsql`; no tunnel or password,
+a 30-second statement timeout, stops at the first error). `bun prodsql` alone opens psql there.
+
 ## Migrations
 
 Schema files live in `bureaucrat/schema/**/*.sql.ts`.

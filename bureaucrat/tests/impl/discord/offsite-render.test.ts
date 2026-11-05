@@ -61,6 +61,12 @@ test('a webhook name is bounded and never the forbidden words', () => {
   expect(webhookName('Discord Clyde')).toBe('d1scord c1yde');
   expect(webhookName('')).toBe('unknown');
   expect(webhookName('x'.repeat(100))).toHaveLength(80);
+  // A name that shows nothing falls back: display name, then username, then id.
+  expect(webhookName('\u17B5', 'alice', '123')).toBe('alice');
+  expect(webhookName('\u200B\u3164 ', '\u2800', '123')).toBe('123');
+  expect(webhookName(undefined, undefined)).toBe('unknown');
+  // A visible name with joiners inside is kept whole.
+  expect(webhookName('👩\u200D💻 Bea', 'bea')).toBe('👩\u200D💻 Bea');
 });
 
 test('mentions become names, a copied thread a live mention, the rest left alone', () => {

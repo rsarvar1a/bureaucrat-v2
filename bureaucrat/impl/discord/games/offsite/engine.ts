@@ -11,6 +11,7 @@ import {
 import { getGame } from '../../../../drizzle/games';
 import type { Game } from '../../../../schema/core/games.sql';
 import { listDestinationsAwaitingReflow, updateDestination } from '../../../../drizzle/offsite';
+import { S } from '../../../../strings';
 import { logger } from '../../../../utilities/logger';
 import { offsiteEvents } from '../../views/games/offsite/events';
 import { reflowChain } from '../archives/categories';
@@ -20,6 +21,7 @@ import { Deferred } from './gate';
 import { schedule, type Phase, type Running } from './schedule';
 import { copyGame, destinationOf } from './write';
 import { offsiteReaders, offsiteWriters } from '../../../../utilities/pool';
+import { classify, isTransient } from '../../errors/classify';
 import { fault, faultScope, swallow } from '../../errors/record';
 
 /** How often unfinished exports are looked for. */
@@ -93,10 +95,12 @@ const run = async (client: Client, exp: GameExportRow): Promise<void> => {
       logger.debug({ message: `Offsite copy of game ${game.id} deferred until ${error.until.toISOString()}.` });
       await updateExport(exp.id, { notBefore: error.until });
     } else {
-      const message = error instanceof Error ? error.message : String(error);
+      // The classified message: a query wrapper's own quotes the statement's parameters.
+      const { message } = classify(error);
+      const stopped = isTransient(error) ? S.errors.offsiteTransient(message) : message;
       logger.error({ message: `Offsite archive of game ${game.id} failed: ${message}`, error });
-      fault('export', 'failed', error, { detail: { state: exp.state } });
-      await updateExport(exp.id, { state: 'failed', error: message.slice(0, 500) });
+      fault('export', 'failed', error, { detail: { state: exp.state, transient: isTransient(error) } });
+      await updateExport(exp.id, { state: 'failed', error: stopped.slice(0, 500) });
     }
   }
   await publish(client, game.id).catch(swallow('card.publish', 'ignored', undefined));

@@ -38,14 +38,34 @@ export const CHUNK = 2000;
 
 const unix = (date: Date) => Math.floor(date.getTime() / 1000);
 
-/** A webhook username: 1 to 80 characters, and never the two words Discord refuses. */
-export const webhookName = (name: string): string => {
-  const cleaned = name
-    .replace(/discord/gi, 'd1scord')
-    .replace(/clyde/gi, 'c1yde')
-    .trim()
-    .slice(0, 80);
-  return cleaned || 'unknown';
+/**
+ * Characters that take up no visible space: whitespace, format characters
+ * (zero-width spaces and joiners), and the fillers people use for a blank
+ * name (Hangul fillers, the braille blank, the Khmer inherent vowels). Discord
+ * refuses a webhook name made only of these.
+ */
+// The Khmer vowels combine, so they sit outside the class.
+const INVISIBLE = /[\s\p{Cf}\u115F\u1160\u2800\u3164\uFFA0]|\u17B4|\u17B5/gu;
+
+const visible = (name: string): boolean => name.replace(INVISIBLE, '').length > 0;
+
+/**
+ * A webhook username: the first of the candidates (a display name, then a
+ * username, then an id) that shows anything, 1 to 80 characters, never the
+ * two words Discord refuses. The name itself is kept as it is, so an emoji
+ * built with joiners survives.
+ */
+export const webhookName = (...candidates: (string | null | undefined)[]): string => {
+  for (const candidate of candidates) {
+    if (!candidate || !visible(candidate)) continue;
+    const cleaned = candidate
+      .replace(/discord/gi, 'd1scord')
+      .replace(/clyde/gi, 'c1yde')
+      .trim()
+      .slice(0, 80);
+    if (visible(cleaned)) return cleaned;
+  }
+  return 'unknown';
 };
 
 const firstLine = (text: string): string => text.split('\n').find((line) => line.trim()) ?? '';
@@ -150,7 +170,7 @@ const isSameDay = (a: Date, b: Date) =>
  */
 export const renderMessage = (row: ExportMessageRow, ctx: RenderContext): Rendered => {
   const author = ctx.members.get(String(row.author));
-  const username = webhookName(author?.displayName ?? String(row.author));
+  const username = webhookName(author?.displayName, author?.username, String(row.author));
   const avatarURL = author?.avatar ?? null;
   const none: Rendered = { username, avatarURL, chunks: [], files: [], embeds: [], pin: false, skip: true };
 

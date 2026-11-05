@@ -35,6 +35,7 @@
     "check": "bunx tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "prodsql": "bash ctl/prodsql",
     "docker": "bun --watch run docker/entrypoint.ts",
     "dev": "bun run index.ts",
     "dev:watch": "bun --watch run index.ts",

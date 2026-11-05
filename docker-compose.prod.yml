@@ -53,13 +53,15 @@ services:
 
   postgres:
     # Published on the host's loopback only, never a public interface: an
-    # SSH tunnel (`ssh -L 5433:localhost:5432 <host>`) is how a database tool
+    # SSH tunnel (`ssh -L 5433:localhost:15432 <host>`) is how a database tool
     # reaches it, so the boundary is still SSH access to the box. The address
     # matters: Docker's published ports bypass ufw/iptables rules, so a bare
     # `5432:5432` would be open to the internet whatever the firewall says.
+    # The host side is 15432, not 5432, so a Postgres installed on the host
+    # itself cannot hold the port and keep the database from starting.
     # `bureaucratctl psql` execs into the container and needs none of this.
     ports: !override
-      - '127.0.0.1:5432:5432'
+      - '127.0.0.1:15432:5432'
     logging: *logging
 
 volumes:

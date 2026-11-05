@@ -8,6 +8,8 @@ declare global {
       TEMPORARY_VIEW_TIMEOUT_MS?: string;
       OFFSITE_CONCURRENCY?: string;
       DATABASE_POOL_SIZE?: string;
+      OFFSITE_READERS?: string;
+      OFFSITE_WRITERS?: string;
       LOG_LEVEL?: string;
     }
   }

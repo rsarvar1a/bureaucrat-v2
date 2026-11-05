@@ -26,6 +26,8 @@ export const GameExport = core.table(
     error: text(),
     startedAt: timestamp(),
     finishedAt: timestamp(),
+    // A copy deferred by Discord's thread limit is not claimed again before this.
+    notBefore: timestamp(),
     ...timestamps(),
   },
   (table) => [unique().on(table.game, table.destination).nullsNotDistinct()],

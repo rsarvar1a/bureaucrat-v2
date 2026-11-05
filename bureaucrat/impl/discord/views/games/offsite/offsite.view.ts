@@ -21,7 +21,8 @@ const stateLine = (exp: GameExportRow): string =>
     : exp.state === 'read'
       ? S.offsite.read(exp.messages, exp.channels)
       : exp.state === 'copying'
-        ? S.offsite.copying(exp.copied, exp.messages)
+        ? S.offsite.copying(exp.copied, exp.messages) +
+          (exp.notBefore && exp.notBefore > new Date() ? `\n${S.offsite.paused(exp.notBefore)}` : '')
         : exp.state === 'copied'
           ? S.offsite.copied(exp.channel!, exp.copied)
           : S.offsite.failed(exp.error ?? 'unknown error');

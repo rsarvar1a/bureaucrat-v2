@@ -17,6 +17,7 @@ import { reflowChain } from '../archives/categories';
 import { stampByName } from '../archives/stamps';
 import { readGame } from './read';
 import { copyGame, destinationOf } from './write';
+import { offsiteConcurrency } from '../../../../utilities/pool';
 
 /** How often unfinished exports are looked for. */
 export const TICK_MS = 15_000;
@@ -111,10 +112,11 @@ const reflowOwed = async (client: Client): Promise<void> => {
  * How many exports run at once. Each game writes through its own webhook,
  * and Discord's webhook limit is per webhook, so jobs do not slow each
  * other down until the global ceiling (about fifty requests a second, of
- * which one copy uses a twentieth). Four is a comfortable default; the
- * environment overrides it.
+ * which one copy uses a twentieth). Copies into one destination meet only
+ * at its chain's lock (`placeInChain`). Four is the default
+ * (`utilities/pool.ts`); the environment overrides it.
  */
-export const CONCURRENCY = Math.max(1, Math.floor(Number(process.env.OFFSITE_CONCURRENCY)) || 4);
+export const CONCURRENCY = offsiteConcurrency();
 
 /**
  * Claims exports up to the cap and runs each in the background; a running

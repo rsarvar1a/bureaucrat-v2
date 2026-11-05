@@ -3,7 +3,7 @@ import { getQueue, updateQueue } from '../../../drizzle/queues';
 import { getOrCreateGuildSettings, updateGuildSettings } from '../../../drizzle/guild-settings';
 import { logger } from '../../../utilities/logger';
 import type { Game } from '../../../schema/core/games.sql';
-import { chainOf, inChain, roomIn } from './archives/categories';
+import { chainOf, inChain, placeInChain } from './archives/categories';
 
 type GameRow = typeof Game.$inferSelect;
 
@@ -59,9 +59,11 @@ export const archiveGame = async (client: Client, game: GameRow): Promise<Archiv
     if (!chain) return { ok: false, reason: 'no-archive' };
     if (inChain(chain, channel)) return { ok: false, reason: 'already-archived' };
 
-    const room = await roomIn(channel.guild, chain, filing.category, filing.pivot);
-    const moved = await channel.setParent(room.category, { lockPermissions: true, reason: 'Game archived' });
-    await moved.setPosition(0, { reason: 'Game archived' });
+    const room = await placeInChain(channel.guild, filing.category, filing.pivot, async (category) => {
+      const moved = await channel.setParent(category, { lockPermissions: true, reason: 'Game archived' });
+      await moved.setPosition(0, { reason: 'Game archived' });
+    });
+    if (!room) return { ok: false, reason: 'no-archive' };
     return { ok: true, category: BigInt(room.category.id) };
   } catch (error) {
     logger.warn({ message: `Could not archive channel ${game.channel} of game ${game.id}.`, error });

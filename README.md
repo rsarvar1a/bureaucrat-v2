@@ -56,6 +56,11 @@ values), `psql` (a shell inside the database container), `dump` (the whole datab
 `backups/`) and `restore` (that file back in, the bot stopped meanwhile; a dump from another box
 moves a database wholesale). Migrations are applied by the bot itself on every start.
 
+`deploy --stop-first` stops the bot before building, so a busy bot gives the build the box (the bot
+is down for the build's length; a failed build starts it again as it was). `deploy --no-pull`
+deploys the checkout as it stands, which is how a rollback goes: `git checkout <commit>` and then
+`bureaucratctl deploy --no-pull`, and `git switch main` before the next ordinary deploy.
+
 ## Migrations
 
 Schema files live in `bureaucrat/schema/**/*.sql.ts`.

@@ -36,8 +36,9 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 The overlay drops the source bind-mount and watch mode (a deployed container runs what was built,
-not whatever is on disk at that instant), stops publishing Postgres to the host, and caps container
-logs. It also names every environment variable explicitly, because production has no mount and
+not whatever is on disk at that instant), publishes Postgres on the host's loopback only (reach it from a
+database tool through an SSH tunnel: `ssh -N -L 5433:localhost:5432 <host>`, then `localhost:5433`),
+and caps container logs. It also names every environment variable explicitly, because production has no mount and
 keeps `.env` out of the image, so a configuration change is an edit to the host's `.env` followed by
 `up`, which re-reads it.
 

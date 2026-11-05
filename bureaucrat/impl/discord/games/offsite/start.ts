@@ -6,7 +6,7 @@ import {
   getExportOfGame,
   insertExport,
   listChannels,
-  listCopiedExportsMissingPrivate,
+  listCopiedExportsOwedPrivate,
   updateExport,
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
@@ -96,6 +96,16 @@ export const autoExport = async (client: Client, game: GameRow): Promise<void> =
 };
 
 /**
+ * One finished copy back through the engine for its private threads: to
+ * the reader first if it never saw them all, which lists them again and
+ * reads only what is new, then to the copier, which sends only what is not
+ * yet copied.
+ */
+export const sendBackForPrivate = async (exp: GameExportRow): Promise<void> => {
+  await updateExport(exp.id, { state: exp.privateListed ? 'copying' : 'reading', copy: true, error: null });
+};
+
+/**
  * Sends a guild's finished copies back through the copier for the private
  * threads they left out, each with its card again. What a server does when
  * it turns private threads on; `/archives offsite sync` does the same for
@@ -103,8 +113,8 @@ export const autoExport = async (client: Client, game: GameRow): Promise<void> =
  */
 export const requeueForPrivate = async (client: Client, guild: bigint): Promise<number> => {
   let queued = 0;
-  for (const exp of await listCopiedExportsMissingPrivate(guild)) {
-    await updateExport(exp.id, { state: 'copying', copy: true, error: null });
+  for (const exp of await listCopiedExportsOwedPrivate(guild)) {
+    await sendBackForPrivate(exp);
     const game = await getGame(exp.game);
     if (game) await placeOffsiteCard(client, game);
     queued += 1;

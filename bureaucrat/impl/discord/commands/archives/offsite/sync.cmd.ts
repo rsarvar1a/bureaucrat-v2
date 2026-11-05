@@ -2,13 +2,13 @@ import { ChannelType, MessageFlags, SlashCommandSubcommandBuilder } from 'discor
 import { Superbuilder } from '../../../../../engine/discord/commands/builders/superbuilder';
 import { accent } from '../../../../../engine/discord/elements';
 import { toast } from '../../../../../engine/discord/reply';
-import { getExportOfGame, listCopiedExportsMissingPrivate, updateExport } from '../../../../../drizzle/game-exports';
+import { getExportOfGame, listCopiedExportsOwedPrivate } from '../../../../../drizzle/game-exports';
 import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../../drizzle/guild-settings';
 import { listQueueArchives } from '../../../../../drizzle/queues';
 import { actorOf } from '../../../access';
 import { chainOf } from '../../../games/archives/categories';
 import { gameOfChannel } from '../../../games/offsite/adopt';
-import { placeOffsiteCard, startExport } from '../../../games/offsite/start';
+import { placeOffsiteCard, sendBackForPrivate, startExport } from '../../../games/offsite/start';
 import { destinationOf } from '../../../games/offsite/write';
 import { S } from '../../../../../strings';
 
@@ -66,7 +66,7 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
 
     // A finished copy that left its private threads out is owed them once the server wants them.
     const owedPrivate = new Set(
-      settings.offsitePrivate ? (await listCopiedExportsMissingPrivate(guildId)).map((exp) => exp.id) : [],
+      settings.offsitePrivate ? (await listCopiedExportsOwedPrivate(guildId)).map((exp) => exp.id) : [],
     );
 
     const tally = { started: 0, adopted: 0, copied: 0, skipped: 0 };
@@ -82,7 +82,7 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
         continue;
       }
       if (exp?.state === 'copied') {
-        await updateExport(exp.id, { state: 'copying', copy: true, error: null });
+        await sendBackForPrivate(exp);
       } else {
         const result = await startExport(found.game, { copy: true, fresh: false });
         if (!result.ok) {

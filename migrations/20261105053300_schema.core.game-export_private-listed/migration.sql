@@ -1,0 +1,1 @@
+ALTER TABLE "core"."GameExport" ADD COLUMN "privateListed" boolean DEFAULT false NOT NULL;

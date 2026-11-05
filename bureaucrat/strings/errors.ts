@@ -202,7 +202,15 @@ export const noReveal = 'This game has no reveal yet.';
 export const badMark = 'A mark is a whole number from 1 to 5.';
 
 /** The offsite archive: the second server an ended game is copied into. */
-export const noOffsite = 'This server has no archive server set. A manager sets one with `/archives offsite config`.';
+export const noOffsite =
+  'This server has no off-server archive set. A manager maps its archives to one with `/archives offsite manage`.';
+export const notMapped =
+  'This archive is not mapped to an off-server archive. A manager maps it with `/archives offsite manage`.';
+export const offsiteNotManager = (guild: string): string =>
+  `You need Manage Server on **${guild}** to send this server's games there.`;
+export const familyMapped = 'That archive, or another category of its chain, is mapped already. Pick it to change it.';
+export const offsiteTargetBad =
+  'That server or category could not be found. Both are ids (Developer Mode, right-click, Copy ID), and the bot must be in the server.';
 export const copyNotAChannel = 'Run this in the text channel to copy, or in one of its threads.';
 export const offsiteSourceGone = "The game's channel could not be found.";
 export const offsiteNotReachable = (missing: string[]): string =>

@@ -3,7 +3,7 @@ import { listViews } from '../../../../engine/discord/views/query';
 import { closeWindow } from '../../../../engine/discord/views/windows';
 import {
   deleteExport,
-  getExportOfGame,
+  getExportOf,
   insertExport,
   listChannels,
   listCopiedExportsOwedPrivate,
@@ -15,6 +15,7 @@ import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
 import { spawnByRoute } from '../create';
+import { destinationForGame } from './mappings';
 
 type GameRow = typeof Game.$inferSelect;
 
@@ -35,12 +36,16 @@ export const placeOffsiteCard = async (client: Client, game: GameRow): Promise<v
 export type StartResult = { ok: true; exp: GameExportRow } | { ok: false; reason: 'running' | 'done' | 'nothing' };
 
 /**
- * Begins or resumes the game's export. `copy` says whether to carry on into
+ * Begins or resumes the game's export to one destination, or its read-only
+ * export when `destination` is null. `copy` says whether to carry on into
  * the archive server once read; `fresh` throws away a finished export and
  * starts over. An export in progress is left to the engine.
  */
-export const startExport = async (game: GameRow, options: { copy: boolean; fresh: boolean }): Promise<StartResult> => {
-  const existing = await getExportOfGame(game.id);
+export const startExport = async (
+  game: GameRow,
+  options: { copy: boolean; fresh: boolean; destination: string | null },
+): Promise<StartResult> => {
+  const existing = await getExportOf(game.id, options.destination);
 
   if (existing && (existing.state === 'reading' || existing.state === 'copying')) {
     return { ok: false, reason: 'running' };
@@ -60,7 +65,13 @@ export const startExport = async (game: GameRow, options: { copy: boolean; fresh
     return { ok: true, exp: exp! };
   }
 
-  const exp = await insertExport({ game: game.id, state: 'reading', copy: options.copy, startedAt: new Date() });
+  const exp = await insertExport({
+    game: game.id,
+    destination: options.destination,
+    state: 'reading',
+    copy: options.copy,
+    startedAt: new Date(),
+  });
   return { ok: true, exp };
 };
 
@@ -87,8 +98,10 @@ export const retryExport = async (exp: GameExportRow): Promise<GameExportRow | u
 export const autoExport = async (client: Client, game: GameRow): Promise<void> => {
   try {
     const settings = await getOrCreateGuildSettings(game.guild);
-    if (!settings.offsiteAuto || settings.offsiteGuild === null) return;
-    const result = await startExport(game, { copy: true, fresh: false });
+    if (!settings.offsiteAuto) return;
+    const destination = await destinationForGame(client, game);
+    if (!destination) return;
+    const result = await startExport(game, { copy: true, fresh: false, destination: destination.id });
     if (result.ok) await placeOffsiteCard(client, game);
   } catch (error) {
     logger.warn({ message: `Could not start the automatic offsite copy of game ${game.id}.`, error });

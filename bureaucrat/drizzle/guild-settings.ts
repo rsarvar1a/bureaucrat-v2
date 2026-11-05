@@ -22,7 +22,3 @@ export const updateGuildSettings = async (guild: bigint, patch: Partial<Omit<Ins
   const [row] = await db.update(GuildSettings).set(patch).where(eq(GuildSettings.guild, guild)).returning();
   return row!;
 };
-
-/** Guilds whose archive server is owed a reflow once the offsite queue is empty. */
-export const listGuildsAwaitingReflow = async () =>
-  db.select().from(GuildSettings).where(eq(GuildSettings.offsiteReflowPending, true));

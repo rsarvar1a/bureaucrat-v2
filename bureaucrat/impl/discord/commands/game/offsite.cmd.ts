@@ -3,6 +3,7 @@ import { Option, Superbuilder } from '../../../../engine/discord/commands/builde
 import { accent } from '../../../../engine/discord/elements';
 import { toast } from '../../../../engine/discord/reply';
 import { placeOffsiteCard, startExport } from '../../games/offsite/start';
+import { destinationForGame } from '../../games/offsite/mappings';
 import { destinationOf } from '../../games/offsite/write';
 import { endedGameContext } from './context';
 import { S } from '../../../../strings';
@@ -22,7 +23,12 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
     if (!ctx) return;
 
     // Checked now, so a missing permission is seen before an hour of work rather than after.
-    const destination = await destinationOf(interaction.client, ctx.game.guild);
+    const row = await destinationForGame(interaction.client, ctx.game);
+    if (!row) {
+      await toast.ephemeral(interaction, S.errors.notMapped, { accent: accent.warning, timeoutMs: 15_000 });
+      return;
+    }
+    const destination = await destinationOf(interaction.client, row);
     if (!destination.ok) {
       const message =
         destination.reason === 'noOffsite' ? S.errors.noOffsite : S.errors.offsiteNotReachable(destination.missing);
@@ -30,7 +36,7 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
       return;
     }
 
-    const result = await startExport(ctx.game, { copy: true, fresh: params.fresh ?? false });
+    const result = await startExport(ctx.game, { copy: true, fresh: params.fresh ?? false, destination: row.id });
     if (!result.ok) {
       await toast.ephemeral(interaction, REFUSALS[result.reason], { accent: accent.neutral });
       return;

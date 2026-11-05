@@ -12,6 +12,7 @@ import {
   v2,
 } from '../../../../engine/discord/elements';
 import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../drizzle/guild-settings';
+import { listSources } from '../../../../drizzle/offsite';
 import { toast } from '../../../../engine/discord/reply';
 import { accent } from '../../../../engine/discord/elements';
 import { requeueForPrivate } from '../../games/offsite/start';
@@ -44,7 +45,10 @@ export default createView<ArchivesState>()({
   },
 
   render: async (view) => {
-    const settings = await getOrCreateGuildSettings(BigInt(view.entityId!));
+    const [settings, mappings] = await Promise.all([
+      getOrCreateGuildSettings(BigInt(view.entityId!)),
+      listSources(BigInt(view.entityId!)),
+    ]);
 
     const menu = channelSelect(view.customId('default'), 'Choose the default archive')
       .setChannelTypes(ChannelType.GuildCategory)
@@ -59,11 +63,7 @@ export default createView<ArchivesState>()({
         separator(),
         channelSelectRow(menu),
         separator(),
-        text(
-          settings.offsiteGuild === null
-            ? 'No archive server yet.'
-            : `The off-server archive (id) is ${settings.offsiteGuild}`,
-        ),
+        text(S.offsite.mappingCount(mappings.length)),
         buttonRow(
           button(
             view.customId('auto'),

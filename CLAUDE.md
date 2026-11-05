@@ -77,21 +77,29 @@ from the systemd unit it installs from `ctl/bureaucrat.service`, `deploy` for a 
 waits for the bot's "Logged in as" line). A barebones `.env` is `ctl/env.example`: the token, the
 client id and the Postgres credentials.
 
-The offsite archive (`/game offsite`) copies an ended game into a second server the bot is also
-in, named by `/archives offsite config`. There it needs View Channel, Manage Channels, Manage
-Webhooks, Manage Threads, Send Messages (and in Threads), Create Public Threads, Attach Files,
-Embed Links, Manage Messages and Read Message History on the archive category; the command checks
-and says which are missing. The copy is a background job driven from `GameExport` rows
-(`impl/discord/games/offsite/`), so a restart resumes it; `OFFSITE_CONCURRENCY` (default 4) says
-how many run at once, each through its own webhook and so its own rate limit. `/archives offsite copy` copies the
-channel it is run in, adopting one the record does not know (an older bot's game) as a bare ended
-game first (`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
+The offsite archive (`/game offsite`) copies an ended game into another server the bot is also in.
+`/archives offsite manage` maps each on-server archive family (a category chain: `Archives 1…N`, a
+Hall of Fame, a queue's archive) to a destination category there (`OffsiteSource` →
+`OffsiteDestination`, `impl/discord/games/offsite/mappings.ts`); a game goes to the destination of
+the family its channel sits in, or else of the archive it is to be filed in, and an unmapped one is
+not copied. Families pointed at the same chain share one destination. There the bot needs View
+Channel, Manage Channels, Manage Webhooks, Manage Threads, Send Messages (and in Threads), Create
+Public Threads, Attach Files, Embed Links, Manage Messages and Read Message History on the
+category; the pane checks and says which are missing. The copy is a background job driven from
+`GameExport` rows, one per game and destination (null for the read-only `/game export`), so a
+restart resumes it and a game promoted into a second mapped family gets a second copy; that
+export clones the first one's read in the database rather than reading Discord again.
+`OFFSITE_CONCURRENCY` (default 4) says how many run at once, each through its own webhook and so
+its own rate limit, never two of one game. `/archives offsite copy` copies the channel it is run
+in, adopting one the record does not know (an older bot's game) as a bare ended game first
+(`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
 (`GuildSettings.offsiteAuto`, acted on at the end of `endGame`) and whether private threads go into
 the copy (`offsitePrivate`, off by default: the reader always reads them, the writer leaves them
 unmarked, and turning the setting on or a later sync sends finished copies back for just those).
-`/archives offsite sync` queues
-every channel across the server's archives that the archive server lacks and flags a reflow, which
-the offsite engine performs once its queue drains (`GuildSettings.offsiteReflowPending`).
+Copied threads open among the channel's messages where they began, and are archived at the end.
+`/archives offsite sync` queues every channel across the mapped archives that its destination
+lacks and flags each destination for a reflow, which the offsite engine performs once its queue
+drains (`OffsiteDestination.reflowPending`).
 
 Archive categories, on-server and offsite, are chains (`impl/discord/games/archives/`): the
 configured category is a seed (`Archives`); when it fills, it is renamed `Archives 1`, `Archives 2`

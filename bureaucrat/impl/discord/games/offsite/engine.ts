@@ -1,8 +1,16 @@
 import type { Client } from 'discord.js';
 import { notifyContexts } from '../../../../engine/discord/views/notify';
-import { getExport, listClaimableExports, updateExport, type GameExportRow } from '../../../../drizzle/game-exports';
+import {
+  cloneRead,
+  getExport,
+  listChannels,
+  listClaimableExports,
+  readSiblingOf,
+  updateExport,
+  type GameExportRow,
+} from '../../../../drizzle/game-exports';
 import { getGame } from '../../../../drizzle/games';
-import { listGuildsAwaitingReflow, updateGuildSettings } from '../../../../drizzle/guild-settings';
+import { listDestinationsAwaitingReflow, updateDestination } from '../../../../drizzle/offsite';
 import { logger } from '../../../../utilities/logger';
 import { offsiteEvents } from '../../views/games/offsite/events';
 import { reflowChain } from '../archives/categories';
@@ -17,6 +25,8 @@ export const TICK_MS = 15_000;
 const REPORT_MS = 5_000;
 
 const running = new Set<string>();
+/** Games with an export running: a second export of one waits, so it can clone the first's read. */
+const busyGames = new Set<string>();
 
 const publish = async (client: Client, gameId: string): Promise<void> => {
   const { viewDefinitions } = await import('../../registry/views');
@@ -48,7 +58,15 @@ const run = async (client: Client, first: GameExportRow): Promise<void> => {
 
   try {
     let exp: GameExportRow | undefined = first;
-    if (exp.state === 'reading') {
+    // A game already read for another destination is cloned, not read from Discord again.
+    if (exp.state === 'reading' && (await listChannels(exp.id)).length === 0) {
+      const sibling = await readSiblingOf(exp);
+      if (sibling) {
+        await cloneRead(sibling, exp);
+        exp = await getExport(exp.id);
+      }
+    }
+    if (exp?.state === 'reading') {
       await readGame(client, game, exp, (p) =>
         report({ channels: p.channels, messages: p.messages, unread: p.unread }),
       );
@@ -72,16 +90,19 @@ const run = async (client: Client, first: GameExportRow): Promise<void> => {
  * every tick; the next sync sets it again.
  */
 const reflowOwed = async (client: Client): Promise<void> => {
-  for (const settings of await listGuildsAwaitingReflow()) {
-    await updateGuildSettings(settings.guild, { offsiteReflowPending: false });
+  for (const row of await listDestinationsAwaitingReflow()) {
+    await updateDestination(row.id, { reflowPending: false });
     try {
-      const destination = await destinationOf(client, settings.guild);
+      const destination = await destinationOf(client, row);
       if (!destination.ok) throw new Error(destination.reason);
       const done = await reflowChain(destination.guild, BigInt(destination.category.id), stampByName);
-      if (done) await updateGuildSettings(settings.guild, { offsiteCategory: BigInt(done.current.id) });
-      logger.info({ message: `Archive server of guild ${settings.guild} reflowed after a sync.` });
+      if (done) await updateDestination(row.id, { category: BigInt(done.current.id) });
+      logger.info({ message: `Archive ${row.category} on ${row.destGuild} reflowed after a sync.` });
     } catch (error) {
-      logger.error({ message: `Archive server of guild ${settings.guild} could not be reflowed after a sync.`, error });
+      logger.error({
+        message: `Archive ${row.category} on ${row.destGuild} could not be reflowed after a sync.`,
+        error,
+      });
     }
   }
 };
@@ -110,11 +131,19 @@ export const tickOffsite = async (client: Client): Promise<void> => {
   const open = CONCURRENCY - running.size;
   if (open <= 0) return;
 
-  for (const exp of claimable.filter((candidate) => !running.has(candidate.id)).slice(0, open)) {
+  let started = 0;
+  for (const exp of claimable) {
+    if (started >= open) break;
+    if (running.has(exp.id) || busyGames.has(exp.game)) continue;
     running.add(exp.id);
+    busyGames.add(exp.game);
+    started += 1;
     void run(client, exp)
       .catch((error: unknown) => logger.error({ message: `Offsite export ${exp.id} crashed.`, error }))
-      .finally(() => running.delete(exp.id));
+      .finally(() => {
+        running.delete(exp.id);
+        busyGames.delete(exp.game);
+      });
   }
 };
 

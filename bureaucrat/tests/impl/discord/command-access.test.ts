@@ -41,7 +41,7 @@ test('an unknown command defaults to open rather than to a permission', () => {
 test("the server's default archive is server furniture and needs server.manage", () => {
   expect(commandAccess('archives::manage')).toBe(Permissions.Server.Manage);
   expect(commandAccess('archives::reflow')).toBe(Permissions.Server.Manage);
-  expect(commandAccess('archives::offsite::config')).toBe(Permissions.Server.Manage);
+  expect(commandAccess('archives::offsite::manage')).toBe(Permissions.Server.Manage);
   expect(commandAccess('archives::offsite::copy')).toBe(Permissions.Server.Manage);
   expect(commandAccess('archives::offsite::reflow')).toBe(Permissions.Server.Manage);
   expect(commandAccess('archives::offsite::sync')).toBe(Permissions.Server.Manage);

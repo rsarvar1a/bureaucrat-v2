@@ -16,7 +16,7 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
     const ctx = await endedGameContext(interaction);
     if (!ctx) return;
 
-    const result = await startExport(ctx.game, { copy: false, fresh: params.fresh ?? false });
+    const result = await startExport(ctx.game, { copy: false, fresh: params.fresh ?? false, destination: null });
     if (!result.ok) {
       await toast.ephemeral(interaction, REFUSALS[result.reason], { accent: accent.neutral });
       return;

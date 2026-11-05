@@ -198,7 +198,7 @@ cmd_logs() { compose logs -f --tail "${1:-100}" bureaucrat; }
 cmd_env() {
   [[ -f .env ]] || die "no .env in $ROOT; copy ctl/env.example to .env and fill it in"
   local key
-  for key in "${REQUIRED[@]}" POSTGRES_HOST POSTGRES_PORT DISCORD_GUILD_ID LOG_LEVEL TEMPORARY_VIEW_TIMEOUT_MS OFFSITE_CONCURRENCY; do
+  for key in "${REQUIRED[@]}" POSTGRES_HOST POSTGRES_PORT DISCORD_GUILD_ID LOG_LEVEL TEMPORARY_VIEW_TIMEOUT_MS OFFSITE_CONCURRENCY DATABASE_POOL_SIZE; do
     if [[ -n "$(env_value "$key" || true)" ]]; then printf '  %-28s set\n' "$key"; else printf '  %-28s -\n' "$key"; fi
   done
   check_env

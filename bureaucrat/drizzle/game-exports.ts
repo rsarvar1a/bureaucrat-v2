@@ -71,9 +71,9 @@ export const cloneRead = async (from: GameExportRow, to: GameExportRow): Promise
     await tx.execute(sql`
       INSERT INTO "core"."ExportMessage"
         ("export", "channel", "message", "author", "bot", "system", "content", "createdAt", "editedAt",
-         "pinned", "replyTo", "attachments", "embeds", "reactions", "components", "extras")
+         "pinned", "replyTo", "attachments", "embeds", "reactions", "components", "extras", "readAt")
       SELECT ${to.id}, "channel", "message", "author", "bot", "system", "content", "createdAt", "editedAt",
-        "pinned", "replyTo", "attachments", "embeds", "reactions", "components", "extras"
+        "pinned", "replyTo", "attachments", "embeds", "reactions", "components", "extras", NULL
       FROM "core"."ExportMessage" WHERE "export" = ${from.id}
       ON CONFLICT DO NOTHING`);
     await tx.execute(sql`

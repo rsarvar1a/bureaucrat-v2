@@ -35,6 +35,7 @@ import { getScriptSummary } from '../../../../drizzle/scripts';
 import { listSeating } from '../../../../drizzle/seating';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
+import { fault, swallow } from '../../errors/record';
 import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
 import { ALIGNMENT_LABEL } from '../script/alignment';
@@ -135,7 +136,10 @@ const channelOf = async (
   ctx: RenderContext,
 ): Promise<{ channel: TextChannel; created: boolean }> => {
   if (exp.channel !== null) {
-    const existing = await client.channels.fetch(String(exp.channel)).catch(() => null);
+    // A copy that cannot be found again is started afresh: a transient failure here is a duplicate.
+    const existing = await client.channels
+      .fetch(String(exp.channel))
+      .catch(swallow('write.channel.lookup', 'degraded', null, { channel: exp.channel }));
     if (existing && existing.type === ChannelType.GuildText) return { channel: existing, created: false };
   }
   const create = (parent: CategoryChannel): Promise<TextChannel> =>
@@ -165,7 +169,9 @@ const channelOf = async (
 
 const webhookOf = async (client: Client, exp: GameExportRow, channel: TextChannel): Promise<Webhook> => {
   if (exp.webhook !== null) {
-    const existing = await client.fetchWebhook(String(exp.webhook)).catch(() => null);
+    const existing = await client
+      .fetchWebhook(String(exp.webhook))
+      .catch(swallow('write.webhook.lookup', 'ignored', null, { channel: channel.id }));
     if (existing) return existing;
   }
   const webhook = await channel.createWebhook({ name: 'Bureaucrat archive', reason: 'Offsite archive' });
@@ -193,18 +199,25 @@ const threadOf = async (channel: TextChannel, row: ExportChannelRow, inSequence:
   });
   await updateChannel(row.id, { copiedTo: BigInt(thread.id) });
   if (inSequence) return BigInt(thread.id);
-  const recent = await channel.messages.fetch({ limit: 10 }).catch(() => null);
+  const recent = await channel.messages
+    .fetch({ limit: 10 })
+    .catch(swallow('write.thread.notice', 'ignored', null, { channel: channel.id }));
   const notice = recent?.find((m) => m.type === MessageType.ThreadCreated && m.reference?.channelId === thread.id);
-  if (notice) await notice.delete().catch(() => undefined);
+  if (notice)
+    await notice.delete().catch(swallow('write.thread.notice', 'ignored', undefined, { channel: channel.id }));
   return BigInt(thread.id);
 };
 
 /** Archives a thread's copy, if it is not already: none should sit in the thread bar. */
 const archiveCopy = async (client: Client, row: ExportChannelRow): Promise<void> => {
   if (row.copiedTo === null) return;
-  const thread = await client.channels.fetch(String(row.copiedTo)).catch(() => null);
+  const thread = await client.channels
+    .fetch(String(row.copiedTo))
+    .catch(swallow('write.thread.archive', 'ignored', null, { channel: row.copiedTo }));
   if (thread?.isThread() && !thread.archived) {
-    await thread.setArchived(true, 'Offsite archive').catch(() => undefined);
+    await thread
+      .setArchived(true, 'Offsite archive')
+      .catch(swallow('write.thread.archive', 'ignored', undefined, { channel: thread.id }));
   }
 };
 
@@ -235,6 +248,10 @@ const send = async (
       if (!final) throw error;
       // A dead file or a bad embed: the words still go, with a note that something did not.
       logger.warn({ message: `Offsite copy: message ${row.message} sent without its files or embeds.`, error });
+      fault('write.send.files', 'degraded', error, {
+        channel: threadId ?? row.channel,
+        detail: { message: String(row.message), files: rendered.files.length, embeds: rendered.embeds.length },
+      });
       last = await webhook.send({
         ...payload,
         files: [],
@@ -243,7 +260,9 @@ const send = async (
       });
     }
   }
-  if (last && rendered.pin) await last.pin().catch(() => undefined);
+  if (last && rendered.pin) {
+    await last.pin().catch(swallow('write.pin', 'degraded', undefined, { detail: { message: String(row.message) } }));
+  }
   return last ? BigInt(last.id) : 0n;
 };
 
@@ -366,6 +385,7 @@ export const copyGame = async (
   }
 
   // A new channel goes to the top; one revisited for its private threads stays where the reflow put it.
-  if (created) await channel.setPosition(0).catch(() => undefined);
+  if (created)
+    await channel.setPosition(0).catch(swallow('write.position', 'ignored', undefined, { channel: channel.id }));
   await updateExport(exp.id, { state: 'copied', copied: progress.copied, finishedAt: new Date(), error: null });
 };

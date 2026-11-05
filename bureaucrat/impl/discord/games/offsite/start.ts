@@ -14,6 +14,7 @@ import { getGame } from '../../../../drizzle/games';
 import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
+import { fault, swallow } from '../../errors/record';
 import { spawnByRoute } from '../create';
 import { destinationForGame } from './mappings';
 
@@ -24,7 +25,9 @@ export const OFFSITE_CARD = 'goffsite';
 /** The progress card, one per game, at the bottom of the game channel. */
 export const placeOffsiteCard = async (client: Client, game: GameRow): Promise<void> => {
   for (const row of await listViews({ route: OFFSITE_CARD, entityId: game.id })) await closeWindow(client, row);
-  const channel = await client.channels.fetch(String(game.channel)).catch(() => null);
+  const channel = await client.channels
+    .fetch(String(game.channel))
+    .catch(swallow('card.place', 'ignored', null, { area: 'offsite', game: game.id, channel: game.channel }));
   if (!channel || !('send' in channel)) return;
   await spawnByRoute(
     OFFSITE_CARD,
@@ -105,6 +108,7 @@ export const autoExport = async (client: Client, game: GameRow): Promise<void> =
     if (result.ok) await placeOffsiteCard(client, game);
   } catch (error) {
     logger.warn({ message: `Could not start the automatic offsite copy of game ${game.id}.`, error });
+    fault('auto.start', 'failed', error, { area: 'offsite', game: game.id });
   }
 };
 

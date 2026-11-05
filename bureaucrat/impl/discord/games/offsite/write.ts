@@ -39,7 +39,7 @@ import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
 import { ALIGNMENT_LABEL } from '../script/alignment';
 import { endedChannelName } from '../names';
-import { chainOf, roomIn } from '../archives/categories';
+import { placeInChain } from '../archives/categories';
 import { renderMessage, type RenderContext } from './render';
 import { S } from '../../../../strings';
 
@@ -138,22 +138,24 @@ const channelOf = async (
     const existing = await client.channels.fetch(String(exp.channel)).catch(() => null);
     if (existing && existing.type === ChannelType.GuildText) return { channel: existing, created: false };
   }
+  const create = (parent: CategoryChannel): Promise<TextChannel> =>
+    guild.channels.create({
+      name: endedChannelName(game.name, game.endedAt ?? new Date()),
+      type: ChannelType.GuildText,
+      parent,
+      topic: `${game.name} · copied from the game server`.slice(0, 1024),
+      reason: `Offsite archive of ${game.name}`,
+    });
   // A full category rolls the chain over, and the destination follows it.
-  const chain = await chainOf(guild, BigInt(category.id));
-  const parent = chain
-    ? (
-        await roomIn(guild, chain, BigInt(category.id), async (next) => {
-          if (exp.destination) await updateDestination(exp.destination, { category: BigInt(next.id) });
-        })
-      ).category
-    : category;
-  const channel = await guild.channels.create({
-    name: endedChannelName(game.name, game.endedAt ?? new Date()),
-    type: ChannelType.GuildText,
-    parent,
-    topic: `${game.name} · copied from the game server`.slice(0, 1024),
-    reason: `Offsite archive of ${game.name}`,
-  });
+  const placed = await placeInChain(
+    guild,
+    BigInt(category.id),
+    async (next) => {
+      if (exp.destination) await updateDestination(exp.destination, { category: BigInt(next.id) });
+    },
+    create,
+  );
+  const channel = placed ? placed.placed : await create(category);
   await updateExport(exp.id, { guild: BigInt(guild.id), channel: BigInt(channel.id) });
   ctx.target = BigInt(channel.id);
   const summary = await header(client, game, ctx);

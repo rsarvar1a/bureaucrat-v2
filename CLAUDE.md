@@ -90,7 +90,8 @@ category; the pane checks and says which are missing. The copy is a background j
 restart resumes it and a game promoted into a second mapped family gets a second copy; that
 export clones the first one's read in the database rather than reading Discord again.
 `OFFSITE_CONCURRENCY` (default 4) says how many run at once, each through its own webhook and so
-its own rate limit, never two of one game. `/archives offsite copy` copies the channel it is run
+its own rate limit, never two of one game; the database pool (`DATABASE_POOL_SIZE`, else sized from
+the concurrency in `utilities/pool.ts`) follows it. `/archives offsite copy` copies the channel it is run
 in, adopting one the record does not know (an older bot's game) as a bare ended game first
 (`offsite/adopt.ts`). `/archives manage` can turn on copying every game as it ends
 (`GuildSettings.offsiteAuto`, acted on at the end of `endGame`) and whether private threads go into
@@ -104,7 +105,9 @@ drains (`OffsiteDestination.reflowPending`).
 Archive categories, on-server and offsite, are chains (`impl/discord/games/archives/`): the
 configured category is a seed (`Archives`); when it fills, it is renamed `Archives 1`, `Archives 2`
 is created above it with the same overwrites and the setting moves along, and so on upward. The
-chain reads top-down, newest first. `/archives reflow` and `/archives offsite reflow` put every
+chain reads top-down, newest first. Placing a channel in a chain (`placeInChain`) and reflowing one
+hold that chain's in-process lock and read it fresh, so concurrent copies cannot both take the last
+slot or both make the next link; a category Discord still calls full is skipped and room found again. `/archives reflow` and `/archives offsite reflow` put every
 channel across a chain in date order (by the record's end date on-server, by the name's stamp
 offsite), making categories as needed.
 

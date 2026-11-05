@@ -152,18 +152,58 @@ cmd_restart() {
 
 # Pull, rebuild, start, and prove the bot reconnected. Migrations are not a
 # step here: the entrypoint applies them on every start.
+#
+#   bureaucratctl deploy                 pull, build beside the running bot, swap
+#   bureaucratctl deploy --stop-first    stop the bot before building, so a busy
+#                                        bot (an offsite backfill, say) gives the
+#                                        build its CPU; down for the build's length
+#   bureaucratctl deploy --no-pull       deploy the checkout as it stands: a
+#                                        rollback to a commit checked out by hand
+#
+# The build is its own step before the swap, so a failed build changes nothing:
+# with --stop-first the stopped bot is started again as it was.
 cmd_deploy() {
+  local stop_first=0 pull=1 arg
+  for arg in "$@"; do
+    case "$arg" in
+      --stop-first) stop_first=1 ;;
+      --no-pull) pull=0 ;;
+      *) die "usage: $0 deploy [--stop-first] [--no-pull]" ;;
+    esac
+  done
+
   check_env
   git diff --quiet HEAD -- || die 'working tree is dirty; commit or discard before deploying'
 
   local before; before="$(git rev-parse --short HEAD)"
 
-  say 'Fetching.'
-  git pull --ff-only
+  if (( pull )); then
+    # A rollback leaves HEAD detached, where a pull has nothing to follow.
+    git symbolic-ref -q HEAD >/dev/null ||
+      die "HEAD is detached at $before (a rollback?); git switch main first, or deploy it as it is with --no-pull"
+    say 'Fetching.'
+    git pull --ff-only
+  else
+    say "Deploying $before as checked out."
+  fi
+
+  if (( stop_first )) && running; then
+    say 'Stopping the bot first, so the build has the box to itself.'
+    compose stop bureaucrat
+  fi
+
+  say 'Building.'
+  if ! compose build bureaucrat; then
+    if (( stop_first )); then
+      say 'Starting the bot again as it was.'
+      compose start bureaucrat || true
+    fi
+    die "the build failed; nothing was replaced (still at $before)"
+  fi
 
   local since; since="$(now)"
-  say 'Building and starting.'
-  compose up -d --build
+  say 'Starting.'
+  compose up -d
 
   if wait_ready "$since"; then
     say "Deployed $(git rev-parse --short HEAD)."
@@ -173,7 +213,7 @@ cmd_deploy() {
   printf '\n'
   compose logs --since "$since" --tail 40 bureaucrat || true
   printf '\n'
-  die "the bot never announced itself within ${READY_TIMEOUT}s. Was at $before; roll back with: git checkout $before && $0 deploy"
+  die "the bot never announced itself within ${READY_TIMEOUT}s. Was at $before; roll back with: git checkout $before && $0 deploy --no-pull"
 }
 
 cmd_status() {
@@ -282,7 +322,7 @@ case "${1:-}" in
   up)        cmd_up ;;
   down)      cmd_down ;;
   restart)   cmd_restart ;;
-  deploy)    cmd_deploy ;;
+  deploy)    shift; cmd_deploy "$@" ;;
   status)    cmd_status ;;
   logs)      shift; cmd_logs "$@" ;;
   env)       cmd_env ;;
@@ -299,6 +339,8 @@ usage: bureaucratctl <command>
   down       stop the stack, keeping the Postgres volume (systemd ExecStop)
   restart    restart the bot only, and wait until it has logged in
   deploy     pull, rebuild, start, and verify the bot logged in
+             --stop-first  stop the bot before building (frees the CPU; down meanwhile)
+             --no-pull     deploy the checkout as it is (a rollback)
   status     what is running, and whether the bot is crash-looping
   logs [n]   follow the bot's logs, starting n lines back
   env        which configuration keys .env sets (never their values)

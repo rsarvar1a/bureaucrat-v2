@@ -70,7 +70,7 @@ the host; generate migrations from the host instead.
 ## Production
 
 Production is the same compose stack with `docker-compose.prod.yml` laid over it: no source mount,
-no watch mode, Postgres unpublished, logs capped, and every variable the bot reads named there and
+no watch mode, Postgres published on the host's loopback only (an SSH tunnel reaches it), logs capped, and every variable the bot reads named there and
 interpolated from the host's `.env` at `up` time (`.env` never enters the image). The checkout lives
 at `/root/bureaucrat-v2`; `ctl/bureaucratctl` is the only way the stack is invoked (`up`/`down`
 from the systemd unit it installs from `ctl/bureaucrat.service`, `deploy` for a release, which

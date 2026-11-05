@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, exists, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { ExportChannel, ExportMember, ExportMessage, GameExport } from '../schema/core/exports.sql';
 import { Game } from '../schema/core/games.sql';
@@ -20,9 +20,80 @@ export const getExport = async (id: string): Promise<GameExportRow | undefined> 
   return row;
 };
 
-export const getExportOfGame = async (gameId: string): Promise<GameExportRow | undefined> => {
-  const [row] = await db.select().from(GameExport).where(eq(GameExport.game, gameId));
+/** The game's export to one destination, or its read-only export when `destination` is null. */
+export const getExportOf = async (gameId: string, destination: string | null): Promise<GameExportRow | undefined> => {
+  const [row] = await db
+    .select()
+    .from(GameExport)
+    .where(
+      and(
+        eq(GameExport.game, gameId),
+        destination === null ? isNull(GameExport.destination) : eq(GameExport.destination, destination),
+      ),
+    );
   return row;
+};
+
+/** Every export of the game, one per destination, the oldest first. */
+export const listExportsOfGame = async (gameId: string): Promise<GameExportRow[]> =>
+  db.select().from(GameExport).where(eq(GameExport.game, gameId)).orderBy(asc(GameExport.createdAt));
+
+/** Another export of the game whose read is finished, to clone rather than read Discord again. */
+export const readSiblingOf = async (exp: GameExportRow): Promise<GameExportRow | undefined> => {
+  const [row] = await db
+    .select()
+    .from(GameExport)
+    .where(
+      and(
+        eq(GameExport.game, exp.game),
+        ne(GameExport.id, exp.id),
+        inArray(GameExport.state, ['read', 'copying', 'copied']),
+      ),
+    )
+    .orderBy(desc(GameExport.privateListed), asc(GameExport.createdAt))
+    .limit(1);
+  return row;
+};
+
+/**
+ * Copies one export's read into another: its channels, messages and members
+ * as read, none of them copied anywhere yet, and the counts. The target is
+ * then as if it had read Discord itself.
+ */
+export const cloneRead = async (from: GameExportRow, to: GameExportRow): Promise<void> => {
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`
+      INSERT INTO "core"."ExportChannel"
+        ("export", "channel", "kind", "name", "parent", "createdAt", "archived", "locked", "readDone")
+      SELECT ${to.id}, "channel", "kind", "name", "parent", "createdAt", "archived", "locked", "readDone"
+      FROM "core"."ExportChannel" WHERE "export" = ${from.id}
+      ON CONFLICT DO NOTHING`);
+    await tx.execute(sql`
+      INSERT INTO "core"."ExportMessage"
+        ("export", "channel", "message", "author", "bot", "system", "content", "createdAt", "editedAt",
+         "pinned", "replyTo", "attachments", "embeds", "reactions", "components", "extras")
+      SELECT ${to.id}, "channel", "message", "author", "bot", "system", "content", "createdAt", "editedAt",
+        "pinned", "replyTo", "attachments", "embeds", "reactions", "components", "extras"
+      FROM "core"."ExportMessage" WHERE "export" = ${from.id}
+      ON CONFLICT DO NOTHING`);
+    await tx.execute(sql`
+      INSERT INTO "core"."ExportMember" ("export", "member", "displayName", "username", "avatar", "bot")
+      SELECT ${to.id}, "member", "displayName", "username", "avatar", "bot"
+      FROM "core"."ExportMember" WHERE "export" = ${from.id}
+      ON CONFLICT DO NOTHING`);
+    await tx
+      .update(GameExport)
+      .set({
+        channels: from.channels,
+        messages: from.messages,
+        unread: from.unread,
+        roles: from.roles,
+        privateListed: from.privateListed,
+        state: to.copy ? 'copying' : 'read',
+        updatedAt: new Date(),
+      })
+      .where(eq(GameExport.id, to.id));
+  });
 };
 
 export const insertExport = async (row: InsertExport): Promise<GameExportRow> => {

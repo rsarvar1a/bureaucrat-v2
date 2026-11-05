@@ -28,7 +28,8 @@ import {
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
 import { listGameWinners } from '../../../../drizzle/game-winners';
-import { getOrCreateGuildSettings, updateGuildSettings } from '../../../../drizzle/guild-settings';
+import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
+import { getDestination, updateDestination, type OffsiteDestinationRow } from '../../../../drizzle/offsite';
 import { listParticipants } from '../../../../drizzle/participants';
 import { getScriptSummary } from '../../../../drizzle/scripts';
 import { listSeating } from '../../../../drizzle/seating';
@@ -81,14 +82,14 @@ export type Destination =
   | { ok: true; guild: Guild; category: CategoryChannel }
   | { ok: false; reason: 'noOffsite' | 'unreachable' | 'missing'; missing: string[] };
 
-/** The archive server and category the settings name, and whether the bot can work there. */
-export const destinationOf = async (client: Client, sourceGuild: bigint): Promise<Destination> => {
-  const settings = await getOrCreateGuildSettings(sourceGuild);
-  if (settings.offsiteGuild === null || settings.offsiteCategory === null) {
-    return { ok: false, reason: 'noOffsite', missing: [] };
-  }
-  const guild = await client.guilds.fetch(String(settings.offsiteGuild)).catch(() => null);
-  const category = guild ? await guild.channels.fetch(String(settings.offsiteCategory)).catch(() => null) : null;
+/** The archive server and category a destination names, and whether the bot can work there. */
+export const destinationOf = async (
+  client: Client,
+  row: OffsiteDestinationRow | null | undefined,
+): Promise<Destination> => {
+  if (!row) return { ok: false, reason: 'noOffsite', missing: [] };
+  const guild = await client.guilds.fetch(String(row.destGuild)).catch(() => null);
+  const category = guild ? await guild.channels.fetch(String(row.category)).catch(() => null) : null;
   if (!guild || !category || category.type !== ChannelType.GuildCategory) {
     return { ok: false, reason: 'unreachable', missing: [] };
   }
@@ -137,12 +138,12 @@ const channelOf = async (
     const existing = await client.channels.fetch(String(exp.channel)).catch(() => null);
     if (existing && existing.type === ChannelType.GuildText) return { channel: existing, created: false };
   }
-  // A full category rolls the chain over, and the setting follows it.
+  // A full category rolls the chain over, and the destination follows it.
   const chain = await chainOf(guild, BigInt(category.id));
   const parent = chain
     ? (
         await roomIn(guild, chain, BigInt(category.id), async (next) => {
-          await updateGuildSettings(game.guild, { offsiteCategory: BigInt(next.id) });
+          if (exp.destination) await updateDestination(exp.destination, { category: BigInt(next.id) });
         })
       ).category
     : category;
@@ -263,7 +264,7 @@ export const copyGame = async (
   exp: GameExportRow,
   report: CopyReport,
 ): Promise<void> => {
-  const destination = await destinationOf(client, game.guild);
+  const destination = await destinationOf(client, exp.destination ? await getDestination(exp.destination) : null);
   if (!destination.ok) {
     throw new Error(
       destination.reason === 'noOffsite' ? S.errors.noOffsite : S.errors.offsiteNotReachable(destination.missing),

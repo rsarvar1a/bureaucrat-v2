@@ -38,7 +38,7 @@ const RULES: Record<string, CommandAccess> = {
   // The server's default archive is server furniture, like a queue's panel.
   'archives::manage': Permissions.Server.Manage,
   'archives::reflow': Permissions.Server.Manage,
-  'archives::offsite::config': Permissions.Server.Manage,
+  'archives::offsite::manage': Permissions.Server.Manage,
   'archives::offsite::copy': Permissions.Server.Manage,
   'archives::offsite::reflow': Permissions.Server.Manage,
   'archives::offsite::sync': Permissions.Server.Manage,

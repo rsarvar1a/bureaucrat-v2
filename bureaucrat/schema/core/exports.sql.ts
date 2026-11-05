@@ -3,12 +3,15 @@ import { fk, primary, snowflake, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { ExportChannelKind, ExportState } from './enums.sql';
 import { Game } from './games.sql';
+import { OffsiteDestination } from './offsite.sql';
 
 export const GameExport = core.table(
   'GameExport',
   {
     id: primary.uuid(),
     game: fk(Game.id, { onDelete: 'cascade' }),
+    /** Where the copy goes; null for a read-only export (`/game export`). One export per game and destination. */
+    destination: fk(OffsiteDestination.id, { nullable: true }),
     state: ExportState().notNull().default('reading'),
     copy: boolean().notNull().default(false),
     ...snowflakes(true, 'guild', 'channel'),
@@ -25,7 +28,7 @@ export const GameExport = core.table(
     finishedAt: timestamp(),
     ...timestamps(),
   },
-  (table) => [unique().on(table.game)],
+  (table) => [unique().on(table.game, table.destination).nullsNotDistinct()],
 );
 
 export const ExportChannel = core.table(

@@ -1,7 +1,9 @@
 import {
   ChannelType,
   GuildPremiumTier,
+  MessageType,
   PermissionFlagsBits,
+  SnowflakeUtil,
   ThreadAutoArchiveDuration,
   type CategoryChannel,
   type Client,
@@ -168,8 +170,17 @@ const webhookOf = async (client: Client, exp: GameExportRow, channel: TextChanne
   return webhook;
 };
 
-/** A source thread's copy: made under the channel on first sight, public whatever it was. */
-const threadOf = async (channel: TextChannel, row: ExportChannelRow): Promise<bigint> => {
+/** When a thread began: its id says so, whatever Discord recorded besides. */
+const bornAt = (row: ExportChannelRow): number => SnowflakeUtil.timestampFrom(String(row.channel));
+
+/**
+ * A source thread's copy, public whatever it was, since a private thread is
+ * shown only to its members and a reader cannot be one of every thread.
+ * Discord posts a "started a thread" line in the channel; `inSequence` keeps
+ * it, as the link beside the messages the thread grew from, and otherwise it
+ * is deleted rather than left out of place at the foot of the game.
+ */
+const threadOf = async (channel: TextChannel, row: ExportChannelRow, inSequence: boolean): Promise<bigint> => {
   if (row.copiedTo !== null) return row.copiedTo;
   const thread = await channel.threads.create({
     name: (row.kind === 'private' ? `🔒 ${row.name}` : row.name).slice(0, 100),
@@ -178,7 +189,20 @@ const threadOf = async (channel: TextChannel, row: ExportChannelRow): Promise<bi
     reason: 'Offsite archive',
   });
   await updateChannel(row.id, { copiedTo: BigInt(thread.id) });
+  if (inSequence) return BigInt(thread.id);
+  const recent = await channel.messages.fetch({ limit: 10 }).catch(() => null);
+  const notice = recent?.find((m) => m.type === MessageType.ThreadCreated && m.reference?.channelId === thread.id);
+  if (notice) await notice.delete().catch(() => undefined);
   return BigInt(thread.id);
+};
+
+/** Archives a thread's copy, if it is not already: none should sit in the thread bar. */
+const archiveCopy = async (client: Client, row: ExportChannelRow): Promise<void> => {
+  if (row.copiedTo === null) return;
+  const thread = await client.channels.fetch(String(row.copiedTo)).catch(() => null);
+  if (thread?.isThread() && !thread.archived) {
+    await thread.setArchived(true, 'Offsite archive').catch(() => undefined);
+  }
 };
 
 /** Sends one rendered message as its chunks; the last chunk carries the files and embeds and is the one recorded. */
@@ -222,9 +246,11 @@ const send = async (
 
 /**
  * Replays the export into the archive server: the channel with its header,
- * a webhook, a public thread per source thread, then every message not yet
- * copied, oldest first, each recorded as it lands so a restart carries on
- * at the first gap. Threads the source had archived are archived again.
+ * a webhook, then every message not yet copied, oldest first, each recorded
+ * as it lands so a restart carries on at the first gap. A public thread per
+ * source thread opens among the channel's messages when it began, and is
+ * filled once the channel is done. Every thread's copy is archived at the end, whatever it
+ * was in the source: an archive has nothing live.
  *
  * Private threads (whispers, the Storyteller's, kibitz) go only where the
  * server has said so (`offsitePrivate`); left out, nothing of theirs is
@@ -277,23 +303,35 @@ export const copyGame = async (
   };
   await report(progress);
 
-  // Threads first, so a mention of one can point at it from the start.
-  for (const row of channels) {
-    if (row.kind !== 'channel' && row.copiedTo === null) {
-      row.copiedTo = await threadOf(channel, row);
+  // Each thread opens in the channel where it began, its "started a thread"
+  // line between the messages either side of that moment, so a whisper agreed
+  // on in the channel sits beside the thread it became. One that began before
+  // what is already copied (a later pass for private threads, a resumed run)
+  // cannot go back, and opens without its line.
+  const main = channels.find((row) => row.kind === 'channel');
+  const threads = channels.filter((row) => row.kind !== 'channel');
+  const unborn = threads.filter((row) => row.copiedTo === null).sort((a, b) => bornAt(a) - bornAt(b));
+  let mainLast = main ? await lastCopiedTimeOf(exp.id, main.channel) : null;
+  const openBefore = async (time: number) => {
+    while (unborn.length > 0 && bornAt(unborn[0]!) < time) {
+      const row = unborn.shift()!;
+      const inSequence = mainLast === null || bornAt(row) >= mainLast.getTime();
+      row.copiedTo = await threadOf(channel, row, inSequence);
       channelMap.set(String(row.channel), row);
     }
-  }
+  };
 
-  for (const row of channels) {
+  const copyRow = async (row: ExportChannelRow) => {
     const pending = await listUncopiedMessages(exp.id, row.channel);
-    if (pending.length === 0) continue;
+    if (pending.length === 0) return;
 
-    ctx.target = row.kind === 'channel' ? BigInt(channel.id) : row.copiedTo!;
+    const isMain = row.kind === 'channel';
+    ctx.target = isMain ? BigInt(channel.id) : row.copiedTo!;
     ctx.previous = await lastCopiedTimeOf(exp.id, row.channel);
-    const threadId = row.kind === 'channel' ? undefined : String(row.copiedTo!);
+    const threadId = isMain ? undefined : String(row.copiedTo!);
 
     for (const message of pending) {
+      if (isMain) await openBefore(message.createdAt.getTime());
       if (message.replyTo !== null && !parents.has(message.replyTo)) {
         parents.set(message.replyTo, await parentOf(exp.id, message.replyTo));
       }
@@ -306,14 +344,22 @@ export const copyGame = async (
         if (parent) parent.copiedTo = copied;
       }
       ctx.previous = message.createdAt;
+      if (isMain) mainLast = message.createdAt;
       progress.copied += 1;
       await report(progress);
     }
+  };
 
-    if (row.kind !== 'channel' && row.archived) {
-      const thread = await client.channels.fetch(String(row.copiedTo)).catch(() => null);
-      if (thread?.isThread()) await thread.setArchived(true, 'Archived in the source too').catch(() => undefined);
-    }
+  // The channel first, opening threads as it goes; then any begun after its
+  // last message; then what the threads hold, every one of them open by now
+  // so a mention of one in another can point at it.
+  if (main) await copyRow(main);
+  await openBefore(Infinity);
+  for (const row of threads) await copyRow(row);
+
+  // Sending to an archived thread opens it again, so every copy is closed once all are written.
+  for (const row of channels) {
+    if (row.kind !== 'channel') await archiveCopy(client, row);
   }
 
   // A new channel goes to the top; one revisited for its private threads stays where the reflow put it.

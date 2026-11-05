@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, exists, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { ExportChannel, ExportMember, ExportMessage, GameExport } from '../schema/core/exports.sql';
 import { Game } from '../schema/core/games.sql';
@@ -214,10 +214,12 @@ export const countMessagesOfKinds = async (exportId: string, kinds: ChannelKind[
 };
 
 /**
- * A guild's finished copies that left a private thread behind: what a
- * server that turns private threads on afterwards owes its archive.
+ * A guild's finished copies that may lack private threads: what a server
+ * that turns private threads on afterwards owes its archive. Either one was
+ * read and left uncopied, or the read never saw the full list of them
+ * (`privateListed`), so there may be some it does not know of.
  */
-export const listCopiedExportsMissingPrivate = async (guild: bigint): Promise<GameExportRow[]> => {
+export const listCopiedExportsOwedPrivate = async (guild: bigint): Promise<GameExportRow[]> => {
   const rows = await db
     .select({ exp: GameExport })
     .from(GameExport)
@@ -226,17 +228,20 @@ export const listCopiedExportsMissingPrivate = async (guild: bigint): Promise<Ga
       and(
         eq(Game.guild, guild),
         eq(GameExport.state, 'copied'),
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(ExportChannel)
-            .where(
-              and(
-                eq(ExportChannel.export, GameExport.id),
-                eq(ExportChannel.kind, 'private'),
-                isNull(ExportChannel.copiedTo),
+        or(
+          eq(GameExport.privateListed, false),
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(ExportChannel)
+              .where(
+                and(
+                  eq(ExportChannel.export, GameExport.id),
+                  eq(ExportChannel.kind, 'private'),
+                  isNull(ExportChannel.copiedTo),
+                ),
               ),
-            ),
+          ),
         ),
       ),
     )

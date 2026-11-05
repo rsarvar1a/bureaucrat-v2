@@ -103,9 +103,20 @@ const reactionsOf = async (m: Message): Promise<ExportReaction[]> => {
   return out;
 };
 
-/** Every thread under the channel: active, archived public, archived private, and the tracked ones by id. */
-const threadsOf = async (client: Client, channel: TextChannel, game: GameRow): Promise<Map<string, ThreadChannel>> => {
+/**
+ * Every thread under the channel: active, archived public, archived private,
+ * and the tracked ones by id. `complete` says whether the archived private
+ * threads came from the full list, which needs Manage Threads; without it
+ * Discord lists only those the bot has joined, and an older bot's whispers
+ * and ST threads are not among them.
+ */
+const threadsOf = async (
+  client: Client,
+  channel: TextChannel,
+  game: GameRow,
+): Promise<{ found: Map<string, ThreadChannel>; complete: boolean }> => {
   const found = new Map<string, ThreadChannel>();
+  let complete = true;
   const take = (threads: Iterable<ThreadChannel>) => {
     for (const thread of threads) found.set(thread.id, thread);
   };
@@ -115,18 +126,25 @@ const threadsOf = async (client: Client, channel: TextChannel, game: GameRow): P
   } catch (error) {
     logger.warn({ message: `Export of game ${game.id}: active threads could not be listed.`, error });
   }
-  for (const type of ['public', 'private'] as const) {
+  const archived = async (type: 'public' | 'private', fetchAll: boolean): Promise<boolean> => {
     let before: ThreadChannel | undefined;
     for (;;) {
-      const page = await channel.threads.fetchArchived({ type, before, limit: 100 }).catch((error: unknown) => {
-        logger.warn({ message: `Export of game ${game.id}: archived ${type} threads could not be listed.`, error });
-        return null;
-      });
-      if (!page) break;
+      const page = await channel.threads
+        .fetchArchived({ type, fetchAll, before, limit: 100 })
+        .catch((error: unknown) => {
+          logger.warn({ message: `Export of game ${game.id}: archived ${type} threads could not be listed.`, error });
+          return null;
+        });
+      if (!page) return false;
       take(page.threads.values());
       before = page.threads.last();
-      if (!page.hasMore || !before) break;
+      if (!page.hasMore || !before) return true;
     }
+  };
+  await archived('public', true);
+  if (!(await archived('private', true))) {
+    complete = false;
+    await archived('private', false);
   }
   // A private thread the bot was never in is not listed, but its row says it exists.
   for (const row of await listManagedThreads(game.id)) {
@@ -134,7 +152,7 @@ const threadsOf = async (client: Client, channel: TextChannel, game: GameRow): P
     const thread = await client.channels.fetch(String(row.thread)).catch(() => null);
     if (thread?.isThread()) found.set(thread.id, thread);
   }
-  return found;
+  return { found, complete };
 };
 
 /** Reads one channel's messages, newest first, from where an earlier read stopped. */
@@ -222,7 +240,7 @@ export const readGame = async (client: Client, game: GameRow, exp: GameExportRow
   if (!source || source.type !== ChannelType.GuildText) throw new Error(S.errors.offsiteSourceGone);
   const guild = source.guild;
 
-  const threads = await threadsOf(client, source, game);
+  const { found: threads, complete } = await threadsOf(client, source, game);
   await upsertChannels([
     {
       export: exp.id,
@@ -287,6 +305,7 @@ export const readGame = async (client: Client, game: GameRow, exp: GameExportRow
     messages: tally.messages,
     unread: [...new Set(unread)],
     roles: { ...exp.roles, ...roleNames },
+    privateListed: exp.privateListed || complete,
     ...(exp.copy ? {} : { finishedAt: new Date() }),
   });
 };

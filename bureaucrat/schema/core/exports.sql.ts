@@ -18,6 +18,8 @@ export const GameExport = core.table(
     messages: integer().notNull().default(0),
     copied: integer().notNull().default(0),
     unread: jsonb().$type<string[]>().notNull().default([]),
+    // Whether the reader saw every private thread, not just those the bot had joined.
+    privateListed: boolean().notNull().default(false),
     error: text(),
     startedAt: timestamp(),
     finishedAt: timestamp(),

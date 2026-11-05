@@ -3,6 +3,7 @@
 .git/
 .notes/
 docs/
+queries/
 node_modules/
 .env
 .env.*

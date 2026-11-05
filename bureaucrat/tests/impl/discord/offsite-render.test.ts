@@ -50,6 +50,7 @@ const row = (over: Partial<ExportMessageRow> = {}): ExportMessageRow => ({
   components: null,
   extras: {},
   copiedTo: null,
+  readAt: null,
   ...over,
 });
 

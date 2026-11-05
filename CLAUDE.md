@@ -37,6 +37,7 @@ bureaucrat/
   tests/                         # Mirrors the source tree
 migrations/                      # Generated SQL (committed to git)
 docs/interactions/               # ADRs for the view framework
+queries/                         # Hand-run SQL for watching prod (offsite throughput, errors)
 ```
 
 ## Database
@@ -160,6 +161,13 @@ offsite), making categories as needed.
   member overwrite on the game channel (no Send Messages, Send Messages in Threads allowed) that
   only `games/whispers/restrict.ts` writes or removes; `/whispers end`, promotion to async, night
   and the game's end all go through it.
+- **Errors**: a caught error that is not simply handled is recorded in `ErrorEvent` through
+  `impl/discord/errors/record.ts`: `fault(operation, outcome, error)` in a `catch`, or
+  `.catch(swallow(operation, outcome, fallback))` where a silent `.catch(() => null)` would have gone.
+  `outcome` is what it cost (`failed`, `degraded`: something missing from the result, `ignored`: a
+  fallback covered it). A background job runs inside `faultScope({ area, game, export })` so every
+  fault beneath it is filed under that. The classifier (`errors/classify.ts`) normalises routes and
+  scrubs webhook tokens. The offsite engine is instrumented so far; `queries/errors-*.sql` read it back.
 - **Strings**: the framework's own words live in `strings/common.ts` and every refusal in
   `strings/errors.ts`. View and command text is still inline and migrates opportunistically.
 

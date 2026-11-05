@@ -26,6 +26,7 @@ import { listManagedThreads } from '../../../../drizzle/managed-threads';
 import type { ExportAttachment, ExportMessage, ExportReaction } from '../../../../schema/core/exports.sql';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
+import { fault, swallow } from '../../errors/record';
 import { S } from '../../../../strings';
 
 type GameRow = typeof Game.$inferSelect;
@@ -91,7 +92,12 @@ const rowOf = (exportId: string, channel: bigint, m: Message): MessageInsert => 
 const reactionsOf = async (m: Message): Promise<ExportReaction[]> => {
   const out: ExportReaction[] = [];
   for (const reaction of m.reactions.cache.values()) {
-    const users = await reaction.users.fetch({ limit: 100 }).catch(() => null);
+    const users = await reaction.users.fetch({ limit: 100 }).catch(
+      swallow('read.reactions', 'degraded', null, {
+        channel: m.channelId,
+        detail: { message: m.id, emoji: reaction.emoji.name },
+      }),
+    );
     out.push({
       emoji: reaction.emoji.id
         ? `<${reaction.emoji.animated ? 'a' : ''}:${reaction.emoji.name}:${reaction.emoji.id}>`
@@ -125,6 +131,7 @@ const threadsOf = async (
     take((await channel.threads.fetchActive()).threads.values());
   } catch (error) {
     logger.warn({ message: `Export of game ${game.id}: active threads could not be listed.`, error });
+    fault('read.threads.active', 'degraded', error, { channel: channel.id });
   }
   const archived = async (type: 'public' | 'private', fetchAll: boolean): Promise<boolean> => {
     let before: ThreadChannel | undefined;
@@ -133,6 +140,9 @@ const threadsOf = async (
         .fetchArchived({ type, fetchAll, before, limit: 100 })
         .catch((error: unknown) => {
           logger.warn({ message: `Export of game ${game.id}: archived ${type} threads could not be listed.`, error });
+          // The full private list falls back to the joined one; anything else is threads lost.
+          const outcome = type === 'private' && fetchAll ? 'ignored' : 'degraded';
+          fault('read.threads.archived', outcome, error, { channel: channel.id, detail: { type, fetchAll } });
           return null;
         });
       if (!page) return false;
@@ -149,7 +159,9 @@ const threadsOf = async (
   // A private thread the bot was never in is not listed, but its row says it exists.
   for (const row of await listManagedThreads(game.id)) {
     if (found.has(String(row.thread))) continue;
-    const thread = await client.channels.fetch(String(row.thread)).catch(() => null);
+    const thread = await client.channels
+      .fetch(String(row.thread))
+      .catch(swallow('read.threads.tracked', 'degraded', null, { channel: row.thread }));
     if (thread?.isThread()) found.set(thread.id, thread);
   }
   return { found, complete };
@@ -200,7 +212,10 @@ const recordMembers = async (client: Client, guild: Guild, exportId: string, ids
   const rows: Parameters<typeof upsertMembers>[0] = [];
   for (let i = 0; i < all.length; i += 100) {
     const chunk = all.slice(i, i + 100);
-    const fetched = await guild.members.fetch({ user: chunk }).catch(() => null);
+    // Each member not found falls back to a user lookup below.
+    const fetched = await guild.members
+      .fetch({ user: chunk })
+      .catch(swallow('read.members', 'ignored', null, { detail: { members: chunk.length } }));
     for (const id of chunk) {
       const member = fetched?.get(id);
       if (member) {
@@ -214,7 +229,9 @@ const recordMembers = async (client: Client, guild: Guild, exportId: string, ids
         });
         continue;
       }
-      const user = await client.users.fetch(id).catch(() => null);
+      const user = await client.users
+        .fetch(id)
+        .catch(swallow('read.users', 'degraded', null, { detail: { user: id } }));
       rows.push({
         export: exportId,
         member: BigInt(id),
@@ -236,7 +253,9 @@ const recordMembers = async (client: Client, guild: Guild, exportId: string, ids
  * with the members and roles seen, and the state moved on.
  */
 export const readGame = async (client: Client, game: GameRow, exp: GameExportRow, report: Report): Promise<void> => {
-  const source = await client.channels.fetch(String(game.channel)).catch(() => null);
+  const source = await client.channels
+    .fetch(String(game.channel))
+    .catch(swallow('read.source', 'failed', null, { channel: game.channel }));
   if (!source || source.type !== ChannelType.GuildText) throw new Error(S.errors.offsiteSourceGone);
   const guild = source.guild;
 
@@ -287,11 +306,14 @@ export const readGame = async (client: Client, game: GameRow, exp: GameExportRow
       await readChannel(exp, row, channel, members, roles, tally, report, progress);
     } catch (error) {
       logger.warn({ message: `Export of game ${game.id}: ${row.name} could not be read.`, error });
+      fault('read.channel', 'degraded', error, { channel: row.channel, detail: { name: row.name, kind: row.kind } });
       unread.push(row.name);
       await updateChannel(row.id, { readDone: true });
     } finally {
       if (wasArchived && channel.isThread() && !channel.archived) {
-        await channel.setArchived(true, 'Read for the archive').catch(() => undefined);
+        await channel
+          .setArchived(true, 'Read for the archive')
+          .catch(swallow('read.threads.rearchive', 'ignored', undefined, { channel: channel.id }));
       }
     }
   }

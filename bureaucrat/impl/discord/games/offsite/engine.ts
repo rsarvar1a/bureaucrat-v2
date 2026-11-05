@@ -18,6 +18,7 @@ import { stampByName } from '../archives/stamps';
 import { readGame } from './read';
 import { copyGame, destinationOf } from './write';
 import { offsiteConcurrency } from '../../../../utilities/pool';
+import { fault, faultScope, swallow } from '../../errors/record';
 
 /** How often unfinished exports are looked for. */
 export const TICK_MS = 15_000;
@@ -44,6 +45,7 @@ const reporter = (client: Client, exp: GameExportRow) => {
     last = now;
     await publish(client, exp.game).catch((error: unknown) => {
       logger.debug({ message: `Offsite card of game ${exp.game} could not be redrawn.`, error });
+      fault('card.publish', 'ignored', error);
     });
   };
 };
@@ -79,9 +81,10 @@ const run = async (client: Client, first: GameExportRow): Promise<void> => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error({ message: `Offsite archive of game ${game.id} failed: ${message}`, error });
+    fault('export', 'failed', error, { detail: { state: first.state } });
     await updateExport(first.id, { state: 'failed', error: message.slice(0, 500) });
   }
-  await publish(client, game.id).catch(() => undefined);
+  await publish(client, game.id).catch(swallow('card.publish', 'ignored', undefined));
 };
 
 /**
@@ -93,18 +96,21 @@ const run = async (client: Client, first: GameExportRow): Promise<void> => {
 const reflowOwed = async (client: Client): Promise<void> => {
   for (const row of await listDestinationsAwaitingReflow()) {
     await updateDestination(row.id, { reflowPending: false });
-    try {
-      const destination = await destinationOf(client, row);
-      if (!destination.ok) throw new Error(destination.reason);
-      const done = await reflowChain(destination.guild, BigInt(destination.category.id), stampByName);
-      if (done) await updateDestination(row.id, { category: BigInt(done.current.id) });
-      logger.info({ message: `Archive ${row.category} on ${row.destGuild} reflowed after a sync.` });
-    } catch (error) {
-      logger.error({
-        message: `Archive ${row.category} on ${row.destGuild} could not be reflowed after a sync.`,
-        error,
-      });
-    }
+    await faultScope({ area: 'offsite', guild: row.destGuild }, async () => {
+      try {
+        const destination = await destinationOf(client, row);
+        if (!destination.ok) throw new Error(destination.reason);
+        const done = await reflowChain(destination.guild, BigInt(destination.category.id), stampByName);
+        if (done) await updateDestination(row.id, { category: BigInt(done.current.id) });
+        logger.info({ message: `Archive ${row.category} on ${row.destGuild} reflowed after a sync.` });
+      } catch (error) {
+        logger.error({
+          message: `Archive ${row.category} on ${row.destGuild} could not be reflowed after a sync.`,
+          error,
+        });
+        fault('reflow', 'failed', error, { detail: { destination: row.id } });
+      }
+    });
   }
 };
 
@@ -140,8 +146,11 @@ export const tickOffsite = async (client: Client): Promise<void> => {
     running.add(exp.id);
     busyGames.add(exp.game);
     started += 1;
-    void run(client, exp)
-      .catch((error: unknown) => logger.error({ message: `Offsite export ${exp.id} crashed.`, error }))
+    void faultScope({ area: 'offsite', game: exp.game, export: exp.id }, () => run(client, exp))
+      .catch((error: unknown) => {
+        logger.error({ message: `Offsite export ${exp.id} crashed.`, error });
+        fault('export.crash', 'failed', error, { area: 'offsite', game: exp.game, export: exp.id });
+      })
       .finally(() => {
         running.delete(exp.id);
         busyGames.delete(exp.game);
@@ -150,7 +159,11 @@ export const tickOffsite = async (client: Client): Promise<void> => {
 };
 
 export const startOffsiteEngine = (client: Client): ReturnType<typeof setInterval> => {
-  const tick = () => tickOffsite(client).catch((error) => logger.error({ message: 'Offsite tick failed.', error }));
+  const tick = () =>
+    faultScope({ area: 'offsite' }, () => tickOffsite(client)).catch((error: unknown) => {
+      logger.error({ message: 'Offsite tick failed.', error });
+      fault('tick', 'failed', error, { area: 'offsite' });
+    });
   void tick();
   return setInterval(tick, TICK_MS);
 };

@@ -87,6 +87,9 @@ export const ExportMessage = core.table(
     components: jsonb().$type<unknown[] | null>(),
     extras: jsonb().$type<ExportExtras>().notNull().default({}),
     copiedTo: snowflake(),
+    // When the reader stored it (the copy's time is in `copiedTo`'s id). Null
+    // for rows read before it existed and for rows cloned from a sibling.
+    readAt: timestamp().defaultNow(),
   },
   (table) => [unique().on(table.export, table.message), index().on(table.export, table.channel, table.message)],
 );

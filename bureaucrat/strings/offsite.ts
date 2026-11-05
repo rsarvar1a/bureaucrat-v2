@@ -1,13 +1,12 @@
 export const title = (game: string): string => `### Archiving ${game}`;
 export const reading = (messages: number, channels: number): string =>
-  `Reading… ${messages.toLocaleString('en')} messages in ${channels} channel${channels === 1 ? '' : 's'} so far.`;
+  `Reading game: ${messages.toLocaleString('en')} messages in ${channels} channel${channels === 1 ? '' : 's'} so far.`;
 export const read = (messages: number, channels: number): string =>
-  `Read: ${messages.toLocaleString('en')} messages in ${channels} channel${channels === 1 ? '' : 's'}. Run \`/game offsite\` to copy them.`;
+  `Read: ${messages.toLocaleString('en')} messages in ${channels} channel${channels === 1 ? '' : 's'}. Run \`/game offsite\` to start copying.`;
 export const copying = (copied: number, messages: number): string =>
-  `Copying… ${copied.toLocaleString('en')} of ${messages.toLocaleString('en')} messages.`;
+  `Copying game: ${copied.toLocaleString('en')} of ${messages.toLocaleString('en')} messages.`;
 /** A copy deferred by Discord's thread limit (`games/offsite/gate.ts`). */
-export const paused = (until: Date): string =>
-  `-# Paused for Discord's thread limit; carries on <t:${Math.ceil(until.getTime() / 1000)}:R>.`;
+export const paused = (until: Date): string => `-# Rate limited until <t:${Math.ceil(until.getTime() / 1000)}:R>.`;
 export const copied = (channel: bigint, messages: number): string =>
   `Copied ${messages.toLocaleString('en')} messages to <#${channel}>.`;
 export const failed = (error: string): string => `**Stopped:** ${error}`;
@@ -16,15 +15,13 @@ export const waiting = 'Waiting for the archiver to pick this up.';
 export const retry = 'Retry';
 export const toRecord = '**Record:**';
 export const toArchive = (guild: string): string => `**${guild}:**`;
-export const started = (game: string): string =>
-  `**${game}** is being archived. The card in its channel follows along.`;
-export const adopted = (game: string): string =>
-  `This channel is now on record as **${game}** and is being archived. The card in it follows along.`;
+export const started = (game: string): string => `**${game}** is being archived.`;
+export const adopted = (game: string): string => `This channel is now on record as **${game}** and is being archived.`;
 export const reflowed = (chains: { base: string; channels: number; links: number }[]): string =>
   chains
     .map(
       ({ base, channels, links }) =>
-        `**${base}**: ${channels.toLocaleString('en')} channel${channels === 1 ? '' : 's'} across ${links} categor${links === 1 ? 'y' : 'ies'}, newest first.`,
+        `**${base}**: ${channels.toLocaleString('en')} channel${channels === 1 ? '' : 's'} across ${links} categor${links === 1 ? 'y' : 'ies'}.`,
     )
     .join('\n');
 export const synced = (tally: {
@@ -34,29 +31,26 @@ export const synced = (tally: {
   skipped: number;
   unmapped: number;
 }): string => {
-  const parts = [
-    `${tally.started} queued for copying${tally.adopted > 0 ? ` (${tally.adopted} adopted from before the record)` : ''}`,
-    `${tally.copied} already there`,
-  ];
-  if (tally.skipped > 0) parts.push(`${tally.skipped} skipped (running, unfinished, or another server's)`);
+  const parts = [`${tally.started} queued for copying`, `${tally.copied} already exported to the target archive`];
+  if (tally.skipped > 0) parts.push(`${tally.skipped} skipped (running, unfinished, or belonging to another server)`);
   const unmapped =
     tally.unmapped > 0
-      ? `\n-# ${tally.unmapped} archive${tally.unmapped === 1 ? '' : 's'} with no mapping left alone; see \`/archives offsite manage\`.`
+      ? `\n-# ignored ${tally.unmapped} archive${tally.unmapped === 1 ? '' : 's'} with no mapping; see \`/archives offsite manage\`.`
       : '';
-  return `Archive sync: ${parts.join(', ')}. Each off-server archive is reflowed once the queue drains.${unmapped}`;
+  return `Archive sync: ${parts.join(', ')}.${unmapped}`;
 };
 export const privateQueued = (count: number): string =>
   count === 0
-    ? 'Private threads will be copied from now on. No finished copy is missing any.'
-    : `Private threads will be copied from now on; ${count} finished cop${count === 1 ? 'y is' : 'ies are'} queued for theirs.`;
+    ? 'Private threads will be copied from now on.'
+    : `Private threads will be copied from now on; ${count} finished cop${count === 1 ? 'y is' : 'ies are'} queued for reingestion!`;
 export const manageTitle = '### Off-server archives';
-export const noMappings = 'No archive is copied anywhere yet. Pick one below to map it.';
+export const noMappings = 'There are no archive mappings yet.';
 /** A destination as links: the server, and the category in it, each opening in Discord. */
 export const mappingTarget = (guild: { id: string; name: string }, category: { id: string; name: string }): string =>
   `[**${guild.name}**](https://discord.com/channels/${guild.id}) › [${category.name}](https://discord.com/channels/${guild.id}/${category.id})`;
-export const familyGone = '*(a category that is gone)*';
+export const familyGone = '*(an unknown category)*';
 export const unmapped = (names: string[]): string => `-# Not copied: ${names.map((name) => `**${name}**`).join(', ')}.`;
-export const addPlaceholder = 'Map an archive (any category of its chain)…';
+export const addPlaceholder = 'Map an archive…';
 export const pickPlaceholder = 'Pick a mapping to change or remove';
 export const addTitle = 'Copy this archive to…';
 export const change = 'Change destination';
@@ -64,5 +58,5 @@ export const remove = 'Stop copying';
 export const removeConfirm = (family: string): string => `Stop copying ${family}`.slice(0, 80);
 export const mappingCount = (count: number): string =>
   count === 0
-    ? 'No archive is copied off-server yet; map them with `/archives offsite manage`.'
+    ? 'No archive is configured to export off-server yet; map them with `/archives offsite manage`.'
     : `${count} archive${count === 1 ? ' is' : 's are'} copied off-server; see \`/archives offsite manage\`.`;

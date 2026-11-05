@@ -1,6 +1,7 @@
 import {
   ChannelType,
   GuildPremiumTier,
+  MessageType,
   PermissionFlagsBits,
   ThreadAutoArchiveDuration,
   type CategoryChannel,
@@ -168,7 +169,13 @@ const webhookOf = async (client: Client, exp: GameExportRow, channel: TextChanne
   return webhook;
 };
 
-/** A source thread's copy: made under the channel on first sight, public whatever it was. */
+/**
+ * A source thread's copy: made under the channel on first sight, public
+ * whatever it was, since a private thread is shown only to its members and
+ * a reader cannot be one of every thread. The "started a thread" line
+ * Discord posts in the channel is deleted, or each private thread a later
+ * pass adds would leave one at the foot of the game.
+ */
 const threadOf = async (channel: TextChannel, row: ExportChannelRow): Promise<bigint> => {
   if (row.copiedTo !== null) return row.copiedTo;
   const thread = await channel.threads.create({
@@ -178,7 +185,19 @@ const threadOf = async (channel: TextChannel, row: ExportChannelRow): Promise<bi
     reason: 'Offsite archive',
   });
   await updateChannel(row.id, { copiedTo: BigInt(thread.id) });
+  const recent = await channel.messages.fetch({ limit: 10 }).catch(() => null);
+  const notice = recent?.find((m) => m.type === MessageType.ThreadCreated && m.reference?.channelId === thread.id);
+  if (notice) await notice.delete().catch(() => undefined);
   return BigInt(thread.id);
+};
+
+/** Archives a thread's copy, if it is not already: none should sit in the thread bar. */
+const archiveCopy = async (client: Client, row: ExportChannelRow): Promise<void> => {
+  if (row.copiedTo === null) return;
+  const thread = await client.channels.fetch(String(row.copiedTo)).catch(() => null);
+  if (thread?.isThread() && !thread.archived) {
+    await thread.setArchived(true, 'Offsite archive').catch(() => undefined);
+  }
 };
 
 /** Sends one rendered message as its chunks; the last chunk carries the files and embeds and is the one recorded. */
@@ -224,7 +243,8 @@ const send = async (
  * Replays the export into the archive server: the channel with its header,
  * a webhook, a public thread per source thread, then every message not yet
  * copied, oldest first, each recorded as it lands so a restart carries on
- * at the first gap. Threads the source had archived are archived again.
+ * at the first gap. Every thread's copy is archived at the end, whatever it
+ * was in the source: an archive has nothing live.
  *
  * Private threads (whispers, the Storyteller's, kibitz) go only where the
  * server has said so (`offsitePrivate`); left out, nothing of theirs is
@@ -309,11 +329,11 @@ export const copyGame = async (
       progress.copied += 1;
       await report(progress);
     }
+  }
 
-    if (row.kind !== 'channel' && row.archived) {
-      const thread = await client.channels.fetch(String(row.copiedTo)).catch(() => null);
-      if (thread?.isThread()) await thread.setArchived(true, 'Archived in the source too').catch(() => undefined);
-    }
+  // Sending to an archived thread opens it again, so every copy is closed once all are written.
+  for (const row of channels) {
+    if (row.kind !== 'channel') await archiveCopy(client, row);
   }
 
   // A new channel goes to the top; one revisited for its private threads stays where the reflow put it.

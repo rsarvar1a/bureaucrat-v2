@@ -14,7 +14,6 @@ import {
   insertMessages,
   listChannels,
   oldestMessageOf,
-  setReactions,
   updateChannel,
   updateExport,
   upsertChannels,
@@ -26,7 +25,7 @@ import { listManagedThreads } from '../../../../drizzle/managed-threads';
 import type { ExportAttachment, ExportMessage, ExportReaction } from '../../../../schema/core/exports.sql';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
-import { fault, swallow } from '../../errors/record';
+import { abortIfTransient, fault, swallow } from '../../errors/record';
 import { S } from '../../../../strings';
 
 type GameRow = typeof Game.$inferSelect;
@@ -130,6 +129,7 @@ const threadsOf = async (
   try {
     take((await channel.threads.fetchActive()).threads.values());
   } catch (error) {
+    abortIfTransient('read.threads.active', error, { channel: channel.id });
     logger.warn({ message: `Export of game ${game.id}: active threads could not be listed.`, error });
     fault('read.threads.active', 'degraded', error, { channel: channel.id });
   }
@@ -139,6 +139,7 @@ const threadsOf = async (
       const page = await channel.threads
         .fetchArchived({ type, fetchAll, before, limit: 100 })
         .catch((error: unknown) => {
+          abortIfTransient('read.threads.archived', error, { channel: channel.id, detail: { type, fetchAll } });
           logger.warn({ message: `Export of game ${game.id}: archived ${type} threads could not be listed.`, error });
           // The full private list falls back to the joined one; anything else is threads lost.
           const outcome = type === 'private' && fetchAll ? 'ignored' : 'degraded';
@@ -184,17 +185,22 @@ const readChannel = async (
     const messages = [...page.values()];
     if (messages.length === 0) break;
 
-    await insertMessages(messages.map((m) => rowOf(exp.id, row.channel, m)));
+    // A page is stored whole, its reactions with it: a read resumes after the
+    // oldest stored message, so a page stored before its reactions were in
+    // would keep its gaps if the job stopped between the two.
+    const rows: MessageInsert[] = [];
     for (const m of messages) {
       members.add(m.author.id);
       for (const match of m.content.matchAll(USER_MENTION)) members.add(match[1]!);
       for (const match of m.content.matchAll(ROLE_MENTION)) roles.add(match[1]!);
+      const stored = rowOf(exp.id, row.channel, m);
       if (m.reactions.cache.size > 0) {
-        const reactions = await reactionsOf(m);
-        for (const r of reactions) for (const id of r.users) members.add(id);
-        await setReactions(exp.id, BigInt(m.id), reactions);
+        stored.reactions = await reactionsOf(m);
+        for (const r of stored.reactions) for (const id of r.users) members.add(id);
       }
+      rows.push(stored);
     }
+    await insertMessages(rows);
 
     tally.messages += messages.length;
     progress.messages = tally.messages;
@@ -305,6 +311,8 @@ export const readGame = async (client: Client, game: GameRow, exp: GameExportRow
       if (channel.isThread()) await writable(channel);
       await readChannel(exp, row, channel, members, roles, tally, report, progress);
     } catch (error) {
+      // Only a channel Discord refuses is left out; anything passing stops the job instead.
+      abortIfTransient('read.channel', error, { channel: row.channel, detail: { name: row.name, kind: row.kind } });
       logger.warn({ message: `Export of game ${game.id}: ${row.name} could not be read.`, error });
       fault('read.channel', 'degraded', error, { channel: row.channel, detail: { name: row.name, kind: row.kind } });
       unread.push(row.name);

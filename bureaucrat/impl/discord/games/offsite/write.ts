@@ -35,7 +35,7 @@ import { getScriptSummary } from '../../../../drizzle/scripts';
 import { listSeating } from '../../../../drizzle/seating';
 import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
-import { fault, swallow } from '../../errors/record';
+import { abortIfTransient, fault, swallow } from '../../errors/record';
 import { Deferred, threadGate } from './gate';
 import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
@@ -250,6 +250,8 @@ const send = async (
       last = await webhook.send(payload);
     } catch (error) {
       if (!final) throw error;
+      // Nothing was posted; a passing failure stops the copy rather than send it without its files.
+      abortIfTransient('write.send.files', error, { channel: threadId ?? row.channel });
       // A dead file or a bad embed: the words still go, with a note that something did not.
       logger.warn({ message: `Offsite copy: message ${row.message} sent without its files or embeds.`, error });
       fault('write.send.files', 'degraded', error, {
@@ -265,7 +267,12 @@ const send = async (
     }
   }
   if (last && rendered.pin) {
-    await last.pin().catch(swallow('write.pin', 'degraded', undefined, { detail: { message: String(row.message) } }));
+    // Not `swallow`, and never an abort: the message has landed but is not yet
+    // recorded, so stopping here would send it twice on the retry and still
+    // not pin it. A pin that fails is left off, and recorded.
+    await last.pin().catch((error: unknown) => {
+      fault('write.pin', 'degraded', error, { detail: { message: String(row.message) } });
+    });
   }
   return last ? BigInt(last.id) : 0n;
 };

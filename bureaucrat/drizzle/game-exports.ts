@@ -200,18 +200,6 @@ export const setMessageCopy = async (id: string, copiedTo: bigint): Promise<void
   await db.update(ExportMessage).set({ copiedTo }).where(eq(ExportMessage.id, id));
 };
 
-/** The reactions come after the insert, one request per emoji, so they are written by source id. */
-export const setReactions = async (
-  exportId: string,
-  message: bigint,
-  reactions: ExportMessageRow['reactions'],
-): Promise<void> => {
-  await db
-    .update(ExportMessage)
-    .set({ reactions })
-    .where(and(eq(ExportMessage.export, exportId), eq(ExportMessage.message, message)));
-};
-
 /** The time of the last message copied in a channel, so a resumed copy knows whether the day changed. */
 export const lastCopiedTimeOf = async (exportId: string, channel: bigint): Promise<Date | null> => {
   const [row] = await db

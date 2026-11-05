@@ -213,6 +213,9 @@ export const offsiteTargetBad =
   'That server or category could not be found. Both are ids (Developer Mode, right-click, Copy ID), and the bot must be in the server.';
 export const copyNotAChannel = 'Run this in the text channel to copy, or in one of its threads.';
 export const offsiteSourceGone = "The game's channel could not be found.";
+/** A copy stopped by a passing failure (the network, Discord, the database), with nothing skipped. */
+export const offsiteTransient = (cause: string): string =>
+  `Stopped on a passing failure (${cause}). Nothing was skipped; **Retry** carries on where it stopped.`;
 export const offsiteNotReachable = (missing: string[]): string =>
   missing.length === 0
     ? 'The archive server or its category could not be reached. Is the bot in it?'

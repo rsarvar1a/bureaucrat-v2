@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { insertErrorEvent } from '../../../drizzle/error-events';
 import { logger } from '../../../utilities/logger';
-import { classify, framesOf, scrub } from './classify';
+import { classify, framesOf, isTransient, scrub } from './classify';
 
 /**
  * Caught errors, kept in `ErrorEvent` to query back (see `queries/errors-*.sql`).
@@ -12,8 +12,12 @@ import { classify, framesOf, scrub } from './classify';
  * an error about an error is logged and dropped.
  */
 
-/** What an error cost: the job, part of the result, or nothing. */
-export type Outcome = 'failed' | 'degraded' | 'ignored';
+/**
+ * What an error cost: the job (`failed`), part of the result (`degraded`),
+ * nothing (`ignored`), or nothing yet because the job stopped there on a
+ * transient error rather than go on without something (`aborted`).
+ */
+export type Outcome = 'failed' | 'degraded' | 'ignored' | 'aborted';
 
 type Ids = { game?: string; export?: string; guild?: bigint | string; channel?: bigint | string };
 export type FaultScope = Ids & { area: string };
@@ -67,10 +71,27 @@ export const fault = (
   });
 };
 
-/** For `.catch(...)`: records the error, then answers `fallback` as the silent catch did. */
+/**
+ * In a `catch` whose fallback would lose something: a transient error is
+ * recorded as `aborted` and thrown on, so the job stops with nothing left
+ * out and a retry carries on from there. Anything else returns to the caller.
+ */
+export const abortIfTransient = (operation: string, error: unknown, extra?: Parameters<typeof fault>[3]): void => {
+  if (!isTransient(error)) return;
+  fault(operation, 'aborted', error, extra);
+  throw error;
+};
+
+/**
+ * For `.catch(...)`: records the error, then answers `fallback` as the
+ * silent catch did. A fallback that loses nothing (`ignored`) takes any
+ * error; one that would (`degraded`, `failed`) takes only a real refusal,
+ * and a transient error stops the job instead (`abortIfTransient`).
+ */
 export const swallow =
-  <T>(operation: string, outcome: Outcome, fallback: T, extra?: Parameters<typeof fault>[3]) =>
+  <T>(operation: string, outcome: Exclude<Outcome, 'aborted'>, fallback: T, extra?: Parameters<typeof fault>[3]) =>
   (error: unknown): T => {
+    if (outcome !== 'ignored') abortIfTransient(operation, error, extra);
     fault(operation, outcome, error, extra);
     return fallback;
   };

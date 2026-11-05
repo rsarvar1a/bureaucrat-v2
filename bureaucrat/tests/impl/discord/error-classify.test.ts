@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { DiscordAPIError, RateLimitError } from 'discord.js';
-import { classify, routeOf, scrub } from '../../../impl/discord/errors/classify';
+import { classify, isTransient, routeOf, scrub } from '../../../impl/discord/errors/classify';
 
 const API = 'https://discord.com/api/v10';
 
@@ -89,4 +89,47 @@ test("discord.js's own errors are internal", () => {
     code: 'ChannelNotCached',
   });
   expect(classify(own)).toMatchObject({ kind: 'internal', code: 'ChannelNotCached' });
+});
+
+const wrapped = (cause: Error) =>
+  Object.assign(
+    new Error('Failed query: update "core"."ExportMessage" set "content" = $1\nparams: a secret whisper', { cause }),
+    {
+      name: 'DrizzleQueryError',
+    },
+  );
+
+test('a query wrapper is its cause, and its parameters go nowhere', () => {
+  const dns = Object.assign(new Error('getaddrinfo EAI_AGAIN postgres'), { code: 'EAI_AGAIN' });
+  const classified = classify(wrapped(dns));
+  expect(classified).toMatchObject({ kind: 'network', code: 'EAI_AGAIN', message: 'getaddrinfo EAI_AGAIN postgres' });
+  expect(classified.message).not.toContain('secret');
+});
+
+test('transient: the network, rate limits, 5xx, and a database out of reach', () => {
+  const dns = Object.assign(new Error('getaddrinfo EAI_AGAIN discord.com'), { code: 'EAI_AGAIN' });
+  const pgTimeout = Object.assign(new Error('write CONNECT_TIMEOUT postgres:5432'), { code: 'CONNECT_TIMEOUT' });
+  const http = (status: number) =>
+    Object.assign(new Error('x'), {
+      name: `DiscordAPIError[0]`,
+      code: 0,
+      status,
+      method: 'GET',
+      url: `${API}/channels/1`,
+    });
+  const pg = (code: string) => Object.assign(new Error('pg'), { name: 'PostgresError', code, severity: 'FATAL' });
+
+  expect(isTransient(dns)).toBe(true);
+  expect(isTransient(wrapped(dns))).toBe(true);
+  expect(isTransient(pgTimeout)).toBe(true);
+  expect(isTransient(http(502))).toBe(true);
+  expect(isTransient(pg('08006'))).toBe(true);
+  expect(isTransient(pg('53300'))).toBe(true);
+  expect(isTransient(pg('40P01'))).toBe(true);
+
+  // Refusals are answers, not accidents.
+  expect(isTransient(http(403))).toBe(false);
+  expect(isTransient(http(404))).toBe(false);
+  expect(isTransient(pg('23505'))).toBe(false);
+  expect(isTransient(new Error('boom'))).toBe(false);
 });

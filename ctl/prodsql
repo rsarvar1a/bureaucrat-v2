@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# SQL against production from a local checkout: over SSH to the box, then
+# through `bureaucratctl psql` there, so no password, port or tunnel is
+# involved and the query runs as the bot's own user inside the container.
+#
+#   bun prodsql < queries/offsite-phases.sql    a file (the usual case)
+#   bun prodsql -c 'select 1'                   one shot; arguments go to psql
+#   bun prodsql                                 an interactive psql on the box
+#
+# Piped SQL runs under a statement timeout, so a heavy query cannot pile onto
+# a box that is already struggling, and stops at its first error. The host is
+# an SSH alias (yours is `uwbotc-db`); forwarding is cleared because that
+# alias forwards a port a running tunnel may already hold.
+#
+#   BUREAUCRAT_PROD_SSH      SSH host or alias        (default uwbotc-db)
+#   BUREAUCRAT_PROD_ROOT     checkout on the box      (default /root/bureaucrat-v2)
+#   BUREAUCRAT_PROD_TIMEOUT  statement timeout, piped (default 30s)
+#
+set -euo pipefail
+
+host="${BUREAUCRAT_PROD_SSH:-uwbotc-db}"
+root="${BUREAUCRAT_PROD_ROOT:-/root/bureaucrat-v2}"
+timeout="${BUREAUCRAT_PROD_TIMEOUT:-30s}"
+
+remote="cd $(printf '%q' "$root") && ctl/bureaucratctl psql -X -P pager=off -v ON_ERROR_STOP=1"
+(( $# == 0 )) || remote+=" $(printf '%q ' "$@")"
+
+if [[ -t 0 ]]; then
+  # A terminal here: a terminal there, for an interactive psql (or a -c).
+  exec ssh -t -o ClearAllForwardings=yes "$host" "$remote"
+fi
+
+{ printf "SET statement_timeout = '%s';\n" "$timeout"; cat; } |
+  ssh -o ClearAllForwardings=yes -o BatchMode=yes "$host" "$remote"

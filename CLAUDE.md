@@ -170,10 +170,15 @@ offsite), making categories as needed.
 - **Errors**: a caught error that is not simply handled is recorded in `ErrorEvent` through
   `impl/discord/errors/record.ts`: `fault(operation, outcome, error)` in a `catch`, or
   `.catch(swallow(operation, outcome, fallback))` where a silent `.catch(() => null)` would have gone.
-  `outcome` is what it cost (`failed`, `degraded`: something missing from the result, `ignored`: a
-  fallback covered it). A background job runs inside `faultScope({ area, game, export })` so every
-  fault beneath it is filed under that. The classifier (`errors/classify.ts`) normalises routes and
-  scrubs webhook tokens. The offsite engine is instrumented so far; `queries/errors-*.sql` read it back.
+  `outcome` is what it cost (`failed`; `degraded`: something missing from the result; `ignored`: a
+  fallback covered it; `aborted`: the job stopped there instead). A transient error (the network, a
+  rate limit, a 5xx, the database out of reach: `isTransient` in `errors/classify.ts`) is never a
+  reason to leave something out: `swallow` with a losing fallback, and `abortIfTransient` at the top of
+  an explicit catch, throw it on so the job stops with nothing skipped and a retry carries on. A
+  background job runs inside `faultScope({ area, game, export })` so every fault beneath it is filed
+  under that. The classifier normalises routes, scrubs webhook tokens and unwraps query wrappers
+  (whose messages quote parameters). The offsite engine is instrumented so far; `queries/errors-*.sql`
+  read it back.
 - **Strings**: the framework's own words live in `strings/common.ts` and every refusal in
   `strings/errors.ts`. View and command text is still inline and migrates opportunistically.
 

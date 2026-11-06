@@ -7,7 +7,7 @@ discord/
   views/        the view framework: lifecycle, dispatch, guards, ancestry, subscriptions
                 query.ts lists rows and descendants; windows.ts opens and closes stacked windows
   commands/     the slash command builder, loader and sync
-  components/   confirm, dismiss, modal, stars, stepper, tabs, stack
+  components/   confirm, dismiss, modal, pager, stars, stepper, tabs, stack
   elements/     Components V2 builders and accent colours
   reply.ts      replySafely, toast
 ```

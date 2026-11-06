@@ -54,7 +54,7 @@ const targetModal = modal<OffsiteState>()({
   action: 'target',
   title: 'Off-server archive',
   fields: {
-    guild: field.short('Server id', { placeholder: 'The archive server\'s ID', maxLength: 20 }),
+    guild: field.short('Server id', { placeholder: "The archive server's ID", maxLength: 20 }),
     category: field.short('Category id', {
       placeholder: 'A category',
       maxLength: 20,

@@ -118,6 +118,13 @@ slot or both make the next link; a category Discord still calls full is skipped 
 channel across a chain in date order (by the record's end date on-server, by the name's stamp
 offsite), making categories as needed.
 
+`/stats` reads results live (`listPlayerResults`) and message counts from the rollups in
+`schema/core/stats.sql.ts`, per game from its largest export. Scanning `ExportMessage` is too slow for a
+view, so `games/stats/refresh.ts` recounts a game whose largest export has changed, on each
+`/stats messages` render, and the first one in a server can take seconds. `queries/playerstats/`
+keeps the same 2-day stretch of play by hand. `GuildSettings.statsNormalization` is the threshold
+under which a win rate counts half of it as extra wins and half as extra losses.
+
 ## Implementation Guidelines
 
 - **Layering**: `engine/` never imports `impl/`; the bottom tier never imports either. A loader

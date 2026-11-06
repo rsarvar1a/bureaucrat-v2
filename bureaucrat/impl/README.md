@@ -46,8 +46,9 @@ discord/
 
 A management pane that would otherwise branch into child panes is one ephemeral
 view with a `tab` field in its state, built on the `tabs` component. `queuemanage`
-(Description | Resources | Category | Delete), `qmanage` (Details | Signups) and
-`aclroleedit` (Details | Bindings | Permissions) are the three in the tree.
+(Description | Resources | Category | Delete), `qmanage` (Details | Signups),
+`aclroleedit` (Details | Bindings | Permissions) and `statsmessages` (Games | Users) are the
+four in the tree.
 
 - The strip is the header, with a separator beneath it so the content does not
   crowd the buttons. Every tab reads top to bottom as navigation (the strip),

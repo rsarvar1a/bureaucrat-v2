@@ -27,7 +27,8 @@ export type RankingSort = (typeof RANKING_SORTS)[number];
 export const normalized = (wins: number, games: number, threshold: number): Rate => {
   if (games === 0) return null;
   if (games >= threshold) return { value: wins / games, adjusted: false };
-  return { value: (wins + threshold / 2) / (games + threshold), adjusted: true };
+  // Padded up to the threshold, half of the missing games won and half lost.
+  return { value: (wins + (threshold - games) / 2) / threshold, adjusted: true };
 };
 
 const opposite = (side: Alignment): Alignment => (side === 'good' ? 'evil' : 'good');
@@ -93,7 +94,10 @@ export const sortRecords = (records: PlayerRecord[], sort: RankingSort, descendi
     return a.member < b.member ? -1 : a.member > b.member ? 1 : 0;
   });
 
-export const percent = (share: number): string => `${(share * 100).toFixed(1)}%`;
+const percent = (share: number): string => (share * 100).toFixed(1);
 
-export const rateText = (rate: Rate): string =>
-  rate === null ? '—' : `${percent(rate.value)}${rate.adjusted ? '\\*' : ''}`;
+/** A cell of the ranking table, whose headers carry the `%`. */
+export const rateCell = (rate: Rate): string =>
+  rate === null ? '-' : `${percent(rate.value)}${rate.adjusted ? '*' : ''}`;
+
+export const shareCell = (share: number | null): string => (share === null ? '-' : percent(share));

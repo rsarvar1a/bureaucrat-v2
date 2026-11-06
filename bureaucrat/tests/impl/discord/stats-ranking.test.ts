@@ -2,7 +2,8 @@ import { test, expect } from 'bun:test';
 import {
   normalized,
   playerRecords,
-  rateText,
+  rateCell,
+  shareCell,
   sortRecords,
   type PlayerRecord,
   type ResultRow,
@@ -15,8 +16,10 @@ const player = (member: bigint, winner: 'good' | 'evil', won: boolean): ResultRo
   won,
 });
 
-test('under the threshold counts half of it as wins and half as losses', () => {
-  expect(normalized(2, 2, 10)).toEqual({ value: 7 / 12, adjusted: true });
+test('under the threshold is padded up to it, half of the missing games won and half lost', () => {
+  // 2 for 2 with N = 10: 8 missing, so 4 more wins over 10 games.
+  expect(normalized(2, 2, 10)).toEqual({ value: 6 / 10, adjusted: true });
+  expect(normalized(0, 9, 10)).toEqual({ value: 0.5 / 10, adjusted: true });
 });
 
 test('at or over the threshold is the plain record', () => {
@@ -26,12 +29,12 @@ test('at or over the threshold is the plain record', () => {
 
 test('a threshold of zero is off, and an odd one keeps its half', () => {
   expect(normalized(1, 1, 0)).toEqual({ value: 1, adjusted: false });
-  expect(normalized(1, 1, 5)).toEqual({ value: 3.5 / 6, adjusted: true });
+  expect(normalized(1, 2, 5)).toEqual({ value: 2.5 / 5, adjusted: true });
 });
 
 test('no games is no rate, not an even one', () => {
   expect(normalized(0, 0, 10)).toBeNull();
-  expect(rateText(null)).toBe('—');
+  expect(rateCell(null)).toBe('-');
 });
 
 test('the side compared with the threshold is the games on that side', () => {
@@ -42,7 +45,7 @@ test('the side compared with the threshold is the games on that side', () => {
   const [record] = playerRecords(rows, 4);
   expect(record!.win).toEqual({ value: 1, adjusted: false });
   expect(record!.good).toEqual({ value: 1, adjusted: false });
-  expect(record!.evil).toEqual({ value: 4 / 6, adjusted: true });
+  expect(record!.evil).toEqual({ value: 3 / 4, adjusted: true });
 });
 
 test("a loser was on the side opposite the outcome's winner", () => {
@@ -94,6 +97,8 @@ test('a tie goes to whoever played more, then to the lower id', () => {
 });
 
 test('an adjusted rate is marked', () => {
-  expect(rateText({ value: 0.5, adjusted: true })).toBe('50.0%\\*');
-  expect(rateText({ value: 0.5, adjusted: false })).toBe('50.0%');
+  expect(rateCell({ value: 0.5, adjusted: true })).toBe('50.0*');
+  expect(rateCell({ value: 0.5, adjusted: false })).toBe('50.0');
+  expect(shareCell(0.273)).toBe('27.3');
+  expect(shareCell(null)).toBe('-');
 });

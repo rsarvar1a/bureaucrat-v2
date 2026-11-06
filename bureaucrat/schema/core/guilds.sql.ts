@@ -12,7 +12,7 @@ export const GuildSettings = core.table(
     offsiteAuto: boolean().notNull().default(false),
     /** Whether a game's private threads (whispers, the Storyteller's, kibitz) go into the copy. */
     offsitePrivate: boolean().notNull().default(false),
-    /** Under this many games a win rate counts half this many extra wins and losses; 0 is off. */
+    /** A win rate over fewer games than this is padded up to it, half won and half lost; 0 is off. */
     statsNormalization: integer().notNull().default(0),
     ...timestamps(),
   },

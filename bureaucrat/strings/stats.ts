@@ -40,6 +40,31 @@ export const stillReading = (games: number) => `\n-# ${games} are still being in
 
 export const count = (n: number, noun: string) => `${n.toLocaleString('en-US')} ${noun}${n === 1 ? '' : 's'}`;
 
+/** Column headers, and the labels of the dropdown that picks them. */
+export const columns = {
+  rank: '#',
+  player: 'Player',
+  played: 'Played',
+  win: 'Win %',
+  good: 'Good win %',
+  evil: 'Evil win %',
+  evilShare: 'Evil rate',
+  storytold: 'Storytold',
+  game: 'Game',
+  winner: 'Winner',
+  messages: 'Messages',
+  threads: 'Threads',
+  members: 'Members',
+  days: 'Days',
+  started: 'Started',
+  ended: 'Ended',
+  user: 'User',
+  games: 'Games',
+  perGame: 'Per game',
+  perDay: 'Per day',
+} as const;
+export const columnsPlaceholder = 'View columns';
+
 export const sortPlaceholder = 'Sort by';
 export const descending = 'Descending';
 export const ascending = 'Ascending';

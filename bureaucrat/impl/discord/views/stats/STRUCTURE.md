@@ -9,10 +9,11 @@ is in `games/stats/`.
 
 ### `statsranking`
 
-`/stats ranking`. Every Player and Storyteller with a result on record, sorted and paged per viewer.
+`/stats ranking`. Every Player and Storyteller with a result on record, sorted and paged per viewer, as
+a table whose optional columns (`columns.ts`) the viewer picks.
 
 ### `statsmessages`
 
 `/stats messages`. Games and Users tabs over the rollups, which `refreshMessageStats` brings up to date
 on each render. Renderers are in `messages/`, and the strip in `tabs.ts`. The Users tab is at the
-five-row limit: strip, sort, roles, direction and pager, Dismiss.
+five-row limit, so direction and paging share the strip's row: strip, sort, roles, columns, Dismiss.

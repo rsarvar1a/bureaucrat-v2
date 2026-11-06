@@ -123,7 +123,7 @@ offsite), making categories as needed.
 view, so `games/stats/refresh.ts` recounts a game whose largest export has changed, on each
 `/stats messages` render, and the first one in a server can take seconds. `queries/playerstats/`
 keeps the same 2-day stretch of play by hand. `GuildSettings.statsNormalization` is the threshold
-under which a win rate counts half of it as extra wins and half as extra losses.
+a win rate over fewer games is padded up to, half of the missing games won and half lost.
 
 ## Implementation Guidelines
 

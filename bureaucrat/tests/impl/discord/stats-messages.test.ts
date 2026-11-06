@@ -105,8 +105,10 @@ test('roles held in state fall back to all three when empty or unknown', () => {
 
 test('the strip fits, and the users tab stays inside five rows', () => {
   expect(TABS.length).toBeLessThanOrEqual(MAX_TABS);
-  // The strip, sort, roles, direction and pager, Dismiss.
-  expect(1 + 2 + 1 + 1).toBeLessThanOrEqual(5);
+  // Direction, ◀ and ▶ share the strip's row, which holds five buttons.
+  expect(TABS.length + 3).toBeLessThanOrEqual(MAX_TABS);
+  // The strip, sort, roles, columns, Dismiss.
+  expect(1 + 3 + 1).toBeLessThanOrEqual(5);
 });
 
 test('every custom id stays under the 100-character cap', () => {

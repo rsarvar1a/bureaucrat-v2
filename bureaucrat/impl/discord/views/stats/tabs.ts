@@ -8,6 +8,15 @@ export const TABS: Tab<MessagesTab>[] = [
   { key: 'users', label: S.stats.messagesUsers },
 ];
 
-export const ACTIONS = ['game-sort', 'user-sort', 'roles', 'direction', 'prev', 'next'] as const;
+export const ACTIONS = [
+  'game-sort',
+  'user-sort',
+  'game-columns',
+  'user-columns',
+  'roles',
+  'direction',
+  'prev',
+  'next',
+] as const;
 
 export const PAGE_SIZE = 15;

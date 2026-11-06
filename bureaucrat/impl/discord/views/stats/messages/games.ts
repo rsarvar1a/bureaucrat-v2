@@ -1,18 +1,15 @@
 import { clampPage, pageCount, pageItems } from '../../../../../engine/discord/components/pager';
 import { select, selectRow, text } from '../../../../../engine/discord/elements';
+import { asciiCell } from '../../../../../engine/discord/table';
 import type { ViewRow } from '../../../../../engine/discord/views/types';
 import { listGameMessageStats } from '../../../../../drizzle/stats';
-import { daysOf, GAME_SORTS, sortGames, type GameStats } from '../../../games/stats/messages';
+import { GAME_SORTS, sortGames, type GameStats } from '../../../games/stats/messages';
+import { columnSelect, DEFAULT_GAME_COLUMNS, GAME_COLUMNS, parseColumns, rankColumn, statsTable } from '../columns';
 import { PAGE_SIZE } from '../tabs';
 import type { MessagesState } from '../messages.view';
 import { S } from '../../../../../strings';
 
-const day = (at: Date | null) => at?.toISOString().slice(0, 10) ?? '?';
-
-const line = (game: GameStats, position: number) =>
-  `${position}. **${game.name}**${game.winner ? ` · ${game.winner}` : ''} · ${S.stats.count(game.messages, 'message')}` +
-  ` · ${S.stats.count(game.threads, 'thread')} · ${S.stats.count(game.authors, 'member')} · ${daysOf(game.firstAt, game.lastAt).toFixed(1)}d` +
-  ` · ${day(game.firstAt)} → ${day(game.lastAt)}`;
+const NAME_WIDTH = 20;
 
 export const renderGames = async (
   view: ViewRow<MessagesState>,
@@ -23,14 +20,24 @@ export const renderGames = async (
   const games = sortGames(await listGameMessageStats(guild), state.gameSort, state.descending);
   const pages = pageCount(games.length, PAGE_SIZE);
   const page = clampPage(state.page, pages);
-  const lines = pageItems(games, page, PAGE_SIZE).map((game, i) => line(game, page * PAGE_SIZE + i + 1));
+  const shown = pageItems(games, page, PAGE_SIZE);
+  const columns = parseColumns(state.gameColumns, GAME_COLUMNS, DEFAULT_GAME_COLUMNS);
+  const table = statsTable(
+    [
+      rankColumn(page * PAGE_SIZE),
+      { header: S.stats.columns.game, maxWidth: NAME_WIDTH, cell: (game: GameStats) => asciiCell(game.name) || '?' },
+    ],
+    GAME_COLUMNS,
+    columns,
+    shown,
+  );
 
   return {
     pages,
     body: [
       text(S.stats.gamesTitle),
       text(
-        `${lines.join('\n') || S.stats.gamesEmpty}${reading > 0 ? S.stats.stillReading(reading) : ''}${S.stats.pageOf(page, pages)}`,
+        `${shown.length > 0 ? table : S.stats.gamesEmpty}${reading > 0 ? S.stats.stillReading(reading) : ''}${S.stats.pageOf(page, pages)}`,
       ),
     ],
     controls: [
@@ -43,6 +50,7 @@ export const renderGames = async (
           })),
         ),
       ),
+      columnSelect(view.customId('game-columns'), GAME_COLUMNS, columns),
     ],
   };
 };

@@ -14,17 +14,24 @@ const number = (n: number) => n.toLocaleString('en-US');
 const day = (at: Date | null) => at?.toISOString().slice(0, 10) ?? '-';
 
 const C = S.stats.columns;
+const SHORT = S.stats.shortColumns;
 
 export const RANKING_COLUMNS: OptionalColumn<
   'played' | 'win' | 'good' | 'evil' | 'evilShare' | 'storytold',
   PlayerRecord
 >[] = [
-  { key: 'played', header: C.played, align: 'right', cell: (r) => number(r.games) },
-  { key: 'win', header: C.win, align: 'right', cell: (r) => rateCell(r.win) },
-  { key: 'good', header: C.good, align: 'right', cell: (r) => rateCell(r.good) },
-  { key: 'evil', header: C.evil, align: 'right', cell: (r) => rateCell(r.evil) },
-  { key: 'evilShare', header: C.evilShare, align: 'right', cell: (r) => shareCell(r.evilShare) },
-  { key: 'storytold', header: C.storytold, align: 'right', cell: (r) => number(r.storytold) },
+  { key: 'played', header: C.played, short: SHORT.played, align: 'right', cell: (r) => number(r.games) },
+  { key: 'win', header: C.win, short: SHORT.win, align: 'right', cell: (r) => rateCell(r.win) },
+  { key: 'good', header: C.good, short: SHORT.good, align: 'right', cell: (r) => rateCell(r.good) },
+  { key: 'evil', header: C.evil, short: SHORT.evil, align: 'right', cell: (r) => rateCell(r.evil) },
+  {
+    key: 'evilShare',
+    header: C.evilShare,
+    short: SHORT.evilShare,
+    align: 'right',
+    cell: (r) => shareCell(r.evilShare),
+  },
+  { key: 'storytold', header: C.storytold, short: SHORT.storytold, align: 'right', cell: (r) => number(r.storytold) },
 ];
 export type RankingColumn = (typeof RANKING_COLUMNS)[number]['key'];
 export const DEFAULT_RANKING_COLUMNS: RankingColumn[] = RANKING_COLUMNS.map((column) => column.key);
@@ -34,22 +41,22 @@ export const GAME_COLUMNS: OptionalColumn<
   GameStats
 >[] = [
   { key: 'winner', header: C.winner, cell: (g) => g.winner ?? '-' },
-  { key: 'messages', header: C.messages, align: 'right', cell: (g) => number(g.messages) },
-  { key: 'threads', header: C.threads, align: 'right', cell: (g) => number(g.threads) },
-  { key: 'members', header: C.members, align: 'right', cell: (g) => number(g.authors) },
+  { key: 'messages', header: C.messages, short: SHORT.messages, align: 'right', cell: (g) => number(g.messages) },
+  { key: 'threads', header: C.threads, short: SHORT.threads, align: 'right', cell: (g) => number(g.threads) },
+  { key: 'members', header: C.members, short: SHORT.members, align: 'right', cell: (g) => number(g.authors) },
   { key: 'days', header: C.days, align: 'right', cell: (g) => daysOf(g.firstAt, g.lastAt).toFixed(1) },
   { key: 'started', header: C.started, cell: (g) => day(g.firstAt) },
   { key: 'ended', header: C.ended, cell: (g) => day(g.lastAt) },
 ];
 export type GameColumn = (typeof GAME_COLUMNS)[number]['key'];
-// All seven do not fit a desktop message beside a game's name; the counts are the ones to ask for.
-export const DEFAULT_GAME_COLUMNS: GameColumn[] = ['winner', 'messages', 'days', 'started', 'ended'];
+// Beside a game's name, more of these would not fit a line of a code block.
+export const DEFAULT_GAME_COLUMNS: GameColumn[] = ['winner', 'messages', 'days', 'ended'];
 
 export const USER_COLUMNS: OptionalColumn<'messages' | 'games' | 'perGame' | 'perDay', UserStats>[] = [
-  { key: 'messages', header: C.messages, align: 'right', cell: (u) => number(u.messages) },
-  { key: 'games', header: C.games, align: 'right', cell: (u) => number(u.games) },
-  { key: 'perGame', header: C.perGame, align: 'right', cell: (u) => u.perGame.toFixed(1) },
-  { key: 'perDay', header: C.perDay, align: 'right', cell: (u) => u.perDay.toFixed(1) },
+  { key: 'messages', header: C.messages, short: SHORT.messages, align: 'right', cell: (u) => number(u.messages) },
+  { key: 'games', header: C.games, short: SHORT.games, align: 'right', cell: (u) => number(u.games) },
+  { key: 'perGame', header: C.perGame, short: SHORT.perGame, align: 'right', cell: (u) => u.perGame.toFixed(1) },
+  { key: 'perDay', header: C.perDay, short: SHORT.perDay, align: 'right', cell: (u) => u.perDay.toFixed(1) },
 ];
 export type UserColumn = (typeof USER_COLUMNS)[number]['key'];
 export const DEFAULT_USER_COLUMNS: UserColumn[] = USER_COLUMNS.map((column) => column.key);

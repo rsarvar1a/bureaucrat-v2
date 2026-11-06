@@ -25,5 +25,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true
-  }
+  },
+  "exclude": ["node_modules", "docs"]
 }

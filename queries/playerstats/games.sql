@@ -1,16 +1,18 @@
--- Games ranked by human messages, with the size of each and how long it ran.
+-- Games ranked by human messages, with who won, the size of each and how long it ran.
 --
 --   BUREAUCRAT_PROD_TIMEOUT=5min bun prodsql < queries/playerstats/games.sql
 --
 -- `human` leaves out bots, webhooks and system messages; `all` keeps them.
 --
 -- How long a game ran comes from its stretch of play: split its human messages
--- wherever more than a week passes between two of them, and keep the stretch
+-- wherever more than two days pass between two of them, and keep the stretch
 -- with the most. That drops setup before a long wait for the start as well as
 -- a hall of fame thread years later. `outside_play` counts what it left out, so
 -- a big number there is worth a look; `human` still counts it for the ranking.
 -- A game is at least a day for `per_day`. Each game counts once, through its
--- largest export; see `state` for one still being read. Scans every message.
+-- largest export; see `state` for one still being read. `winner` is the winning
+-- team, one per colour for a multicolour game (`good / evil`), and empty for a
+-- game with no result on record. Scans every message.
 WITH canonical AS (
   SELECT DISTINCT ON (game) id, game, state
   FROM core."GameExport"
@@ -59,9 +61,15 @@ threads AS (
   FROM core."ExportChannel" ch
   JOIN canonical c ON c.id = ch.export
   GROUP BY ch.export
+),
+winners AS (
+  SELECT game, string_agg(winner::text, ' / ' ORDER BY position) AS winner
+  FROM core."GameOutcome"
+  GROUP BY game
 )
 SELECT rank() OVER (ORDER BY t.human DESC) AS rank,
        g.name AS game,
+       w.winner,
        t.human as messages,
        coalesce(th.threads, 0) AS threads,
        -- t."all",
@@ -75,4 +83,5 @@ FROM tallies t
 JOIN canonical c ON c.id = t.export
 JOIN core."Game" g ON g.id = c.game
 LEFT JOIN threads th ON th.export = t.export
+LEFT JOIN winners w ON w.game = c.game
 ORDER BY rank, g.name;

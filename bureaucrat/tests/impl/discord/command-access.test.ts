@@ -31,6 +31,13 @@ test('reading commands are open', () => {
   }
 });
 
+test('stats are open to read and need server.manage to configure', () => {
+  expect(commandAccess('stats::config')).toBe(Permissions.Server.Manage);
+  for (const path of ['stats', 'stats::ranking', 'stats::messages']) {
+    expect(commandAccess(path), path).toBe('open');
+  }
+});
+
 test('an unknown command defaults to open rather than to a permission', () => {
   // The ACL is closed by default: no grant means deny. A default of "some
   // permission" would therefore lock everyone out of a command nobody has

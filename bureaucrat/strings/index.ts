@@ -28,7 +28,7 @@
  * the separator.
  *
  * `common` (what the framework itself says), `errors` (every refusal), `games`,
- * `my`, `offsite`, `rating`, `reveal` and `whispers` live here so far. View and command text is still inline and migrates
+ * `my`, `offsite`, `rating`, `reveal`, `stats` and `whispers` live here so far. View and command text is still inline and migrates
  * opportunistically.
  */
 
@@ -39,6 +39,7 @@ import * as my from './my';
 import * as offsite from './offsite';
 import * as rating from './rating';
 import * as reveal from './reveal';
+import * as stats from './stats';
 import * as whispers from './whispers';
 
 /**
@@ -56,5 +57,6 @@ export const S = {
   offsite,
   rating,
   reveal,
+  stats,
   whispers,
 } as const;

@@ -1,10 +1,10 @@
-import { and, count, desc, eq, ne, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, ne, or } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { Game } from '../schema/core/games.sql';
 import { ManagedThread } from '../schema/core/threads.sql';
 import { Participant } from '../schema/core/people.sql';
 import { Seating } from '../schema/core/seating.sql';
-import { GameWinner } from '../schema/core/results.sql';
+import { GameOutcome, GameWinner } from '../schema/core/results.sql';
 
 type InsertGame = typeof Game.$inferInsert;
 
@@ -68,29 +68,55 @@ export const listGamesByMemberInGuild = async (member: bigint, guildId: bigint) 
 
 /**
  * Every game a member is or was in, with what the record needs: their role,
- * their seat's true role and alignment if they had one, and whether they
- * were declared a winner. The seat and the winner row are both optional
- * (a Storyteller has neither; a game still running has no winner).
+ * their seat's true role and alignment if they had one, and each of the game's
+ * results with whether they were declared a winner of it. The seat and the
+ * results are both optional (a Storyteller has no seat; a game still running
+ * has no result).
  */
-export const listGameRecordsByMember = async (member: bigint, guildId: bigint) =>
-  db
+export const listGameRecordsByMember = async (member: bigint, guildId: bigint) => {
+  const games = await db
     .select({
       id: Game.id,
       name: Game.name,
       state: Game.state,
       channel: Game.channel,
-      winner: Game.winner,
       endedAt: Game.endedAt,
       createdAt: Game.createdAt,
       role: Participant.role,
       trueRole: Seating.trueRole,
       trueAlignment: Seating.trueAlignment,
-      wonAs: GameWinner.alignment,
-      won: sql<boolean>`${GameWinner.id} is not null`,
     })
     .from(Participant)
     .innerJoin(Game, eq(Participant.game, Game.id))
     .leftJoin(Seating, eq(Seating.player, Participant.id))
-    .leftJoin(GameWinner, and(eq(GameWinner.game, Game.id), eq(GameWinner.member, member)))
     .where(and(eq(Participant.member, member), eq(Game.guild, guildId)))
     .orderBy(desc(Game.createdAt));
+
+  const results =
+    games.length === 0
+      ? []
+      : await db
+          .select({
+            game: GameOutcome.game,
+            position: GameOutcome.position,
+            winner: GameOutcome.winner,
+            winnerId: GameWinner.id,
+            wonAs: GameWinner.alignment,
+          })
+          .from(GameOutcome)
+          .leftJoin(GameWinner, and(eq(GameWinner.outcome, GameOutcome.id), eq(GameWinner.member, member)))
+          .where(
+            inArray(
+              GameOutcome.game,
+              games.map((g) => g.id),
+            ),
+          )
+          .orderBy(asc(GameOutcome.position));
+
+  return games.map((game) => ({
+    ...game,
+    results: results
+      .filter((r) => r.game === game.id)
+      .map((r) => ({ position: r.position, winner: r.winner, wonAs: r.wonAs, won: r.winnerId !== null })),
+  }));
+};

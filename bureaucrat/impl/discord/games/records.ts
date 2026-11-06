@@ -1,4 +1,8 @@
+import { colourTitle } from './outcome';
 import { ALIGNMENT_LABEL, defaultAlignment, type Alignment, type TeamOf } from './script/alignment';
+
+/** One result of a game, as it went for this member. */
+export type RecordResult = { position: number; winner: Alignment; wonAs: Alignment | null; won: boolean };
 
 /** A game as it stands in one member's record: `listGameRecordsByMember`, shaped for the page. */
 export type GameRecord = {
@@ -6,14 +10,13 @@ export type GameRecord = {
   name: string;
   state: 'signups' | 'running' | 'completed';
   channel: bigint | null;
-  winner: Alignment | null;
   endedAt: Date | null;
   createdAt: Date;
   role: 'Player' | 'Storyteller' | 'Kibitzer';
   trueRole: string | null;
   trueAlignment: Alignment | null;
-  wonAs: Alignment | null;
-  won: boolean;
+  /** One, or one per colour of a multicolour game; none until the game ends. */
+  results: RecordResult[];
 };
 
 export type Grouping = 'state' | 'role';
@@ -61,11 +64,16 @@ const isSort = (value: string | undefined): value is Sort => SORTS.includes(valu
 const isFilter = (value: string | undefined): value is Filter => FILTERS.includes(value as Filter);
 export const parse = { grouping: isGrouping, sort: isSort, filter: isFilter };
 
-/** The team a lost game was lost with: the seat's side, else the side the winner was not. */
-export const lostAs = (record: GameRecord, teamOf: TeamOf): Alignment | null =>
-  record.trueAlignment ??
-  defaultAlignment(teamOf(record.trueRole)) ??
-  (record.winner === 'good' ? 'evil' : record.winner === 'evil' ? 'good' : null);
+const otherSide = (side: Alignment): Alignment => (side === 'good' ? 'evil' : 'good');
+
+/**
+ * The team a result was lost with: the seat's side, else the side the winner
+ * was not. A seat holds one side, so in a multicolour game only the winner says.
+ */
+export const lostAs = (record: GameRecord, winner: Alignment, teamOf: TeamOf): Alignment => {
+  if (record.results.length > 1) return otherSide(winner);
+  return record.trueAlignment ?? defaultAlignment(teamOf(record.trueRole)) ?? otherSide(winner);
+};
 
 export const matches = (record: GameRecord, filter: Filter): boolean => {
   switch (filter) {
@@ -80,9 +88,9 @@ export const matches = (record: GameRecord, filter: Filter): boolean => {
     case 'storyteller':
       return record.role === 'Storyteller';
     case 'won':
-      return record.state === 'completed' && record.role === 'Player' && record.won;
+      return record.state === 'completed' && record.role === 'Player' && record.results.some((r) => r.won);
     case 'lost':
-      return record.state === 'completed' && record.role === 'Player' && !record.won;
+      return record.state === 'completed' && record.role === 'Player' && record.results.some((r) => !r.won);
   }
 };
 
@@ -145,8 +153,11 @@ export const recordLines = (record: GameRecord, look: RecordLook): string[] => {
     lines.push(`-# ${verb} as ${as}`);
   }
   if (over && record.role === 'Player') {
-    const team = record.won ? (record.wonAs ?? record.winner) : lostAs(record, look.teamOf);
-    lines.push(`-# ${record.won ? 'won' : 'lost'}${team ? ` with ${ALIGNMENT_LABEL[team]}` : ''}`);
+    for (const result of record.results) {
+      const team = result.won ? (result.wonAs ?? result.winner) : lostAs(record, result.winner, look.teamOf);
+      const colour = record.results.length > 1 ? `${colourTitle(result.position)}: ` : '';
+      lines.push(`-# ${colour}${result.won ? 'won' : 'lost'} with ${ALIGNMENT_LABEL[team]}`);
+    }
   }
   return lines;
 };

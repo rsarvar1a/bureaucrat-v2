@@ -1,7 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import { defineConfig } from 'eslint/config';
+import { defineConfig, globalIgnores } from 'eslint/config';
 import type { Linter } from 'eslint';
 
 const forbid = (groups: string[], message: string): Linter.RulesRecord => ({
@@ -9,6 +9,8 @@ const forbid = (groups: string[], message: string): Linter.RulesRecord => ({
 });
 
 export default defineConfig([
+  globalIgnores(['docs/']),
+
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { js },

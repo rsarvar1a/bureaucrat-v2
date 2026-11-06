@@ -286,9 +286,13 @@ changes nothing on the seat: the Storyteller handles the traveler in Seating.
 `/game end` (a Storyteller's), or the header's End game button that replaces Start once the game
 runs, opens an ephemeral pane (`gend`, beside the stack rather than in it): a Good / Evil select, then the seated players in a multi-select with their true roles as
 icons. Picking the team fills the players with everyone on that side by true role and alignment
-(`games/outcome.ts`); the Storyteller reviews the edge cases, then presses End. End game writes the team to `Game.winner` and
+(`games/outcome.ts`); the Storyteller reviews the edge cases, then presses End. End game writes the team to `GameOutcome` and
 the picked players to `GameWinner` with their role and side frozen as declared, for the record
-and for whatever statistics come later. Then it completes the row, tears the stack down,
+and for whatever statistics come later. A multicolour game (a pair of games run as one in the same
+channel) declares one result per colour through Add another result: one `Game`, one set of
+`Participant` rows, several `GameOutcome` rows. Stats count each result for win and evil rates, and
+the game once as a played unit. A seat holds one side, so only the first colour's winners are
+filled in. Then it completes the row, tears the stack down,
 archives the managed threads and renames the channel `yyyymmdd-<title>` so the archive reads
 chronologically. Games
 hold no Discord roles, so there is nothing to strip. The channel stays where it is until

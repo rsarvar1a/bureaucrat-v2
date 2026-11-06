@@ -1,6 +1,9 @@
-import type { WinnerInput } from '../../../drizzle/game-winners';
+import type { WinnerInput } from '../../../drizzle/game-outcomes';
 import type { SeatedPlayer } from '../../../drizzle/seating';
 import { defaultAlignment, type Alignment, type TeamOf } from './script/alignment';
+
+/** What a multicolour game calls one of its results. */
+export const colourTitle = (position: number): string => `Colour ${position}`;
 
 /**
  * The side a seat is on as the game ends: the Storyteller's override if set,

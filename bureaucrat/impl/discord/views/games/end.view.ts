@@ -20,7 +20,7 @@ import { inGuild } from '../../guards';
 import { storytells } from '../../guards/game';
 import { endGame } from '../../games/end';
 import type { Emote } from '../../games/emotes';
-import { defaultWinners, winnersFrom } from '../../games/outcome';
+import { colourTitle, defaultWinners, winnersFrom } from '../../games/outcome';
 import { ALIGNMENT_LABEL, teamLookup, type Alignment } from '../../games/script/alignment';
 import { offerVacancy } from '../../games/vacancy';
 import { displayNames } from '../queue/members';
@@ -29,8 +29,14 @@ import { characterChoices } from './seating/roles';
 import { GameEvents } from './events';
 import { S } from '../../../../strings';
 
-/** The team declared, and the seats picked as its winners. Nothing until the team is picked. */
-type EndState = { winner: Alignment | null; selected: string[] };
+/** A result as declared: the team, and the seats picked as its winners. */
+type Declared = { winner: Alignment; selected: string[] };
+
+/**
+ * The result being declared, nothing until its team is picked, and any declared
+ * before it in a multicolour game.
+ */
+type EndState = { recorded: Declared[]; winner: Alignment | null; selected: string[] };
 
 const TEAMS: Alignment[] = ['good', 'evil'];
 
@@ -43,13 +49,15 @@ const isAlignment = (value: string | undefined): value is Alignment => TEAMS.inc
  * The pane behind `/game end`: the winning team in one select, the players on
  * it in another. Picking the team fills the players with everyone on that
  * side, by true role and alignment; the Storyteller's job is to review the
- * edge cases (a Traveler, a turned player) before pressing End.
+ * edge cases (a Traveler, a turned player) before pressing End. A multicolour
+ * game declares a result for each colour through Add another result; a seat
+ * holds one side, so only the first colour's players are filled in.
  */
 export default createView<EndState>()({
   id: 'gend',
   idParams: [],
   events: {},
-  defaultState: { winner: null, selected: [] },
+  defaultState: { recorded: [], winner: null, selected: [] },
   subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
@@ -74,11 +82,16 @@ export default createView<EndState>()({
     );
     const winner = view.state?.winner ?? null;
     const selected = view.state?.selected ?? [];
+    const recorded = view.state?.recorded ?? [];
 
     return v2(
       linear(
         text(`### Ending ${game.name}`),
         text('Review the members of the winning team before ending the game.'),
+        ...recorded.map((r, i) =>
+          text(`${colourTitle(i + 1)}: ${ALIGNMENT_LABEL[r.winner]} wins, with ${r.selected.length} player(s).`),
+        ),
+        ...(recorded.length > 0 ? [text(`**${colourTitle(recorded.length + 1)}**`)] : []),
         separator(),
         selectRow(
           select(view.customId('team'), 'Which team won?').addOptions(
@@ -112,6 +125,7 @@ export default createView<EndState>()({
         ),
         buttonRow(
           button(view.customId('end'), `End game`, ButtonStyle.Danger).setDisabled(winner === null),
+          button(view.customId('another'), 'Add another result', ButtonStyle.Secondary).setDisabled(winner === null),
           button(view.customId('cancel'), 'Cancel', ButtonStyle.Secondary),
         ),
       ).setAccentColor(winner === 'good' ? accent.success : winner === 'evil' ? accent.danger : accent.neutral),
@@ -129,7 +143,8 @@ export default createView<EndState>()({
 
       const [rows, script] = await Promise.all([listSeating(ctx.view.entityId!), getScriptSummary(ctx.view.entityId!)]);
       const teamOf = teamLookup(characterChoices(script?.json));
-      await ctx.updateState({ winner, selected: defaultWinners(rows, winner, teamOf) });
+      const first = (ctx.view.state?.recorded ?? []).length === 0;
+      await ctx.updateState({ winner, selected: first ? defaultWinners(rows, winner, teamOf) : [] });
 
       return { action: 'render' };
     },
@@ -138,6 +153,15 @@ export default createView<EndState>()({
       if (!interaction.isStringSelectMenu()) return;
       await interaction.deferUpdate();
       await ctx.updateState({ selected: interaction.values });
+      return { action: 'render' };
+    },
+
+    // A multicolour game: this result is set aside and the pane asks for the next.
+    another: async (interaction, ctx) => {
+      if (!interaction.isMessageComponent()) return;
+      await interaction.deferUpdate();
+      const { recorded = [], winner = null, selected = [] } = ctx.view.state ?? {};
+      if (winner) await ctx.updateState({ recorded: [...recorded, { winner, selected }], winner: null, selected: [] });
       return { action: 'render' };
     },
 
@@ -162,16 +186,20 @@ export default createView<EndState>()({
       }
 
       const [rows, script] = await Promise.all([listSeating(game.id), getScriptSummary(game.id)]);
-      const winners = winnersFrom(rows, ctx.view.state?.selected ?? [], teamLookup(characterChoices(script?.json)));
+      const teamOf = teamLookup(characterChoices(script?.json));
+      const declared = [...(ctx.view.state?.recorded ?? []), { winner, selected: ctx.view.state?.selected ?? [] }];
+      const outcomes = declared.map((d) => ({ winner: d.winner, winners: winnersFrom(rows, d.selected, teamOf) }));
 
-      await endGame(interaction.client, game, { winner, winners });
+      await endGame(interaction.client, game, outcomes);
       if (game.queue) await offerVacancy(ctx.spawnView, { interaction }, game.queue);
 
-      await toast.followUp(
-        interaction,
-        `**${game.name}** has ended. ${ALIGNMENT_LABEL[winner]} wins, with ${winners.length} player(s) on the winning side.`,
-        { accent: accent.success },
-      );
+      const summary = outcomes
+        .map(
+          (o, i) =>
+            `${outcomes.length > 1 ? `${colourTitle(i + 1)}: ` : ''}${ALIGNMENT_LABEL[o.winner]} wins, with ${o.winners.length} player(s) on the winning side.`,
+        )
+        .join(' ');
+      await toast.followUp(interaction, `**${game.name}** has ended. ${summary}`, { accent: accent.success });
 
       // `Ended` has already taken this pane down with the rest of the stack.
       return { action: 'noop' };

@@ -7,6 +7,7 @@ import {
   recordLines,
   sorted,
   type GameRecord,
+  type RecordResult,
 } from '../../../impl/discord/games/records';
 
 const record = (over: Partial<GameRecord> = {}): GameRecord => ({
@@ -14,12 +15,18 @@ const record = (over: Partial<GameRecord> = {}): GameRecord => ({
   name: 'Trouble',
   state: 'running',
   channel: 5n,
-  winner: null,
   endedAt: null,
   createdAt: new Date('2026-01-01T00:00:00Z'),
   role: 'Player',
   trueRole: null,
   trueAlignment: null,
+  results: [],
+  ...over,
+});
+
+const result = (over: Partial<RecordResult> = {}): RecordResult => ({
+  position: 1,
+  winner: 'good',
   wonAs: null,
   won: false,
   ...over,
@@ -38,16 +45,16 @@ test('an entry says where, when, as whom and how it went', () => {
   ]);
   const ended = new Date('2026-02-01T00:00:00Z');
   expect(
-    recordLines(record({ state: 'completed', endedAt: ended, winner: 'good', trueRole: 'Imp', won: false }), look),
+    recordLines(record({ state: 'completed', endedAt: ended, trueRole: 'Imp', results: [result()] }), look),
   ).toEqual([
     '**Trouble**',
     `-# in <#5> · finished on <t:${Math.floor(ended.getTime() / 1000)}:D>`,
     '-# participated as the <:Imp_x:>',
     '-# lost with Evil',
   ]);
-  expect(recordLines(record({ state: 'completed', endedAt: ended, won: true, wonAs: 'good' }), look)).toContain(
-    '-# won with Good',
-  );
+  expect(
+    recordLines(record({ state: 'completed', endedAt: ended, results: [result({ won: true, wonAs: 'good' })] }), look),
+  ).toContain('-# won with Good');
   expect(recordLines(record({ role: 'Storyteller', channel: null }), look)).toEqual([
     '**Trouble**',
     '-# in progress',
@@ -60,15 +67,35 @@ test('an entry says where, when, as whom and how it went', () => {
 });
 
 test('a lost game is lost with the seat side, the role team, or the side that did not win', () => {
-  expect(lostAs(record({ trueAlignment: 'good', trueRole: 'Imp' }), look.teamOf)).toBe('good');
-  expect(lostAs(record({ trueRole: 'Imp' }), look.teamOf)).toBe('evil');
-  expect(lostAs(record({ winner: 'good' }), look.teamOf)).toBe('evil');
-  expect(lostAs(record(), look.teamOf)).toBeNull();
+  expect(lostAs(record({ trueAlignment: 'good', trueRole: 'Imp' }), 'evil', look.teamOf)).toBe('good');
+  expect(lostAs(record({ trueRole: 'Imp' }), 'good', look.teamOf)).toBe('evil');
+  expect(lostAs(record(), 'good', look.teamOf)).toBe('evil');
+});
+
+test('a multicolour game shows each result, sides read from who won rather than the one seat', () => {
+  const both = record({
+    state: 'completed',
+    trueAlignment: 'good',
+    results: [
+      result({ position: 1, winner: 'good', won: true, wonAs: 'good' }),
+      result({ position: 2, winner: 'good' }),
+    ],
+  });
+  expect(recordLines(both, look).slice(-2)).toEqual(['-# Colour 1: won with Good', '-# Colour 2: lost with Evil']);
+  expect(matches(both, 'won')).toBe(true);
+  expect(matches(both, 'lost')).toBe(true);
+});
+
+test('a finished game with no result on record shows none and is neither won nor lost', () => {
+  const bare = record({ state: 'completed' });
+  expect(recordLines(bare, look).some((line) => /won|lost/.test(line))).toBe(false);
+  expect(matches(bare, 'won')).toBe(false);
+  expect(matches(bare, 'lost')).toBe(false);
 });
 
 test('filters read the state, the role and the outcome', () => {
-  const won = record({ state: 'completed', won: true });
-  const lost = record({ state: 'completed' });
+  const won = record({ state: 'completed', results: [result({ won: true })] });
+  const lost = record({ state: 'completed', results: [result()] });
   const st = record({ role: 'Storyteller', state: 'completed' });
   expect(matches(won, 'won')).toBe(true);
   expect(matches(lost, 'won')).toBe(false);

@@ -11,7 +11,6 @@ export const Game = core.table('Game', {
   creator: snowflake().notNull(),
   name: text().notNull(),
   state: GameState().notNull().default('signups'),
-  winner: Alignment(),
   endedAt: timestamp(),
   ...snowflakes('guild', 'channel'),
   ...timestamps(),

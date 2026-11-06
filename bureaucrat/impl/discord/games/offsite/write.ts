@@ -27,7 +27,7 @@ import {
   type ExportMessageRow,
   type GameExportRow,
 } from '../../../../drizzle/game-exports';
-import { listGameWinners } from '../../../../drizzle/game-winners';
+import { listGameOutcomes } from '../../../../drizzle/game-outcomes';
 import { getOrCreateGuildSettings } from '../../../../drizzle/guild-settings';
 import { getDestination, updateDestination, type OffsiteDestinationRow } from '../../../../drizzle/offsite';
 import { listParticipants } from '../../../../drizzle/participants';
@@ -40,6 +40,7 @@ import { Deferred, threadGate } from './gate';
 import { pagesOf } from './pages';
 import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
+import { colourTitle } from '../outcome';
 import { ALIGNMENT_LABEL } from '../script/alignment';
 import { endedChannelName } from '../names';
 import { placeInChain } from '../archives/categories';
@@ -107,11 +108,11 @@ export const destinationOf = async (
 
 /** The game as the database knows it, posted first so the channel opens with its summary. */
 const header = async (client: Client, game: GameRow, ctx: RenderContext): Promise<string> => {
-  const [storytellers, script, seating, winners] = await Promise.all([
+  const [storytellers, script, seating, outcomes] = await Promise.all([
     listParticipants(game.id, 'Storyteller'),
     getScriptSummary(game.id),
     listSeating(game.id),
-    listGameWinners(game.id),
+    listGameOutcomes(game.id),
   ]);
   const name = (member: bigint | null | undefined) =>
     member == null ? '*nobody*' : `**${ctx.members.get(String(member))?.displayName ?? member}**`;
@@ -123,9 +124,10 @@ const header = async (client: Client, game: GameRow, ctx: RenderContext): Promis
   if (script?.name || script?.link) {
     lines.push(`**Script:** ${script.link ? `[${script.name ?? 'script'}](${script.link})` : script.name}`);
   }
-  if (game.winner) {
-    const names = winners.map((w) => name(w.member)).join(', ');
-    lines.push(`**${ALIGNMENT_LABEL[game.winner]} wins**${names ? `: ${names}` : ''}`);
+  for (const outcome of outcomes) {
+    const names = outcome.winners.map((w) => name(w.member)).join(', ');
+    const colour = outcomes.length > 1 ? `${colourTitle(outcome.position)}: ` : '';
+    lines.push(`**${colour}${ALIGNMENT_LABEL[outcome.winner]} wins**${names ? `: ${names}` : ''}`);
   }
   if (seating.length > 0) lines.push('', townSquare(seating, look, name));
   return lines.join('\n');

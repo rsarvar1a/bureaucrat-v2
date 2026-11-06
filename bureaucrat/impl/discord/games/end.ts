@@ -1,8 +1,7 @@
 import type { Client } from 'discord.js';
 import { notifyContexts } from '../../../engine/discord/views/notify';
 import { updateGame } from '../../../drizzle/games';
-import { insertGameWinners, type WinnerInput } from '../../../drizzle/game-winners';
-import type { Alignment } from './script/alignment';
+import { recordOutcomes, type OutcomeInput } from '../../../drizzle/game-outcomes';
 import { listManagedThreads } from '../../../drizzle/managed-threads';
 import { logger } from '../../../utilities/logger';
 import type { Game } from '../../../schema/core/games.sql';
@@ -14,12 +13,9 @@ import { autoExport } from './offsite/start';
 
 type GameRow = typeof Game.$inferSelect;
 
-/** What the Storyteller declares at the end: the team, and who was on it. */
-export type Outcome = { winner: Alignment; winners: WinnerInput[] };
-
 /**
- * Ends a game: the row is completed with its winner, the winning players are
- * recorded, every window in its stack hears
+ * Ends a game: the row is completed, its results and their winning players are
+ * recorded (one result, or one per colour of a multicolour game), every window in its stack hears
  * `Ended` and takes itself down, its threads are archived and its channel is
  * renamed with the date in front, ready to be filed.
  *
@@ -31,10 +27,10 @@ export type Outcome = { winner: Alignment; winners: WinnerInput[] };
  * The game's tracked Discord roles (`roles.ts`) are deleted with it; the
  * Participant rows, which are the membership (ADR-005), stay as the record.
  */
-export const endGame = async (client: Client, game: GameRow, outcome: Outcome): Promise<GameRow> => {
+export const endGame = async (client: Client, game: GameRow, outcomes: OutcomeInput[]): Promise<GameRow> => {
   const endedAt = new Date();
-  const ended = (await updateGame(game.id, { state: 'completed', winner: outcome.winner, endedAt })) ?? game;
-  await insertGameWinners(outcome.winners.map((w) => ({ ...w, game: game.id })));
+  const ended = (await updateGame(game.id, { state: 'completed', endedAt })) ?? game;
+  await recordOutcomes(game.id, outcomes);
 
   const { viewDefinitions } = await import('../registry/views');
   await notifyContexts(client, viewDefinitions, [gameEvents(game.id).Ended]);

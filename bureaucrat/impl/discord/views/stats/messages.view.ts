@@ -2,7 +2,7 @@ import { ButtonStyle } from 'discord.js';
 import { dismissButton } from '../../../../engine/discord/components/dismiss';
 import { pager } from '../../../../engine/discord/components/pager';
 import { tabs } from '../../../../engine/discord/components/tabs';
-import { accent, button, buttonRow, linear, separator, v2 } from '../../../../engine/discord/elements';
+import { accent, button, linear, separator, v2 } from '../../../../engine/discord/elements';
 import { createView } from '../../../../engine/discord/views/create-view';
 import type { InteractionHandler } from '../../../../engine/discord/views/types';
 import {
@@ -16,6 +16,15 @@ import {
 } from '../../games/stats/messages';
 import { refreshMessageStats } from '../../games/stats/refresh';
 import { inGuild } from '../../guards';
+import {
+  DEFAULT_GAME_COLUMNS,
+  DEFAULT_USER_COLUMNS,
+  GAME_COLUMNS,
+  parseColumns,
+  USER_COLUMNS,
+  type GameColumn,
+  type UserColumn,
+} from './columns';
 import { renderGames } from './messages/games';
 import { renderUsers } from './messages/users';
 import { TABS, type MessagesTab } from './tabs';
@@ -27,6 +36,8 @@ export type MessagesState = {
   userSort: UserSort;
   descending: boolean;
   roles: Role[];
+  gameColumns: GameColumn[];
+  userColumns: UserColumn[];
   page: number;
 };
 
@@ -36,6 +47,8 @@ const DEFAULT_STATE: MessagesState = {
   userSort: 'messages',
   descending: true,
   roles: ROLES,
+  gameColumns: DEFAULT_GAME_COLUMNS,
+  userColumns: DEFAULT_USER_COLUMNS,
   page: 0,
 };
 
@@ -81,12 +94,9 @@ export default createView<MessagesState>()({
     return {
       ...v2(
         linear(
-          strip.row(view),
-          separator(),
-          ...face.body,
-          separator(),
-          ...face.controls,
-          buttonRow(
+          // Controls for the list share the strip's row: the Users tab has none to spare.
+          strip.row(
+            view,
             button(
               view.customId('direction'),
               state.descending ? S.stats.descending : S.stats.ascending,
@@ -94,6 +104,10 @@ export default createView<MessagesState>()({
             ),
             ...pages.buttons(view, face.pages),
           ),
+          separator(),
+          ...face.body,
+          separator(),
+          ...face.controls,
           separator(),
           dismiss.row(view),
         ).setAccentColor(accent.brand),
@@ -127,6 +141,24 @@ export default createView<MessagesState>()({
       if (!interaction.isStringSelectMenu()) return;
       await interaction.deferUpdate();
       await ctx.updateState({ roles: parseRoles(interaction.values), page: 0 });
+      return { action: 'render' };
+    },
+
+    'game-columns': async (interaction, ctx) => {
+      if (!interaction.isStringSelectMenu()) return;
+      await interaction.deferUpdate();
+      await ctx.updateState({
+        gameColumns: parseColumns(interaction.values, GAME_COLUMNS, DEFAULT_GAME_COLUMNS),
+      });
+      return { action: 'render' };
+    },
+
+    'user-columns': async (interaction, ctx) => {
+      if (!interaction.isStringSelectMenu()) return;
+      await interaction.deferUpdate();
+      await ctx.updateState({
+        userColumns: parseColumns(interaction.values, USER_COLUMNS, DEFAULT_USER_COLUMNS),
+      });
       return { action: 'render' };
     },
 

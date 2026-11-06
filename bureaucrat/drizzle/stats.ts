@@ -149,11 +149,11 @@ export const listPlayerResults = async (guild: bigint) => {
   return rows.map(({ winnerRow, ...row }) => ({ ...row, won: winnerRow !== null }));
 };
 
-/** The newest display name an export recorded for each member, for people no longer in the server. */
-export const listExportedNames = async (members: bigint[]) => {
+/** The newest username an export recorded for each member, for when Discord will not say. */
+export const listExportedUsernames = async (members: bigint[]) => {
   if (members.length === 0) return [];
   return db
-    .selectDistinctOn([ExportMember.member], { member: ExportMember.member, displayName: ExportMember.displayName })
+    .selectDistinctOn([ExportMember.member], { member: ExportMember.member, username: ExportMember.username })
     .from(ExportMember)
     .innerJoin(GameExport, eq(GameExport.id, ExportMember.export))
     .where(inArray(ExportMember.member, members))

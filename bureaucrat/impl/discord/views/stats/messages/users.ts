@@ -10,7 +10,7 @@ import { PAGE_SIZE } from '../tabs';
 import type { MessagesState } from '../messages.view';
 import { S } from '../../../../../strings';
 
-const NAME_WIDTH = 18;
+const NAME_MIN_WIDTH = 12;
 
 export const renderUsers = async (
   view: ViewRow<MessagesState>,
@@ -32,7 +32,7 @@ export const renderUsers = async (
   const table = statsTable(
     [
       rankColumn(page * PAGE_SIZE),
-      { header: S.stats.columns.user, maxWidth: NAME_WIDTH, cell: (user: UserStats) => name(user.member) },
+      { header: S.stats.columns.user, minWidth: NAME_MIN_WIDTH, cell: (user: UserStats) => name(user.member) },
     ],
     USER_COLUMNS,
     columns,

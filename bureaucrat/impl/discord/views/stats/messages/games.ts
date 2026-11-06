@@ -9,7 +9,7 @@ import { PAGE_SIZE } from '../tabs';
 import type { MessagesState } from '../messages.view';
 import { S } from '../../../../../strings';
 
-const NAME_WIDTH = 20;
+const NAME_MIN_WIDTH = 16;
 
 export const renderGames = async (
   view: ViewRow<MessagesState>,
@@ -25,7 +25,11 @@ export const renderGames = async (
   const table = statsTable(
     [
       rankColumn(page * PAGE_SIZE),
-      { header: S.stats.columns.game, maxWidth: NAME_WIDTH, cell: (game: GameStats) => asciiCell(game.name) || '?' },
+      {
+        header: S.stats.columns.game,
+        minWidth: NAME_MIN_WIDTH,
+        cell: (game: GameStats) => asciiCell(game.name) || '?',
+      },
     ],
     GAME_COLUMNS,
     columns,

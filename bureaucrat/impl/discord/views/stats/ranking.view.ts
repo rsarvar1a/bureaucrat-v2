@@ -39,7 +39,7 @@ export type RankingState = { sort: RankingSort; descending: boolean; columns: Ra
 
 const DEFAULT_STATE: RankingState = { sort: 'games', descending: true, columns: DEFAULT_RANKING_COLUMNS, page: 0 };
 const PAGE_SIZE = 15;
-const NAME_WIDTH = 18;
+const NAME_MIN_WIDTH = 12;
 
 const dismiss = dismissButton<RankingState>()({ action: 'dismiss' });
 const pages = pager<RankingState>()({ field: 'page' });
@@ -75,7 +75,7 @@ export default createView<RankingState>()({
         rankColumn(page * PAGE_SIZE),
         {
           header: S.stats.columns.player,
-          maxWidth: NAME_WIDTH,
+          minWidth: NAME_MIN_WIDTH,
           cell: (record: PlayerRecord) => name(record.member),
         },
       ],

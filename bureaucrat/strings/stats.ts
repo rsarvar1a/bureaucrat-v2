@@ -63,6 +63,21 @@ export const columns = {
   perGame: 'Per game',
   perDay: 'Per day',
 } as const;
+/** The same headers when a table has to narrow to fit. */
+export const shortColumns = {
+  played: 'GP',
+  win: 'W%',
+  good: 'Good W%',
+  evil: 'Evil W%',
+  evilShare: 'Evil%',
+  storytold: 'ST',
+  messages: 'Msgs',
+  threads: 'Thds',
+  members: 'Mbrs',
+  games: 'GP',
+  perGame: '/game',
+  perDay: '/day',
+} as const;
 export const columnsPlaceholder = 'View columns';
 
 export const sortPlaceholder = 'Sort by';

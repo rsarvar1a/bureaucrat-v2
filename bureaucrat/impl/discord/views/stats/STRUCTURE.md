@@ -10,7 +10,8 @@ is in `games/stats/`.
 ### `statsranking`
 
 `/stats ranking`. Every Player and Storyteller with a result on record, sorted and paged per viewer, as
-a table whose optional columns (`columns.ts`) the viewer picks.
+a table whose optional columns (`columns.ts`) the viewer picks. `asciiTable` narrows a table that would
+not fit a code block's line: short headers first, then cutting names.
 
 ### `statsmessages`
 

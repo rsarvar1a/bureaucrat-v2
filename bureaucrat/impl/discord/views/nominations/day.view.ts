@@ -15,7 +15,7 @@ import { isStorytellerOf } from '../../guards/game';
 import { storytellsDay } from '../../guards/nominations';
 import { actorOf } from '../../access';
 import { label } from '../../games/phases';
-import { BLOCK_PANE, isOpen, NOMINATION_CARD } from '../../games/nominations/open';
+import { BLOCK_PANE, isOpen, NOMINATION_CARD, votingLive } from '../../games/nominations/open';
 import { headline, STATUS_MARK } from '../../games/nominations/format';
 import { statusOf, tally } from '../../games/nominations/rules';
 import { GameEvents } from '../games/events';
@@ -112,7 +112,14 @@ export default createView<Empty>()({
     );
 
     const open = isOpen(phase);
-    const state = open ? '' : phase.nominationsClosedAt ? 'Closed.\n' : 'Not yet open.\n';
+    const voting = await votingLive(game, phase);
+    const state = open
+      ? ''
+      : voting
+        ? 'No new nominations today; voting carries on.\n'
+        : phase.nominationsClosedAt
+          ? 'Closed.\n'
+          : 'Not yet open.\n';
 
     return {
       ...v2(
@@ -124,7 +131,7 @@ export default createView<Empty>()({
             button(view.customId('nominate'), 'Nominate', ButtonStyle.Primary).setDisabled(!open),
             button(view.customId('manage'), 'Manage', ButtonStyle.Secondary),
           ),
-        ).setAccentColor(open ? accent.warning : accent.neutral),
+        ).setAccentColor(voting ? accent.warning : accent.neutral),
       ),
       allowedMentions: { parse: [] },
     };

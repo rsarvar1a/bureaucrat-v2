@@ -17,4 +17,4 @@ SELECT area, operation, outcome, kind, code, status, route,
 FROM core."ErrorEvent", params
 WHERE "at" >= (now() AT TIME ZONE 'UTC') - span
 GROUP BY area, operation, outcome, kind, code, status, route
-ORDER BY events DESC;
+ORDER BY events desc;

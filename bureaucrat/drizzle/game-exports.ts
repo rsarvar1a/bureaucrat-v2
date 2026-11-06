@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, exists, inArray, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { ExportChannel, ExportMember, ExportMessage, GameExport } from '../schema/core/exports.sql';
 import { Game } from '../schema/core/games.sql';
@@ -188,13 +188,26 @@ export const countCopied = async (exportId: string): Promise<number> => {
   return row?.count ?? 0;
 };
 
-/** The messages of a channel still to copy, oldest first. */
-export const listUncopiedMessages = async (exportId: string, channel: bigint): Promise<ExportMessageRow[]> =>
+/** A page of the messages of a channel still to copy, oldest first, from after `after`. */
+export const listUncopiedMessages = async (
+  exportId: string,
+  channel: bigint,
+  after: bigint | null,
+  limit: number,
+): Promise<ExportMessageRow[]> =>
   db
     .select()
     .from(ExportMessage)
-    .where(and(eq(ExportMessage.export, exportId), eq(ExportMessage.channel, channel), isNull(ExportMessage.copiedTo)))
-    .orderBy(asc(ExportMessage.message));
+    .where(
+      and(
+        eq(ExportMessage.export, exportId),
+        eq(ExportMessage.channel, channel),
+        isNull(ExportMessage.copiedTo),
+        after === null ? undefined : gt(ExportMessage.message, after),
+      ),
+    )
+    .orderBy(asc(ExportMessage.message))
+    .limit(limit);
 
 export const setMessageCopy = async (id: string, copiedTo: bigint): Promise<void> => {
   await db.update(ExportMessage).set({ copiedTo }).where(eq(ExportMessage.id, id));

@@ -6,6 +6,7 @@ import { closeWindow } from '../../../../engine/discord/views/windows';
 import {
   claimNominationsOpen,
   closeNominations,
+  currentPhase,
   getPhase,
   listOpenDays,
   reopenNominations,
@@ -23,6 +24,7 @@ import { nominationChannel } from './thread';
 import { S } from '../../../../strings';
 import { roleMentions, trackedRoles } from '../roles';
 import { publish } from './publish';
+import { votingOpen } from './rules';
 
 type GameRow = typeof Game.$inferSelect;
 type PhaseRow = typeof GamePhase.$inferSelect;
@@ -37,9 +39,13 @@ export type Interaction = Extract<SpawnTarget, { interaction: unknown }>['intera
 
 export type OpenResult = { outcome: 'opened' | 'already' | 'not-day' | 'no-channel'; fellBack: boolean };
 
-/** Open: opened, not closed. Current-ness is the caller's to check. */
+/** Open to new nominations: opened, not closed. Current-ness is the caller's to check. */
 export const isOpen = (phase: Pick<PhaseRow, 'nominationsOpenedAt' | 'nominationsClosedAt'>): boolean =>
   phase.nominationsOpenedAt !== null && phase.nominationsClosedAt === null;
+
+/** Whether this day still takes votes and arguments, as the game stands now. */
+export const votingLive = async (game: Pick<GameRow, 'id' | 'state'>, phase: PhaseRow): Promise<boolean> =>
+  votingOpen(phase, game.state === 'running', (await currentPhase(game.id))?.id);
 
 /** The day card and every card of the day: what a change to the day repaints. */
 const dayLabels = async (phaseId: string): Promise<string[]> => [
@@ -100,6 +106,11 @@ const announceOpen = async (client: Client, game: GameRow, cardChannel: string):
   await channel
     .send({ content: S.games.nominationsOpen(who.text.join(' '), where), allowedMentions: { roles: who.ids } })
     .catch((error: unknown) => logger.warn({ message: `Could not announce nominations of game ${game.id}.`, error }));
+};
+
+/** Repaints a day's cards, for a move that changes whether it takes votes without closing anything. */
+export const repaintDay = async (client: Client, phaseId: string): Promise<void> => {
+  await publish(client, await dayLabels(phaseId));
 };
 
 export const closeDay = async (client: Client, phaseId: string): Promise<void> => {

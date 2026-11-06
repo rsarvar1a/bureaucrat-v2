@@ -8,7 +8,7 @@ import { listSeating, type SeatedPlayer } from '../../../../drizzle/seating';
 import type { Game, GamePhase } from '../../../../schema/core/games.sql';
 import { actorOf } from '../../access';
 import { isStorytellerOf } from '../../guards/game';
-import { DAY_CARD, isOpen, NOMINATION_CARD } from '../../games/nominations/open';
+import { DAY_CARD, NOMINATION_CARD } from '../../games/nominations/open';
 import { listViews, type StoredView } from '../../../../engine/discord/views/query';
 import { S } from '../../../../strings';
 
@@ -17,7 +17,7 @@ type PhaseRow = typeof GamePhase.$inferSelect;
 
 export type NominationContext = {
   game: GameRow;
-  /** The current day, with its nominations open. */
+  /** The current day, its nominations opened; they may since have closed to new ones. */
   phase: PhaseRow;
   /** Every seat, empty ones included. */
   rows: SeatedPlayer[];
@@ -27,7 +27,7 @@ export type NominationContext = {
 
 /**
  * What every `/nominations` command needs: the game this channel belongs to,
- * its current day with nominations open, and the caller's seat in it.
+ * its current day once nominations have opened, and the caller's seat in it.
  * Refuses ephemerally, so a caller that gets a context back has a reply to
  * fill (deferred unless it asked not to).
  */
@@ -54,7 +54,7 @@ export const nominationContext = async (
   if (game.state !== 'running') return refuse(S.errors.nominationsClosed);
 
   const phase = await currentPhase(game.id);
-  if (!phase || phase.phase !== 'day' || !isOpen(phase)) return refuse(S.errors.nominationsClosed);
+  if (!phase || phase.phase !== 'day' || phase.nominationsOpenedAt === null) return refuse(S.errors.nominationsClosed);
 
   const rows = await listSeating(game.id);
   const participant = await getParticipantByMember(game.id, actor.id);

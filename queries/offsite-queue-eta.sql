@@ -22,6 +22,7 @@ with
       "copiedTo" >= (
         (
           extract(
+            
             epoch
             from
               now() - interval '10 minutes'

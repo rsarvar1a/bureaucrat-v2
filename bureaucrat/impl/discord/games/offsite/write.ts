@@ -37,6 +37,7 @@ import type { Game } from '../../../../schema/core/games.sql';
 import { logger } from '../../../../utilities/logger';
 import { abortIfTransient, fault, swallow } from '../../errors/record';
 import { Deferred, threadGate } from './gate';
+import { pagesOf } from './pages';
 import { roleLook, townSquare } from '../../views/games/seating/render';
 import { characterChoices } from '../../views/games/seating/roles';
 import { ALIGNMENT_LABEL } from '../script/alignment';
@@ -67,6 +68,9 @@ export const REQUIRED = [
 ];
 
 const MB = 1_048_576;
+
+/** Messages a writer holds at once: every writer runs together, so a long channel must not load whole. */
+const COPY_PAGE = 100;
 
 /** The upload cap the archive server's boost level buys. */
 export const fileCapOf = (guild: Guild): number => {
@@ -358,31 +362,42 @@ export const copyGame = async (
   };
 
   const copyRow = async (row: ExportChannelRow) => {
-    const pending = await listUncopiedMessages(exp.id, row.channel);
-    if (pending.length === 0) return;
-
     const isMain = row.kind === 'channel';
-    ctx.target = isMain ? BigInt(channel.id) : row.copiedTo!;
-    ctx.previous = await lastCopiedTimeOf(exp.id, row.channel);
-    const threadId = isMain ? undefined : String(row.copiedTo!);
+    const pages = pagesOf(
+      (after) => listUncopiedMessages(exp.id, row.channel, after, COPY_PAGE),
+      (message) => message.message,
+      COPY_PAGE,
+    );
+    let started = false;
 
-    for (const message of pending) {
-      if (isMain) await openBefore(message.createdAt.getTime());
-      if (message.replyTo !== null && !parents.has(message.replyTo)) {
-        parents.set(message.replyTo, await parentOf(exp.id, message.replyTo));
+    for await (const page of pages) {
+      if (!started) {
+        ctx.target = isMain ? BigInt(channel.id) : row.copiedTo!;
+        ctx.previous = await lastCopiedTimeOf(exp.id, row.channel);
+        started = true;
       }
-      ctx.parentOf = (id) => parents.get(id) ?? null;
+      const threadId = isMain ? undefined : String(row.copiedTo!);
+      // Only the message being rendered needs its parent, and what a parent became is already recorded.
+      parents.clear();
 
-      const copied = await send(webhook, threadId, message, ctx);
-      await setMessageCopy(message.id, copied);
-      if (copied !== 0n) {
-        const parent = parents.get(message.message);
-        if (parent) parent.copiedTo = copied;
+      for (const message of page) {
+        if (isMain) await openBefore(message.createdAt.getTime());
+        if (message.replyTo !== null && !parents.has(message.replyTo)) {
+          parents.set(message.replyTo, await parentOf(exp.id, message.replyTo));
+        }
+        ctx.parentOf = (id) => parents.get(id) ?? null;
+
+        const copied = await send(webhook, threadId, message, ctx);
+        await setMessageCopy(message.id, copied);
+        if (copied !== 0n) {
+          const parent = parents.get(message.message);
+          if (parent) parent.copiedTo = copied;
+        }
+        ctx.previous = message.createdAt;
+        if (isMain) mainLast = message.createdAt;
+        progress.copied += 1;
+        await report(progress);
       }
-      ctx.previous = message.createdAt;
-      if (isMain) mainLast = message.createdAt;
-      progress.copied += 1;
-      await report(progress);
     }
   };
 

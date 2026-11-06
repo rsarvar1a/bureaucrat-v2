@@ -92,6 +92,18 @@ export const answerPromotion = async (whisperId: string, participantId: string, 
     .where(and(eq(WhisperParticipant.whisper, whisperId), eq(WhisperParticipant.participant, participantId)));
 };
 
+/** The last yes: the whisper goes async, at what each member now owes. */
+export const promoteWhisper = async (whisperId: string, owed: { participant: string; cost: number }[]) =>
+  db.transaction(async (tx) => {
+    for (const { participant, cost } of owed) {
+      await tx
+        .update(WhisperParticipant)
+        .set({ cost })
+        .where(and(eq(WhisperParticipant.whisper, whisperId), eq(WhisperParticipant.participant, participant)));
+    }
+    await tx.update(Whisper).set({ async: true, promoting: false }).where(eq(Whisper.id, whisperId));
+  });
+
 /** What a participant has spent on a day: every whisper they are in that opened, by cost; ending one refunds nothing. */
 export const spentOn = async (
   gameId: string,

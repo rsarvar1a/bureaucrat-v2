@@ -27,6 +27,7 @@ import {
   isOpen,
   openNominations,
   reopenDay,
+  repaintDay,
   teardownPhases,
 } from '../../games/nominations/open';
 import { namer } from '../naming';
@@ -72,6 +73,13 @@ const moveTo = async (
   // Leaving a day closes its nominations; standing still leaves them be.
   const after = await currentPhase(gameId);
   await closeOpenDays(interaction.client, gameId, after && before?.id === after.id ? after.id : undefined);
+
+  // Votes follow the current day, so the day left and the day returned to both
+  // repaint. Leaving one still open already did, through its close.
+  if (after && before?.id !== after.id) {
+    if (before?.nominationsClosedAt) await repaintDay(interaction.client, before.id);
+    if (after.phase === 'day' && after.nominationsOpenedAt) await repaintDay(interaction.client, after.id);
+  }
 
   // Night falls on every whisper: threads lock, town voices come back. Day
   // breaks on the neighbours' standing threads.

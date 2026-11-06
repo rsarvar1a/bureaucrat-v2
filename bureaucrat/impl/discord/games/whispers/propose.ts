@@ -23,7 +23,16 @@ import { logger } from '../../../../utilities/logger';
 import { joinThreads } from '../membership';
 import { busyWhispering, syncTownVoice } from './restrict';
 import { allowanceOf } from './allowance';
-import { affordable, costs, neighbours, setTag, whisperThreadName, type Budget, type Spent } from './rules';
+import {
+  affordable,
+  costs,
+  neighbours,
+  setTag,
+  travelerRuleApplies,
+  whisperThreadName,
+  type Budget,
+  type Spent,
+} from './rules';
 
 type GameRow = typeof Game.$inferSelect;
 type ParticipantRow = typeof Participant.$inferSelect;
@@ -101,7 +110,7 @@ export const checkProposal = async (
   const isTraveler = await travelerOf(game.id);
   const cost = costs(
     [initiator, ...invitees].map((p) => ({ id: p.id, traveler: isTraveler(p.id) })),
-    settings.travelerWhispers,
+    travelerRuleApplies(settings, proposal.async),
     proposal.free,
   );
 

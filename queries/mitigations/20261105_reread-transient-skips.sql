@@ -19,11 +19,18 @@
 --   bun prodsql -v apply=1 -v include_busy=1 < …
 --       also exports the engine may be running (reading, copying): only with
 --       the bot stopped, or a running copy marks itself copied over this
+--   bun prodsql -v apply=1 -v game='rerack of al time' < …
+--       only the games matching this pattern (ILIKE); the dry run takes it too
 --
 -- Safe to run again. A channel counts as skipped while it is still named in
 -- `unread`, or once reset while its export ended up copied or failed anyway;
 -- one read for real since matches neither, so the busy ones can be picked up
 -- by a second run once they settle.
+
+\if :{?game}
+\else
+\set game '%'
+\endif
 
 BEGIN;
 
@@ -36,6 +43,7 @@ JOIN core."Game" g ON g.id = e.game
 WHERE ev.area = 'offsite'
   AND ev.operation = 'read.channel'
   AND ev.outcome = 'degraded'
+  AND g.name ILIKE :'game'
   -- Passing failures only: the network, or the database wrapped as `other` before the classifier unwrapped it.
   AND (ev.kind = 'network' OR ev.detail ->> 'cause' ~ '(EAI_AGAIN|CONNECT_TIMEOUT|ECONNRESET|ETIMEDOUT)')
   AND (

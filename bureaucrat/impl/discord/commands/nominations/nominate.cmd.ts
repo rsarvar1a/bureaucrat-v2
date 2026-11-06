@@ -2,6 +2,7 @@ import { SlashCommandSubcommandBuilder } from 'discord.js';
 import { Superbuilder } from '../../../../engine/discord/commands/builders/superbuilder';
 import { accent } from '../../../../engine/discord/elements';
 import { toast } from '../../../../engine/discord/reply';
+import { isOpen } from '../../games/nominations/open';
 import { accuserChoices, entryContext, nomineeChoices } from '../../views/nominations/choices';
 import { nominateModal, proxyNominateModal } from '../../views/nominations/modals';
 import { dayCardOf, nominationContext } from './context';
@@ -13,6 +14,10 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
   .define(async (interaction) => {
     const ctx = await nominationContext(interaction, { defer: false });
     if (!ctx) return;
+    if (!isOpen(ctx.phase)) {
+      await toast.ephemeral(interaction, S.errors.nominationsClosed, { accent: accent.warning });
+      return;
+    }
 
     if (ctx.me && ctx.me.seat.state !== 'alive') {
       await toast.ephemeral(interaction, S.errors.nominationRefused['notAlive']!, { accent: accent.warning });

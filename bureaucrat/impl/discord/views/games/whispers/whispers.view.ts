@@ -72,7 +72,7 @@ export default createView<WhispersState>()({
         text(
           [
             'When group whispers are enabled, an N-player whisper costs each player N-1 whispers.',
-            'When Traveler whispers are enabled, regular players can whisper them for free.',
+            'When Traveler whispers are enabled, regular players can whisper them for free, except async whispers in Hybrid mode.',
             'When precise tracking is enabled, `/whisper end` adds a timestamp to each player.',
           ].join('\n'),
         ),

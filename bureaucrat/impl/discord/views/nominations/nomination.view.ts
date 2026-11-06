@@ -9,7 +9,7 @@ import { listVotes } from '../../../../drizzle/votes';
 import { inGuild } from '../../guards';
 import { storytellsNomination } from '../../guards/nominations';
 import { ballotLines, headline, quoted, statusLine } from '../../games/nominations/format';
-import { CONSOLE, isOpen } from '../../games/nominations/open';
+import { CONSOLE, votingLive } from '../../games/nominations/open';
 import { mayVote, statusOf, tally } from '../../games/nominations/rules';
 import { GameEvents } from '../games/events';
 import { roleLook, stateTag, who } from '../games/seating/render';
@@ -69,7 +69,7 @@ export default createView<CardState>()({
 
     const votes = ballot.map((v) => v.vote);
     const status = statusOf(votes, nomination.required, nomination.finalizedAt !== null);
-    const live = isOpen(phase) && status === 'open';
+    const live = status === 'open' && (await votingLive(game, phase));
 
     return {
       ...v2(
@@ -123,9 +123,9 @@ export default createView<CardState>()({
 
     // One Vote for everyone; the accuser's form carries the accusation while
     // no hand is locked, the nominee's their defense, a self-nominator's both.
-    // When the vote itself is refused (locked, spent, closed) the accuser and
-    // the nominee still get their text boxes, under a title saying why. A
-    // Kibitzer has no hand to raise and sees the whole ballot instead, private votes and all.
+    // When the vote itself is refused (locked, spent) the accuser and the
+    // nominee still get their text boxes, under a title saying why; once the day
+    // is left, nobody writes anything. A Kibitzer has no hand to raise and sees the whole ballot instead, private votes and all.
     vote: async (interaction, ctx) => {
       if (!interaction.isMessageComponent()) return;
       const found = await load(ctx.view.entityId);
@@ -143,13 +143,15 @@ export default createView<CardState>()({
         await toast.ephemeral(interaction, S.errors.notVoting, { accent: accent.warning });
         return;
       }
+      if (!(await votingLive(found.game, found.phase))) {
+        await toast.ephemeral(interaction, S.errors.votingClosed, { accent: accent.warning });
+        return;
+      }
       const refusal = mine.vote.locked
         ? { message: S.errors.voteLocked, why: 'vote locked' }
         : !mayVote(found.nomination.kind, mine.vote.state)
           ? { message: S.errors.noGhostVote, why: 'no vote left' }
-          : !isOpen(found.phase)
-            ? { message: S.errors.nominationsClosed, why: 'voting closed' }
-            : null;
+          : null;
 
       const { nomination } = found;
       const values = {

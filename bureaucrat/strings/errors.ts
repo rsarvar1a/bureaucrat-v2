@@ -183,6 +183,7 @@ export const nominationRefused: Record<string, string> = {
   noChannel: 'There is nowhere to post the nomination.',
 };
 export const nominationsClosed = nominationRefused['closed']!;
+export const votingClosed = 'That day is over: votes and arguments have closed.';
 export const notVoting = 'You have no vote in this nomination.';
 export const voteLocked = 'That vote has been locked.';
 export const noGhostVote = 'You have no vote left: your ghost vote is spent.';

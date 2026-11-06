@@ -56,6 +56,12 @@ export const costs = (participants: Whisperer[], travelerRule: boolean, free: bo
     ]),
   );
 
+/** Whether a whisper gets the traveler rule: a hybrid game's async whisper never does. */
+export const travelerRuleApplies = (
+  settings: Pick<Settings, 'whisperMode' | 'travelerWhispers'>,
+  async: boolean,
+): boolean => settings.travelerWhispers && !(settings.whisperMode === 'hybrid' && async);
+
 export type Spent = { total: number; async: number };
 
 /** Whether a participant can afford one more at this cost, on both counters when it is async. */
@@ -71,9 +77,20 @@ export const restricts = (
   part: { endedAt: Date | null },
 ): boolean => whisper.state === 'accepted' && !whisper.async && !whisper.free && part.endedAt === null;
 
-/** Whether one more async whisper at this cost fits the async allowance; the total was spent when it opened. */
-export const promotable = (spent: Spent, cost: number, allowance: Budget): boolean =>
-  spent.async + cost <= allowance.async;
+/**
+ * What a member owes once their whisper goes async: in a hybrid game one per
+ * other member, the traveler rule no longer counting; elsewhere what they paid.
+ */
+export const promotedCost = (mode: Settings['whisperMode'], paid: number, members: number): number =>
+  mode === 'hybrid' ? members - 1 : paid;
+
+/**
+ * Whether a member can take an open whisper async: the full cost has to fit
+ * the async counter, and the total has to cover whatever the traveler rule let
+ * them off when it opened. The rest of the total was spent then.
+ */
+export const promotable = (spent: Spent, paid: number, cost: number, allowance: Budget): boolean =>
+  spent.async + cost <= allowance.async && (cost === paid || spent.total + cost - paid <= allowance.total);
 
 /**
  * Who is still in a whisper once a member leaves it: everyone whose part has

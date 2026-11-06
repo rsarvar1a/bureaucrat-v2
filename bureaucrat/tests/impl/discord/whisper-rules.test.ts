@@ -7,7 +7,9 @@ import {
   lockOnClose,
   neighbours,
   promotable,
+  promotedCost,
   remainingAfter,
+  travelerRuleApplies,
   renamedWhisperThread,
   restricts,
   setTag,
@@ -76,6 +78,22 @@ test('with the traveler rule a regular player does not pay for travelers, and tr
   expect(costs([ann, tom], true, false).get('tom')).toBe(1);
 });
 
+test("the traveler rule stands everywhere but on a hybrid game's async whisper", () => {
+  const rule = (whisperMode: 'sync' | 'async' | 'hybrid', async: boolean, travelerWhispers = true) =>
+    travelerRuleApplies({ whisperMode, travelerWhispers }, async);
+  expect(rule('hybrid', true)).toBe(false);
+  expect(rule('hybrid', false)).toBe(true);
+  expect(rule('async', true)).toBe(true);
+  expect(rule('sync', false)).toBe(true);
+  expect(rule('async', true, false)).toBe(false);
+});
+
+test('going async charges in full in a hybrid game, and nothing more elsewhere', () => {
+  expect(promotedCost('hybrid', 0, 2)).toBe(1);
+  expect(promotedCost('hybrid', 2, 3)).toBe(2);
+  expect(promotedCost('async', 0, 2)).toBe(0);
+});
+
 test('a free whisper costs nobody anything', () => {
   for (const cost of costs([ann, bob, tom], true, true).values()) expect(cost).toBe(0);
 });
@@ -128,11 +146,19 @@ test('a closed thread locks unless it is two neighbours under the neighbour rule
   expect(lockOnClose(true, [1, undefined], 5)).toBe(true);
 });
 
-test('promotion only needs room on the async counter', () => {
+test('promotion needs room on the async counter for the full cost', () => {
   const allowance = { total: 2, async: 1 };
-  expect(promotable({ total: 2, async: 0 }, 1, allowance)).toBe(true);
-  expect(promotable({ total: 2, async: 1 }, 1, allowance)).toBe(false);
-  expect(promotable({ total: 1, async: 0 }, 2, allowance)).toBe(false);
+  expect(promotable({ total: 2, async: 0 }, 1, 1, allowance)).toBe(true);
+  expect(promotable({ total: 2, async: 1 }, 1, 1, allowance)).toBe(false);
+  expect(promotable({ total: 1, async: 0 }, 2, 2, allowance)).toBe(false);
+});
+
+test('promotion charges the total only for what the traveler rule let them off', () => {
+  const allowance = { total: 2, async: 2 };
+  expect(promotable({ total: 1, async: 0 }, 0, 1, allowance)).toBe(true);
+  expect(promotable({ total: 2, async: 0 }, 0, 1, allowance)).toBe(false);
+  // A total lowered since they paid does not undo what is already paid.
+  expect(promotable({ total: 3, async: 0 }, 1, 1, allowance)).toBe(true);
 });
 
 test('who remains after a leave: the second-last out leaves nobody worth keeping, more carry on', () => {

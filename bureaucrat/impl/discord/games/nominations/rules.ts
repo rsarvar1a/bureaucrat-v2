@@ -118,3 +118,13 @@ export const weightLabel = (weight: number | null): string => {
   if (weight === null || weight === 1) return '';
   return weight < 0 ? `−${Math.abs(weight)}` : `×${weight}`;
 };
+
+/**
+ * Votes and arguments run from the day's opening until the game moves off it.
+ * Closing nominations stops only new ones, so it does not come into this.
+ */
+export const votingOpen = (
+  phase: { id: string; nominationsOpenedAt: Date | null },
+  gameRunning: boolean,
+  currentId: string | undefined,
+): boolean => gameRunning && phase.nominationsOpenedAt !== null && currentId === phase.id;

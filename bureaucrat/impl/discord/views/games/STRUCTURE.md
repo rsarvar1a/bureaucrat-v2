@@ -194,7 +194,10 @@ cannot both post), closes any other open day, and puts the **day card** (`gnomda
 thread, pinned. The card lists today's nominations with a link to each card and where its count
 stands, and offers Nominate: a modal whose select names the players still open to nomination
 (travelers first, since a big game may not fit everyone in twenty-five; the Storyteller when
-allowed) and takes the accusation. Any phase move closes the day; Phases can reopen it.
+allowed) and takes the accusation. Closing, from Phases or by any phase move, stops only new
+nominations; Phases can reopen it. Votes, accusations and defenses on the day's nominations stay
+open until the game moves off that day (`votingLive`), and return if the Storyteller steps back to
+it. A Storyteller can still write an accusation or defense from the console afterwards.
 
 The day card's Manage opens the Storyteller's **block pane** (`gnomblock`), ephemeral: who is on
 the block, and a select (none allowed) to put any of today's nominations there or clear it. The
@@ -330,11 +333,12 @@ when the game has none. A reminder whose game has ended is retired unposted.
   is capped at the main count, and lowering the main count lowers the async count with it.
 - Async whispers need not be committed up front. Any member of an open synchronous whisper may
   ask to promote it (`/whispers promote`, the "retroactive unlim"): the request card goes where
-  invitations go, every member must have room on the day's async counter for what they already
-  paid, and when all accept the row's `async` flips, which is the whole charge (the total was
-  spent when it opened and stays spent; `spentOn` counts an async whisper's cost on both).
+  invitations go, every member must have room for what it will cost them, and when all accept the
+  row's `async` flips (`spentOn` counts an async whisper's cost on both counters). In a hybrid game
+  a regular player the traveler rule let off now pays in full, on the total too.
 - Traveler whispers on: a regular player whispering a traveler spends nothing and only the
-  traveler spends one. Off: it costs as normal.
+  traveler spends one, except that an async whisper in a hybrid game charges both. Off: it costs
+  as normal.
 - Neighbour whispers on: a whisper between two seated neighbours is free and gets no
   announcement in town. Off: it is announced and counted in the day's total like any other.
 
@@ -388,8 +392,8 @@ Threads are private, in the game channel, kind `whisper`, tagged with the sorted
 so the next whisper between the same people reuses the thread; the Storytellers are in every one.
 `games/whispers/rules.ts` holds the arithmetic: the day's allowance by mode (sync: the day's
 count; async: the async count; hybrid: both, async inside total), the cost of a whisper (one per
-other participant; with the traveler rule a regular player pays nothing for travelers; a
-neighbour whisper is free) and whether a participant can afford one. The initiator is checked
+other participant; with the traveler rule a regular player pays nothing for travelers, save on a
+hybrid game's async whisper; a neighbour whisper is free) and whether a participant can afford one. The initiator is checked
 when proposing, each invitee when accepting; a whisper counts against the `on` of the phase it
 was made in.
 

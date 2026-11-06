@@ -11,7 +11,7 @@ import { listVotes, setVoteText, type BallotEntry } from '../../../../drizzle/vo
 import { actorOf } from '../../access';
 import { nominate, nominateFor } from '../../games/nominations/nominate';
 import { isStorytellerOf } from '../../guards/game';
-import { isOpen } from '../../games/nominations/open';
+import { votingLive } from '../../games/nominations/open';
 import { publish } from '../../games/nominations/publish';
 import { mayVote } from '../../games/nominations/rules';
 import { nominationChanged } from './events';
@@ -65,7 +65,7 @@ export const writeVote = async (
   found: NonNullable<Awaited<ReturnType<typeof loadNomination>>>,
   line: BallotEntry,
 ): Promise<string | null> => {
-  if (!isOpen(found.phase)) return S.errors.nominationsClosed;
+  if (!(await votingLive(found.game, found.phase))) return S.errors.votingClosed;
   if (line.vote.locked) return S.errors.voteLocked;
   if (!mayVote(found.nomination.kind, line.vote.state)) return S.errors.noGhostVote;
 
@@ -81,6 +81,20 @@ export const writeVote = async (
 
 const PUBLIC = field.paragraph('Public vote', { required: false, maxLength: 150 });
 const PRIVATE = field.paragraph('Private vote (Storytellers only)', { required: false, maxLength: 150 });
+
+/**
+ * Whether the arguments are shut to whoever submitted: the day has been left,
+ * and they are not a Storyteller, who is never locked out.
+ */
+const argumentsShut = async (
+  interaction: ViewInteraction,
+  found: Awaited<ReturnType<typeof loadNomination>>,
+): Promise<boolean> => {
+  if (!found) return true;
+  if (await votingLive(found.game, found.phase)) return false;
+  const actor = actorOf(interaction);
+  return !(actor && (await isStorytellerOf(found.game, actor)));
+};
 
 // --- The day card's modals -------------------------------------------------
 
@@ -190,6 +204,7 @@ const submitVote = async (
   const found = await loadNomination(nominationId);
   const mine = found ? await seatOf(interaction, found.nomination) : null;
   if (!found || !mine) return S.errors.notVoting;
+  if (!(await votingLive(found.game, found.phase))) return S.errors.votingClosed;
 
   const patch: { accusation?: string | null; defense?: string | null } = {};
   if (values.accusation !== undefined && mine.seat.id === found.nomination.plaintiff) {
@@ -290,6 +305,10 @@ export const defenseModal = modal<ConsoleState | Empty>()({
   fields: { defense: DEFENSE },
   async onSubmit(values, interaction, ctx) {
     await interaction.deferUpdate();
+    if (await argumentsShut(interaction, await loadNomination(ctx.view.entityId))) {
+      await toast.followUp(interaction, S.errors.votingClosed, { accent: accent.warning });
+      return { action: 'render' };
+    }
     await updateNomination(ctx.view.entityId!, { defense: values['defense']?.trim() || null });
     await publish(interaction.client, [nominationChanged(ctx.view.entityId!)]);
     return { action: 'render' };
@@ -303,6 +322,10 @@ export const selfText = modal<Empty>()({
   fields: { accusation: ACCUSATION, defense: DEFENSE },
   async onSubmit(values, interaction, ctx) {
     await interaction.deferUpdate();
+    if (await argumentsShut(interaction, await loadNomination(ctx.view.entityId))) {
+      await toast.followUp(interaction, S.errors.votingClosed, { accent: accent.warning });
+      return { action: 'render' };
+    }
     const locked = (await listVotes(ctx.view.entityId!)).some((v) => v.vote.locked);
     await updateNomination(ctx.view.entityId!, {
       ...(locked ? {} : { accusation: values['accusation']?.trim() || null }),
@@ -322,6 +345,10 @@ export const accusationModal = modal<ConsoleState | Empty>()({
     await interaction.deferUpdate();
     // The accuser is bound once voting begins; a Storyteller, acting for them, is not.
     const found = await loadNomination(ctx.view.entityId);
+    if (await argumentsShut(interaction, found)) {
+      await toast.followUp(interaction, S.errors.votingClosed, { accent: accent.warning });
+      return { action: 'render' };
+    }
     const actor = actorOf(interaction);
     const storyteller = found && actor ? await isStorytellerOf(found.game, actor) : false;
     const ballot = await listVotes(ctx.view.entityId!);

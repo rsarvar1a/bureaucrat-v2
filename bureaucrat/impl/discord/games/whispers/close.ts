@@ -13,6 +13,7 @@ import {
   getWhisper,
   listOpenWhispers,
   listWhisperMembers,
+  promoteWhisper,
   setPromotion,
   spentOn,
   updateWhisper,
@@ -30,7 +31,7 @@ import { publish } from '../publish';
 import { checkProposal, openWhisper, recordProposal, threadFor } from './propose';
 import { syncTownVoice } from './restrict';
 import { allowanceOf } from './allowance';
-import { lockOnClose, neighbours, promotable, remainingAfter } from './rules';
+import { lockOnClose, neighbours, promotable, promotedCost, remainingAfter } from './rules';
 import { displayNames } from '../../views/queue/members';
 import { S } from '../../../../strings';
 
@@ -229,9 +230,9 @@ export type Asked =
   | { ok: false; reason: 'over-budget'; who: ParticipantRow[] };
 
 /**
- * A member asks to make the whisper asynchronous. Everyone must have room
- * on the day's async counter for what they already paid; the total was spent
- * when it opened and stays spent. The request card goes where invitations go.
+ * A member asks to make the whisper asynchronous. Everyone must have room for
+ * what it will cost them, which in a hybrid game includes anything the traveler
+ * rule let them off when it opened. The request card goes where invitations go.
  */
 export const askPromotion = async (
   client: Client,
@@ -248,13 +249,15 @@ export const askPromotion = async (
   const members = await listWhisperMembers(whisper.id);
   if (!members.some((m) => m.participant.id === asker.id)) return { ok: false, reason: 'not-member' };
 
-  const allowance = await allowanceOf(game.id);
+  const settings = await getOrCreateGameSettings(game.id);
+  const allowance = await allowanceOf(game.id, settings);
   if (allowance.async === 0) return { ok: false, reason: 'no-async' };
 
   const who: ParticipantRow[] = [];
   for (const m of members) {
     const spent = await spentOn(game.id, m.participant.id, whisper.day);
-    if (!promotable(spent, m.part.cost, allowance)) who.push(m.participant);
+    const cost = promotedCost(settings.whisperMode, m.part.cost, members.length);
+    if (!promotable(spent, m.part.cost, cost, allowance)) who.push(m.participant);
   }
   if (who.length > 0) return { ok: false, reason: 'over-budget', who };
 
@@ -298,15 +301,23 @@ export const answerPromotion = async (
     return { ok: true, outcome: 'declined' };
   }
 
-  const allowance = await allowanceOf(game.id);
+  const settings = await getOrCreateGameSettings(game.id);
+  const allowance = await allowanceOf(game.id, settings);
   const spent = await spentOn(game.id, participant.id, whisper.day);
-  if (!promotable(spent, mine.part.cost, allowance)) return { ok: false, reason: 'over-budget' };
+  const cost = promotedCost(settings.whisperMode, mine.part.cost, members.length);
+  if (!promotable(spent, mine.part.cost, cost, allowance)) return { ok: false, reason: 'over-budget' };
 
   await recordAnswer(whisper.id, participant.id, true);
   const everyone = members.every((m) => m.participant.id === participant.id || m.part.promote === true);
   if (!everyone) return { ok: true, outcome: 'waiting' };
 
-  await updateWhisper(whisper.id, { async: true, promoting: false });
+  await promoteWhisper(
+    whisper.id,
+    members.map((m) => ({
+      participant: m.participant.id,
+      cost: promotedCost(settings.whisperMode, m.part.cost, members.length),
+    })),
+  );
   for (const m of members) await syncTownVoice(client, game, m.participant);
   await publish(client, [whisperChanged(whisper.id)]);
   return { ok: true, outcome: 'promoted' };

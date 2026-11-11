@@ -215,7 +215,7 @@ export default createView<SeatingState>()({
   idParams: [],
   events: {},
   defaultState: { seat: null, mode: null },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

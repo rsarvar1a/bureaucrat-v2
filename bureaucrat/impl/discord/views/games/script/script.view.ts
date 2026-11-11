@@ -208,7 +208,7 @@ export default createView<ScriptState>()({
   idParams: [],
   events: {},
   defaultState: { kind: null },
-  subscribesTo: { destroy: [GameEvents.Ended] },
+  subscribesTo: { detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

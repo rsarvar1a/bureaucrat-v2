@@ -38,7 +38,7 @@ export default createView<TownSquareState>()({
   idParams: [],
   events: {},
   defaultState: {},
-  subscribesTo: { render: [GameEvents.Changed, GameEvents.Published], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed, GameEvents.Published], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild] },
 
   destroy: async (view, client) => {

@@ -2,7 +2,7 @@ import { inArray } from 'drizzle-orm';
 import type { Client } from 'discord.js';
 import { db } from '../../../utilities/db';
 import { View, Subscription } from '../../../schema/abc/views.sql';
-import type { ViewDefinition, ViewRow } from './types';
+import type { LifecycleAction, ViewDefinition, ViewRow } from './types';
 import { lifecycleHandlers } from './events';
 import { logger } from '../../../utilities/logger';
 
@@ -49,14 +49,14 @@ export const notifyContexts = async (
 
   logger.debug({ message: `Resolving ${subscriptions.length} subscription(s).`, subscriptions });
 
-  // Determine the strongest action per view: destroy > render
-  const viewActionMap = new Map<string, 'render' | 'destroy'>();
+  // Determine the strongest action per view: destroy > detach > render
+  const strength: Record<LifecycleAction, number> = { render: 0, detach: 1, destroy: 2 };
+  const viewActionMap = new Map<string, LifecycleAction>();
   for (const s of subscriptions) {
     if (s.viewId === options.excludeViewId) continue;
+    const action = s.action as LifecycleAction;
     const current = viewActionMap.get(s.viewId);
-    if (s.action === 'destroy' || !current) {
-      viewActionMap.set(s.viewId, s.action as 'render' | 'destroy');
-    }
+    if (!current || strength[action] > strength[current]) viewActionMap.set(s.viewId, action);
   }
 
   if (viewActionMap.size === 0) return;
@@ -77,7 +77,7 @@ export const notifyContexts = async (
     action: viewActionMap.get(v.id),
   }));
 
-  // Process each lifecycle handler in precedence order (destroy before render)
+  // Process each lifecycle handler in precedence order (destroy, detach, render)
   for (const handler of lifecycleHandlers) {
     await Promise.allSettled(
       lifecycleEvents

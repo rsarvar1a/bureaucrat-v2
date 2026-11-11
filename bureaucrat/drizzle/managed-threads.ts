@@ -17,7 +17,10 @@ export const listManagedThreads = async (gameId: string, kind?: ThreadKind) =>
     .where(kind ? and(eq(ManagedThread.game, gameId), eq(ManagedThread.kind, kind)) : eq(ManagedThread.game, gameId))
     .orderBy(asc(ManagedThread.createdAt));
 
-export const updateManagedThread = async (id: string, patch: Partial<Pick<InsertManagedThread, 'tag'>>) => {
+export const updateManagedThread = async (
+  id: string,
+  patch: Partial<Pick<InsertManagedThread, 'tag' | 'publishedAt'>>,
+) => {
   const [row] = await db.update(ManagedThread).set(patch).where(eq(ManagedThread.id, id)).returning();
   return row;
 };

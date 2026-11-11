@@ -50,8 +50,11 @@ export const badDuration = 'That is not a duration. Write it like `1d13h4m2s`.';
 export const notGameChannel = "That channel is not part of this game. Pick the game's channel or one of its threads.";
 export const badOffsets = 'Those are not heads-ups. Write them like `4h 2h 1h`, each shorter than the duration.';
 
-export const renameBeforeEnd = 'You can rename this game after it has ended and is ready to be archived.';
+export const renameBeforeEnd = 'This game has not ended yet; rename it with /game rename.';
 export const gameNotRenamed = "Failed to rename the game's channel.";
+/** Discord renames a channel only twice in ten minutes; `when` is a timestamp. */
+export const gameRenameLimited = (when: string) =>
+  `Discord only lets a channel be renamed twice in ten minutes. Try again ${when}.`;
 
 /** Archiving files a finished game; who may file it is the owner or a server manager. */
 export const gameNotEnded = 'End the game before archiving it.';
@@ -200,6 +203,7 @@ export const notNomineeToday = 'Nobody has nominated you today.';
 export const nothingOpenToVote = 'There is no open nomination to vote on.';
 export const revealExists = 'This game already has a reveal; rename it with /reveal rename.';
 export const noReveal = 'This game has no reveal yet.';
+export const revealNotPublished = 'The reveal has not been published yet.';
 export const badMark = 'A mark is a whole number from 1 to 5.';
 
 /** The offsite archive: the second server an ended game is copied into. */

@@ -34,7 +34,7 @@ of this one: it updates the header's state, replaces the child window, and re-re
 Defining a stack registers its route so `openWindow` can recurse.
 
 Windows are plain views. They inherit the entity from the header through ancestry (ADR-003), they
-subscribe to the entity's `Changed` event to re-render and its `Ended` event to destroy, and they
+subscribe to the entity's `Changed` event to re-render and its `Ended` event to detach, and they
 are guarded like anything else. They have no Dismiss, because the header above them is what
 closes them.
 

@@ -60,6 +60,11 @@ type HandlerResult = { action: 'render' } | { action: 'destroy' } | { action: 'n
 Note that `destroy` **precedes** `render` in `lifecycleHandlers`, so a view subscribed to both
 actions for the same event is destroyed rather than re-rendered.
 
+A subscription may also `detach` (between the two in precedence): a public view's message keeps
+what it showed with its controls stripped (`strip.ts`), and the row goes without the view's
+`destroy` hook, which is what would delete the message. An ephemeral view is destroyed as usual.
+A game's views detach on `Ended`, so the channel reads as it was played.
+
 ### Rendering is a pure function of persisted state
 
 `render(view, db, client)` receives the persisted row, a database handle and the client, and

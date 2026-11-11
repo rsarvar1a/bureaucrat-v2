@@ -76,7 +76,7 @@ export default createView<MessagingState>()({
   idParams: [],
   events: {},
   defaultState: {},
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

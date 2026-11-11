@@ -70,7 +70,7 @@ export default createView<SignupState>()({
   idParams: [],
   events: {},
   defaultState: { signupId: null },
-  subscribesTo: { destroy: [GameEvents.Ended] },
+  subscribesTo: { detach: [GameEvents.Ended] },
   guards: { '*': [inGuild] },
 
   destroy: async (view, client) => {

@@ -89,7 +89,7 @@ export default createView<ReminderState>()({
   idParams: [],
   events: {},
   defaultState: { message: '', duration: null, offsets: [], mentions: ['Player'], channel: null },
-  subscribesTo: { render: [], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

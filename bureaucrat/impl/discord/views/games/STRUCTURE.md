@@ -175,13 +175,14 @@ header holds its own navigation; the content sits beneath both, so a stack is tw
 messages deep. A root tab may still `inline` its header's strip (`tabs.ts`) to save the middle
 message, with a subtitle naming the root tab above the nested ribbon; nothing is inlined today.
 
-Every window subscribes to `GameEvents.Changed` (render) and `GameEvents.Ended` (destroy). No
-window has a Dismiss: the header above it closes it, and `/game end` closes the lot. Every write
+Every window subscribes to `GameEvents.Changed` (render) and `GameEvents.Ended` (detach). No
+window has a Dismiss: the header above it closes it, and `/game end` disconnects the lot, leaving
+each message in place with its controls stripped. Every write
 a window makes ends in `notify(Changed)` so the header's counts and the sibling windows follow;
 a confirm's `onConfirm` ends in `notifyAll`, since the confirm handler itself returns nothing.
 
 The stack opens from `games/create.ts` (`openWindow` on `gconfig`, which recurses through the
-registered headers) and is torn down by `games/end.ts`. `/game config`, the game owner's, takes
+registered headers) and is disconnected by `games/end.ts`. `/game config`, the game owner's, takes
 down whatever is there and opens a fresh stack (`games/reopen.ts`) when the old one is lost or
 predates a deploy.
 

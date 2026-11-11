@@ -19,7 +19,7 @@ export default createView<SignupsState>()({
   idParams: [],
   events: {},
   defaultState: { tab: 'applications' },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

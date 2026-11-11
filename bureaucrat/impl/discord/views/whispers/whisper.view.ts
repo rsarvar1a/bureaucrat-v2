@@ -59,7 +59,7 @@ export default createView<WhisperCardState>()({
   idParams: [],
   events: {},
   defaultState: { standings: null },
-  subscribesTo: { render: [WhisperEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [WhisperEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild], accept: [invited], decline: [invited], go: [inWhisper] },
 
   destroy: async (view, client) => {

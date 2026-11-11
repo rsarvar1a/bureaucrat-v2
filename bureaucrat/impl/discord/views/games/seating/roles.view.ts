@@ -141,7 +141,7 @@ export default createView<RolesState>()({
   idParams: [],
   events: {},
   defaultState: { seat: '', truePage: 0, apparentPage: 0 },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: {
     '*': [inGuild],
     'true-pick': [storytells],

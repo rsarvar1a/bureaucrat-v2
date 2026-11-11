@@ -11,12 +11,13 @@ import {
 } from 'discord.js';
 import { db } from '../../../utilities/db';
 import { View, Subscription } from '../../../schema/abc/views.sql';
-import type { ViewDefinition, ViewRow } from './types';
+import type { LifecycleAction, ViewDefinition, ViewRow } from './types';
 import { injectCustomId } from './custom-id';
 import { resolveEventTemplate } from './notify';
 import { resolveAncestry } from './ancestry';
 import { logger } from '../../../utilities/logger';
 import { writable } from './threads';
+import { stripControls } from './strip';
 
 const SWEEP_INTERVAL_MS = 60_000; // 1 minute
 
@@ -193,8 +194,8 @@ export const spawnView = async (
     })
     .returning();
 
-  const subscriptionRows: { view: string; contextLabel: string; action: 'render' | 'destroy' }[] = [];
-  for (const [action, templates] of Object.entries(viewDef.subscribesTo) as ['render' | 'destroy', string[]][]) {
+  const subscriptionRows: { view: string; contextLabel: string; action: LifecycleAction }[] = [];
+  for (const [action, templates] of Object.entries(viewDef.subscribesTo) as [LifecycleAction, string[]][]) {
     for (const template of templates) {
       subscriptionRows.push({
         view: row!.id,
@@ -229,6 +230,28 @@ export const deleteViewMessage = async (view: ViewRow, client: Client): Promise<
     }
   } catch (error) {
     logger.debug({ message: 'Ignoring error in deleteViewMessage:', error });
+  }
+};
+
+/**
+ * Takes the controls off a public view's message and leaves the rest where it
+ * is; a message that was nothing but controls is deleted instead, since an
+ * edit cannot leave a message empty.
+ */
+export const detachViewMessage = async (view: ViewRow, client: Client): Promise<void> => {
+  try {
+    const channel = (await client.channels.fetch(String(view.channel))) as GuildTextBasedChannel | null;
+    if (!channel) return;
+    await writable(channel);
+
+    const message = await channel.messages.fetch(String(view.message));
+    const before = message.components.map((component) => component.toJSON());
+    const after = stripControls(before);
+
+    if (after.length === 0 && !message.content && message.embeds.length === 0) await message.delete();
+    else if (JSON.stringify(after) !== JSON.stringify(before)) await message.edit({ components: after as never });
+  } catch (error) {
+    logger.debug({ message: 'Ignoring error in detachViewMessage:', error });
   }
 };
 

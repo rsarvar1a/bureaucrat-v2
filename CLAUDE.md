@@ -159,7 +159,8 @@ a win rate over fewer games is padded up to, half of the missing games won and h
 - **Windows**: a persistent tree menu is a stack of public messages in one thread, built on the
   `stack` component and `engine/discord/views/windows.ts`: a header, the window its tab names
   beneath it, deeper if that window is a header too. Windows have no Dismiss; the header closes
-  them and the entity's end event takes the stack down. Creation code calls `openWindow` on the
+  them and the entity's end event detaches the stack (messages stay, controls stripped, as does every
+  game view on `Ended`). Creation code calls `openWindow` on the
   root only (see `impl/README.md` and ADR-004). A window that attaches files must not render
   on a broad event like `Changed`, since a V2 edit re-sends every file; it re-renders from its
   own handlers only (see `gscript`). A tab that opens a header may

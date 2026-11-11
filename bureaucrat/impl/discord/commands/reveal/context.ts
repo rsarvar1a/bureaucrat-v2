@@ -11,11 +11,18 @@ type GameRow = typeof Game.$inferSelect;
 
 export type RevealContext = { game: GameRow; actor: Actor };
 
+/** Why `/reveal read` or `/reveal react` let nobody in. */
+export const refusals = {
+  noReveal: S.errors.noReveal,
+  unpublished: S.errors.revealNotPublished,
+  refused: S.errors.notAdmitted,
+} as const;
+
 /**
  * The game this channel (or thread) belongs to and who is asking; refuses
  * ephemerally. The write-up is the Storytellers' to make, name and publish;
  * reading and reacting are open to anyone who can see the channel, since an
- * ended game's channel is the archive.
+ * ended game's channel is the archive, once the reveal is published.
  */
 export const revealContext = async (
   interaction: ChatInputCommandInteraction,

@@ -18,7 +18,7 @@ export default createView<SetupState>()({
   idParams: [],
   events: {},
   defaultState: { tab: 'script' },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

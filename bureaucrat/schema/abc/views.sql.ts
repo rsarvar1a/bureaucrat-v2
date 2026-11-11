@@ -27,7 +27,7 @@ export const Subscription = abc.table(
     id: primary.uuid(),
     view: fk(View.id, { onDelete: 'cascade' }),
     contextLabel: text().notNull(),
-    action: text().notNull().$type<'render' | 'destroy'>().default('render'),
+    action: text().notNull().$type<'render' | 'detach' | 'destroy'>().default('render'),
     ...timestamps(),
   },
   (table) => [unique().on(table.view, table.contextLabel)],

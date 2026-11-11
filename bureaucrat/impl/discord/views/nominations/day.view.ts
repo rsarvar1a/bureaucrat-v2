@@ -63,7 +63,7 @@ const standing = async (
  * The day's card in the bound thread: every nomination made today with a
  * link to its card and where its count stands, Nominate, and Vote for those
  * who would rather pick the nomination from a list than find its card.
- * Parentless and public; `Ended` takes it down with the game. The
+ * Parentless and public; `Ended` leaves it, controls stripped, as the record. The
  * `/nominations` commands open the same modals through this card.
  */
 export default createView<Empty>()({
@@ -71,7 +71,7 @@ export default createView<Empty>()({
   idParams: [],
   events: {},
   defaultState: {},
-  subscribesTo: { render: [NominationEvents.DayChanged], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [NominationEvents.DayChanged], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild], 'proxy-submit': [storytellsDay], manage: [storytellsDay] },
 
   destroy: async (view, client) => {

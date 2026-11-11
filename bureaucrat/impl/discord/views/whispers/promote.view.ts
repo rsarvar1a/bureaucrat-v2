@@ -32,7 +32,7 @@ export default createView<PromoteCardState>()({
   idParams: [],
   events: {},
   defaultState: { asker: '', outcome: null },
-  subscribesTo: { render: [WhisperEvents.PromoteChanged], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [WhisperEvents.PromoteChanged], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild], accept: [member], decline: [member] },
 
   destroy: async (view, client) => {

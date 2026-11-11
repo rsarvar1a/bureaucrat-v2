@@ -43,7 +43,7 @@ export default createView<CardState>()({
   idParams: [],
   events: {},
   defaultState: {},
-  subscribesTo: { render: [NominationEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [NominationEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild], manage: [storytellsNomination] },
 
   destroy: async (view, client) => {

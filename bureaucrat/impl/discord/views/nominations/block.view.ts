@@ -33,7 +33,7 @@ export default createView<Empty>()({
   idParams: [],
   events: {},
   defaultState: {},
-  subscribesTo: { render: [NominationEvents.DayChanged], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [NominationEvents.DayChanged], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytellsDay] },
 
   destroy: async (view, client) => {

@@ -185,7 +185,7 @@ export default createView<ConsoleState>()({
   idParams: [],
   events: {},
   defaultState: { mode: 'yes', weight: 1, seats: [] },
-  subscribesTo: { render: [NominationEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [NominationEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytellsNomination] },
 
   destroy: async (view, client) => {

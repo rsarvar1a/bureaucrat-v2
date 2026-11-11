@@ -111,17 +111,35 @@ export const publishReveal = async (client: Client, game: GameRow): Promise<bool
   await reveal
     ?.setLocked(true, 'Reveal published')
     .catch((error: unknown) => logger.warn({ message: `Could not lock the reveal of game ${game.id}.`, error }));
+
+  if (!threads.reveal.publishedAt) await updateManagedThread(threads.reveal.id, { publishedAt: new Date() });
   return true;
 };
 
-/** A latecomer into the write-up or the reactions; false when there is no reveal or Discord refused. */
+/**
+ * Whether the reveal is out. A reveal published before the record kept that
+ * reads it off Discord instead: publishing locked the write-up, so a locked
+ * one is taken as published, and noted so the question is not asked again.
+ */
+const isPublished = async (client: Client, threads: RevealThreads): Promise<boolean> => {
+  if (threads.reveal.publishedAt) return true;
+
+  const reveal = await threadOf(client, threads.reveal);
+  if (!reveal?.locked) return false;
+
+  await updateManagedThread(threads.reveal.id, { publishedAt: new Date() });
+  return true;
+};
+
+/** A latecomer into the write-up or the reactions, once the reveal is published. */
 export const admitToReveal = async (
   client: Client,
   game: GameRow,
   which: 'reveal' | 'reactions',
   member: bigint,
-): Promise<'admitted' | 'noReveal' | 'refused'> => {
+): Promise<'admitted' | 'noReveal' | 'unpublished' | 'refused'> => {
   const threads = await revealThreads(game.id);
   if (!threads) return 'noReveal';
+  if (!(await isPublished(client, threads))) return 'unpublished';
   return (await admitGuest(client, threads[which], member)) ? 'admitted' : 'refused';
 };

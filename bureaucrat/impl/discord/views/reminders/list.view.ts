@@ -42,7 +42,7 @@ export default createView<ListState>()({
   idParams: [],
   events: {},
   defaultState: { selected: null },
-  subscribesTo: { render: [], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

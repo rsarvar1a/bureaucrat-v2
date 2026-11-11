@@ -99,8 +99,8 @@ names beneath it, and another window beneath that when the window is itself a
 header. GAME CONFIG is the one in the tree (`views/games/STRUCTURE.md`).
 
 - A window has no Dismiss. Its header closes it when a tab changes
-  (`replaceChildWindow`), and a destroy subscription on the entity's end event
-  takes the whole stack down.
+  (`replaceChildWindow`), and a detach subscription on the entity's end event
+  disconnects the whole stack, leaving its messages in place without controls.
 - A header is never closed by its children, and nothing but the bot posts in
   the thread, so a replaced window lands where the old one was.
 - `openWindow` opens a header and then whatever its registered stack wants

@@ -1,4 +1,4 @@
-import { foreignKey, text, unique } from 'drizzle-orm/pg-core';
+import { foreignKey, text, timestamp, unique } from 'drizzle-orm/pg-core';
 import { fk, primary, snowflakes, timestamps } from '../helpers';
 import { core } from './.schema.sql';
 import { ThreadType } from './enums.sql';
@@ -12,6 +12,8 @@ export const ManagedThread = core.table(
     game: fk(Game.id, { onDelete: 'cascade' }),
     kind: ThreadType().notNull(),
     tag: text(),
+    /** A reveal's first publish; until then `/reveal read` and `/reveal react` let nobody in. */
+    publishedAt: timestamp(),
     ...snowflakes('thread'),
     ...timestamps(),
   },

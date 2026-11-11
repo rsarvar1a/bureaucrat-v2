@@ -58,7 +58,7 @@ export default createView<EndState>()({
   idParams: [],
   events: {},
   defaultState: { recorded: [], winner: null, selected: [] },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {
@@ -201,7 +201,7 @@ export default createView<EndState>()({
         .join(' ');
       await toast.followUp(interaction, `**${game.name}** has ended. ${summary}`, { accent: accent.success });
 
-      // `Ended` has already taken this pane down with the rest of the stack.
+      // `Ended` has already taken this ephemeral pane down and disconnected the stack.
       return { action: 'noop' };
     },
   },

@@ -15,8 +15,8 @@ type GameRow = typeof Game.$inferSelect;
 
 /**
  * Ends a game: the row is completed, its results and their winning players are
- * recorded (one result, or one per colour of a multicolour game), every window in its stack hears
- * `Ended` and takes itself down, its threads are archived and its channel is
+ * recorded (one result, or one per colour of a multicolour game), every view of it hears
+ * `Ended` and detaches, its message left with its controls stripped as the record, its threads are archived and its channel is
  * renamed with the date in front, ready to be filed.
  *
  * The channel stays - it is the record of the game, and `/game archive`

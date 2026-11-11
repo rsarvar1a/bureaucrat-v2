@@ -1,0 +1,1 @@
+ALTER TABLE "core"."ManagedThread" ADD COLUMN "publishedAt" timestamp;

@@ -1,18 +1,24 @@
-import { MessageFlags, SlashCommandStringOption, SlashCommandSubcommandBuilder } from 'discord.js';
+import {
+  MessageFlags,
+  SlashCommandStringOption,
+  SlashCommandSubcommandBuilder,
+  time,
+  TimestampStyles,
+} from 'discord.js';
 import { Option, Superbuilder } from '../../../../engine/discord/commands/builders/superbuilder';
 import { accent } from '../../../../engine/discord/elements';
 import { toast } from '../../../../engine/discord/reply';
-import { getGameByChannel, updateGame } from '../../../../drizzle/games';
-import { logger } from '../../../../utilities/logger';
+import { getGameByChannel } from '../../../../drizzle/games';
 import { actorOf } from '../../access';
 import { isStorytellerOf } from '../../guards/game';
-import { endedChannelName } from '../../games/names';
+import { renameGame } from '../../games/rename';
 import { S } from '../../../../strings';
 
 /**
  * Gives an ended game the name its players settled on, in the record and on
  * the channel, which keeps the date it ended in front. Open at the gate and
- * decided here: a Storyteller of the game, found by the channel.
+ * decided here: a Storyteller of the game, found by the channel. `/game
+ * rename` does the same at any point in the game's life.
  */
 export default new Superbuilder(new SlashCommandSubcommandBuilder())
   .describe('Rename this ended game, in the record and on its channel.')
@@ -43,21 +49,15 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
     }
 
     const name = params['name'].trim().slice(0, 100);
-    await updateGame(game.id, { name });
-
-    try {
-      const channel = await interaction.client.channels.fetch(String(game.channel));
-      if (channel && 'setName' in channel) {
-        await channel.setName(endedChannelName(name, game.endedAt ?? new Date()), 'Game renamed');
-      }
-    } catch (error) {
-      logger.warn({ message: `Could not rename channel ${game.channel} of game ${game.id}.`, error });
-      await toast.ephemeral(interaction, S.errors.gameNotRenamed, { accent: accent.warning });
+    const result = await renameGame(interaction.client, game, name);
+    if (!result.ok) {
+      const message =
+        result.reason === 'limited'
+          ? S.errors.gameRenameLimited(time(result.retryAt, TimestampStyles.RelativeTime))
+          : S.errors.gameNotRenamed;
+      await toast.ephemeral(interaction, message, { accent: accent.warning });
       return;
     }
 
-    await toast.ephemeral(interaction, `**${game.name}** is now **${name}**.`, {
-      accent: accent.success,
-      timeoutMs: 10_000,
-    });
+    await toast.ephemeral(interaction, S.games.renamed(game.name, name), { accent: accent.success, timeoutMs: 10_000 });
   });

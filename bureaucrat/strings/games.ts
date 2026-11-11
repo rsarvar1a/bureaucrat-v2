@@ -21,3 +21,6 @@ export const stThreadsProvided = (created: number, failed: string[]): string =>
     created === 0 ? 'Every seat already has its ST thread.' : `Opened ${created} ST thread${created === 1 ? '' : 's'}.`,
     ...(failed.length > 0 ? [`Could not open one for: ${failed.join(', ')}.`] : []),
   ].join(' ');
+
+/** `/game rename` and `/archives rename`. */
+export const renamed = (from: string, to: string) => `**${from}** is now **${to}**.`;

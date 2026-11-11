@@ -18,8 +18,13 @@ import type { SpawnTarget, SpawnOptions } from './lifecycle';
 
 /**
  * The lifecycle event constants and action type.
+ *
+ * `detach` is a destroy that keeps the message: a public view's controls are
+ * stripped and its row goes, so what it showed stays as the record (an ended
+ * game's nomination cards, say). An ephemeral view has no record to keep and
+ * is destroyed instead.
  */
-export const LifecycleEvent = { Destroy: 'destroy', Render: 'render' } as const;
+export const LifecycleEvent = { Destroy: 'destroy', Detach: 'detach', Render: 'render' } as const;
 
 export type LifecycleAction = (typeof LifecycleEvent)[keyof typeof LifecycleEvent];
 

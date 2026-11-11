@@ -7,6 +7,7 @@ import {
   type ViewRow,
 } from '../types';
 import { destroyHandler } from './destroy';
+import { detachHandler } from './detach';
 import { renderHandler } from './render';
 
 export { LifecycleEvent, type LifecycleAction };
@@ -23,5 +24,5 @@ export type LifecycleEventHandler = {
   execute: (params: LifecycleHandlerParams) => Promise<void>;
 };
 
-/** Ordered by precedence - destroy runs before render. */
-export const lifecycleHandlers: LifecycleEventHandler[] = [destroyHandler, renderHandler];
+/** Ordered by precedence - destroy, then detach, then render. */
+export const lifecycleHandlers: LifecycleEventHandler[] = [destroyHandler, detachHandler, renderHandler];

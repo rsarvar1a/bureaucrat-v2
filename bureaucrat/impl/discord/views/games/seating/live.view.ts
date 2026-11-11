@@ -67,7 +67,7 @@ export default createView<LiveState>()({
   idParams: [],
   events: {},
   defaultState: { seats: [], map: {}, page: 0 },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

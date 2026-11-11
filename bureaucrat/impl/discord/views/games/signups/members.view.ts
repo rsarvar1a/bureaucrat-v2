@@ -54,7 +54,7 @@ export default createView<MembersState>()({
   idParams: [],
   events: {},
   defaultState: { role: 'Player', selected: null },
-  subscribesTo: { render: [GameEvents.Changed], destroy: [GameEvents.Ended] },
+  subscribesTo: { render: [GameEvents.Changed], detach: [GameEvents.Ended] },
   guards: { '*': [inGuild, storytells] },
 
   destroy: async (view, client) => {

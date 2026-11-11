@@ -169,9 +169,10 @@ a win rate over fewer games is padded up to, half of the missing games won and h
   more (ADR-005). Every thread join or leave goes through `games/membership.ts`, which does the
   Discord call and records the row together; never call `thread.members.add` directly. A game's
   tracked Discord roles (`games/roles.ts`, one per logical role) follow the Participant rows:
-  grant on arrival, revoke on departure, delete at the end. They carry no guild permissions; the
-  Kibitzers' role alone gets Manage Threads on the game channel, which is how Discord lets a role
-  see every private thread (`grantKibitzerSight`). A player in an open synchronous whisper has a
+  grant on arrival, revoke on departure, delete at the end. They carry no guild permissions, only
+  overwrites on the game channel (`grantChannelOverwrites`): the Kibitzers get Manage Threads,
+  which is how Discord lets a role see every private thread, and the Storytellers get Manage
+  Threads and Pin Messages. Startup re-applies them to every running game. A player in an open synchronous whisper has a
   member overwrite on the game channel (no Send Messages, Send Messages in Threads allowed) that
   only `games/whispers/restrict.ts` writes or removes; `/whispers end`, promotion to async, night
   and the game's end all go through it.

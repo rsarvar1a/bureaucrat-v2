@@ -42,6 +42,9 @@ export const deleteGame = async (gameId: string) => {
   await db.delete(Game).where(eq(Game.id, gameId));
 };
 
+/** Every game not yet completed, in any server. */
+export const listRunningGames = () => db.select().from(Game).where(ne(Game.state, 'completed'));
+
 /** Games on a queue that still occupy a slot: anything not yet completed. */
 export const countActiveGames = async (queueId: string) => {
   const [row] = await db

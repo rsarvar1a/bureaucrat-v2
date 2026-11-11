@@ -1,6 +1,7 @@
-import { PermissionsBitField, type Client, type Guild } from 'discord.js';
+import { PermissionsBitField, type Client, type Guild, type PermissionOverwriteOptions } from 'discord.js';
 import { deleteGameRole, insertGameRole, listGameRoles } from '../../../drizzle/game-roles';
 import { listParticipants } from '../../../drizzle/participants';
+import { listRunningGames } from '../../../drizzle/games';
 import { logger } from '../../../utilities/logger';
 import type { Game } from '../../../schema/core/games.sql';
 import type { ParticipantRow } from './membership';
@@ -113,34 +114,60 @@ export const revokeGameRole = (client: Client, game: GameRow, participant: Parti
   setRole(client, game, participant, false, roles);
 
 /**
- * Kibitzers see every private thread of the game: ST threads, whispers, the
- * Storytellers' own. Discord shows private threads to whoever may manage
- * threads in the channel, and that is the only permission that does, so the
- * Kibitzers' role gets Manage Threads on the game channel alone. Needs Manage
- * Roles on the channel; a refusal is logged and the game runs on.
+ * What a role may do on the game channel, beyond what the server gives it;
+ * threads inherit it. Kibitzers see every private thread of the game (ST
+ * threads, whispers, the Storytellers' own): Discord shows private threads to
+ * whoever may manage threads in the channel, and nothing else does. The
+ * Storytellers run the channel, so they pin and manage its threads too.
  */
-export const grantKibitzerSight = async (client: Client, game: GameRow, roles: TrackedRoles): Promise<void> => {
-  const roleId = roles.Kibitzer;
-  if (!roleId || game.channel === 0n) return;
+const CHANNEL_GRANTS: Partial<Record<LogicalRole, { allow: PermissionOverwriteOptions; why: string }>> = {
+  Kibitzer: {
+    allow: { ManageThreads: true, ViewChannel: true, ReadMessageHistory: true },
+    why: 'Kibitzers see every thread',
+  },
+  Storyteller: { allow: { ManageThreads: true, PinMessages: true }, why: 'Storytellers run the channel' },
+};
 
-  try {
-    const channel = await client.channels.fetch(String(game.channel));
-    if (!channel || channel.isDMBased() || channel.isThread()) return;
-    await channel.permissionOverwrites.edit(
-      String(roleId),
-      { ManageThreads: true, ViewChannel: true, ReadMessageHistory: true },
-      { reason: `Game: ${game.name} - Kibitzers see every thread` },
-    );
-  } catch (error) {
-    logger.warn({ message: `Could not let the Kibitzers of game ${game.id} see its private threads.`, error });
+/**
+ * The game's roles get their overwrites on its channel (`CHANNEL_GRANTS`).
+ * Needs Manage Roles on the channel, and the bot must hold what it grants; a
+ * refusal is logged and the game runs on.
+ */
+export const grantChannelOverwrites = async (client: Client, game: GameRow, roles: TrackedRoles): Promise<void> => {
+  if (game.channel === 0n) return;
+
+  const channel = await client.channels.fetch(String(game.channel)).catch(() => null);
+  if (!channel || channel.isDMBased() || channel.isThread()) return;
+
+  for (const [role, grant] of Object.entries(CHANNEL_GRANTS) as [LogicalRole, (typeof CHANNEL_GRANTS)[LogicalRole]][]) {
+    const roleId = roles[role];
+    if (!roleId || !grant) continue;
+    try {
+      await channel.permissionOverwrites.edit(String(roleId), grant.allow, {
+        reason: `Game: ${game.name} - ${grant.why}`,
+      });
+    } catch (error) {
+      logger.warn({ message: `Could not grant the ${role} role of game ${game.id} its channel overwrite.`, error });
+    }
   }
 };
 
 /** Every participant wears the role for their logical role: the roles made and granted in one pass. */
 export const syncGameRoles = async (client: Client, game: GameRow): Promise<void> => {
   const roles = await ensureGameRoles(client, game);
-  await grantKibitzerSight(client, game, roles);
+  await grantChannelOverwrites(client, game, roles);
   for (const participant of await listParticipants(game.id)) await grantGameRole(client, game, participant, roles);
+};
+
+/**
+ * The channel overwrites, re-applied to every running game: a grant added to
+ * `CHANNEL_GRANTS` reaches games made before it. Idempotent, one request per
+ * role per game.
+ */
+export const restoreChannelOverwrites = async (client: Client): Promise<void> => {
+  for (const game of await listRunningGames()) {
+    await grantChannelOverwrites(client, game, await trackedRoles(game.id));
+  }
 };
 
 /** The roles go with the game; a role already gone is simply forgotten. */

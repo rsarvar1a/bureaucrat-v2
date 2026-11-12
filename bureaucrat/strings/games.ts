@@ -24,3 +24,6 @@ export const stThreadsProvided = (created: number, failed: string[]): string =>
 
 /** `/game rename` and `/archives rename`. */
 export const renamed = (from: string, to: string) => `**${from}** is now **${to}**.`;
+
+/** The console's Close nomination, done. */
+export const nominationClosed = 'Closed the nomination. Both players may nominate or be nominated again.';

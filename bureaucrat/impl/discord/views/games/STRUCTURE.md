@@ -219,16 +219,22 @@ Accusation and Defense,
 a select for what the lock will be (Yes, No, Bureaucrat ×3 and Thief −1 when on script, or Custom,
 which brings up the `<< < > >>` weight row), a multiselect of seats, then Lock (the picked seats,
 as the select says; a relock overwrites), Unlock (the picked seats), Default ❌ (every hand still
-up, as a no), Finalize and Reset nomination (red, confirmed), with Dismiss on its own row. Locks
+up, as a no) and Finalize, then a row of Reset nomination and Close nomination (red, confirmed)
+with Dismiss. Locks
 are provisional: the status stays 🔄, no ghost vote is spent and the block does not move until
 Finalize calls the count (`Nomination.finalizedAt`), which needs every hand locked. The
 Storyteller is not locked out after: a change to a finalized count is pushed through at once,
-ghost votes reconciled, status re-read, block recomputed. Reset rerolls the
-day's latest nomination against the grimoire as it stands (`games/nominations/reset.ts`): every
+ghost votes reconciled, status re-read, block recomputed. Reset rerolls any of the
+day's nominations against the grimoire as it stands (`games/nominations/reset.ts`): every
 lock comes off and a spent ghost vote goes back, each hand's snapshot and the count required are
 taken again, the block is recomputed; what the players wrote stays. It is for the effect the
-count could not see, an accuser dying to a Witch, applied in Seating first. Only the latest, since
-an earlier reroll would leave later nominations made against a grimoire that no longer held.
+count could not see, an accuser dying to a Witch, applied in Seating first. Any of them, since
+the Storyteller may learn of the first one's effect only after the third is made; the later ones
+stay as they were made, to be reset too if the change reaches them. Close takes a nomination back
+as if it was never made (`games/nominations/close.ts`): its card and consoles come down, a spent
+ghost vote goes back, the row goes with its ballot so both players may nominate or be nominated
+again, and the block settles on what is left. It is for the player who would not have nominated
+had they known what an earlier nomination did.
 
 The rules (`games/nominations/rules.ts`, pure and tested):
 

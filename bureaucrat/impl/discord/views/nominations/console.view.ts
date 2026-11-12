@@ -29,6 +29,7 @@ import { storytellsNomination } from '../../guards/nominations';
 import { consoleBallot, headline, statusLine } from '../../games/nominations/format';
 import { defaultRest, finalize, lockSeats, unlockSeats, type LockResult } from '../../games/nominations/lock';
 import { resetNomination } from '../../games/nominations/reset';
+import { closeNomination } from '../../games/nominations/close';
 import { mayFinalize, nextToLock, statusOf, tally, weightLabel } from '../../games/nominations/rules';
 import { GameEvents } from '../games/events';
 import { roleEmote, roleLook, seatLabel, STATE_EMOTE, stateTag, who, type RoleLook } from '../games/seating/render';
@@ -81,15 +82,24 @@ const reset = confirmButton<ConsoleState>()({
     const nomination = await getNomination(ctx.view.entityId!);
     if (!nomination) return;
     const result = await resetNomination(interaction.client, nomination);
-    if (!result.ok) {
-      await toast.followUp(
-        interaction,
-        result.reason === 'notLatest' ? S.errors.notLatestNomination : S.errors.nominationGone,
-        {
-          accent: accent.warning,
-        },
-      );
-    }
+    if (!result.ok) await toast.followUp(interaction, S.errors.nominationGone, { accent: accent.warning });
+  },
+});
+
+/**
+ * Takes the nomination back as if it was never made (see `close.ts`): the
+ * card comes down, this console with it, and both players are free to
+ * nominate or be nominated again. Red, and asked twice.
+ */
+const close = confirmButton<ConsoleState>()({
+  action: 'close',
+  label: 'Close nomination',
+  onConfirm: async (ctx, interaction) => {
+    const nomination = await getNomination(ctx.view.entityId!);
+    const result = nomination ? await closeNomination(interaction.client, nomination) : null;
+    await toast.followUp(interaction, result?.ok ? S.games.nominationClosed : S.errors.nominationGone, {
+      accent: result?.ok ? accent.success : accent.warning,
+    });
   },
 });
 
@@ -288,11 +298,11 @@ export default createView<ConsoleState>()({
             button(customId('unlock'), 'Unlock', ButtonStyle.Secondary).setDisabled(picked.size === 0),
             button(customId('lock-rest'), 'Default ❌', ButtonStyle.Secondary).setDisabled(!next),
             button(customId('finalize'), 'Finalize', ButtonStyle.Primary).setDisabled(finalized || !mayFinalize(votes)),
-            reset.button(view),
           ),
-          ...(reset.isConfirming(view) ? [reset.confirmRow(view)] : []),
           ...(mode === 'custom' ? [stepperRow(customId, WEIGHT, weightOf(view))] : []),
-          dismiss.row(view),
+          buttonRow(reset.button(view), close.button(view), dismiss.button(view)),
+          ...(reset.isConfirming(view) ? [reset.confirmRow(view)] : []),
+          ...(close.isConfirming(view) ? [close.confirmRow(view)] : []),
         ).setAccentColor(accent.brand),
       ),
       allowedMentions: { parse: [] },
@@ -302,6 +312,7 @@ export default createView<ConsoleState>()({
   interactions: {
     ...dismiss.interactions,
     ...reset.interactions,
+    ...close.interactions,
     ...proxyVote.interactions,
     ...accusationModal.interactions,
     ...defenseModal.interactions,

@@ -233,6 +233,5 @@ export const ratingThreadGone = 'The reveal thread could not be reached.';
 export const revealNotCreated = 'The reveal threads could not be created.';
 export const notAdmitted = 'Could not add you to that thread.';
 export const noSuchThread = 'That thread does not exist; nothing is shown there.';
-export const notLatestNomination = 'Only the latest nomination of the day can be reset.';
 export const nobodyToNominate = 'There is nobody left to nominate today.';
 export const nobodyToNominateFor = 'No living player is seated to nominate on behalf of.';

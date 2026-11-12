@@ -1,7 +1,27 @@
 import type { Client } from 'discord.js';
-import { listNominationsOfPhase, setBlock } from '../../../../drizzle/nominations';
+import { listNominationsOfPhase, setBlock, type NominationRow } from '../../../../drizzle/nominations';
+import { listVotes } from '../../../../drizzle/votes';
+import { blockAfter, statusOf, tally } from './rules';
 import { dayChanged, nominationChanged } from '../../views/nominations/events';
 import { publish } from './publish';
+
+/** Puts the block where the count says, across the day's nominations as they now stand; the day's nominations come back. */
+export const settleBlock = async (phaseId: string): Promise<NominationRow[]> => {
+  const siblings = await listNominationsOfPhase(phaseId);
+  const done = await Promise.all(
+    siblings.map(async (n) => {
+      const ballot = (await listVotes(n.id)).map((v) => v.vote);
+      return {
+        id: n.id,
+        kind: n.kind,
+        status: statusOf(ballot, n.required, n.finalizedAt !== null),
+        tally: tally(ballot),
+      };
+    }),
+  );
+  await setBlock(phaseId, blockAfter(done));
+  return siblings;
+};
 
 /**
  * The Storyteller's hand on the block: one of today's nominations, or nobody.

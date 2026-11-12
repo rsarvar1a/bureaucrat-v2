@@ -27,6 +27,7 @@ export type ConsoleState = {
   /** The seats picked for the next Lock or Unlock. */
   seats?: string[];
   'confirming:reset'?: boolean;
+  'confirming:close'?: boolean;
 };
 
 /** The nomination with its game and day, or nothing when any of them is gone. */

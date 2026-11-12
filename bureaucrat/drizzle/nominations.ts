@@ -78,3 +78,11 @@ export const setBlock = async (phaseId: string, nominationId: string | null) => 
     if (nominationId) await tx.update(Nomination).set({ block: true }).where(eq(Nomination.id, nominationId));
   });
 };
+
+/** A nomination and its ballot, gone as if never made: the day's once-only rules free its two seats again. */
+export const deleteNomination = async (id: string) => {
+  await db.transaction(async (tx) => {
+    await tx.delete(Vote).where(eq(Vote.nomination, id));
+    await tx.delete(Nomination).where(eq(Nomination.id, id));
+  });
+};

@@ -1,43 +1,43 @@
 import type { Client } from 'discord.js';
-import {
-  listNominationsOfPhase,
-  setBlock,
-  updateNomination,
-  type NominationRow,
-} from '../../../../drizzle/nominations';
+import { getNomination, updateNomination, type NominationRow } from '../../../../drizzle/nominations';
 import { listSeating } from '../../../../drizzle/seating';
-import { listVotes, resnapshotVote, unlockVote } from '../../../../drizzle/votes';
+import { listVotes, resnapshotVote, unlockVote, type BallotEntry } from '../../../../drizzle/votes';
 import { gameEvents } from '../../views/games/events';
 import { dayChanged, nominationChanged } from '../../views/nominations/events';
 import { setSeat } from '../seats';
+import { settleBlock } from './block';
 import { publish } from './publish';
-import { blockAfter, requiredVotes, statusOf, tally } from './rules';
+import { requiredVotes } from './rules';
 import { seatRef } from './nominate';
 
-export type ResetResult = { ok: true } | { ok: false; reason: 'notLatest' | 'gone' };
+export type ResetResult = { ok: true } | { ok: false; reason: 'gone' };
+
+/** Every ghost vote these locks spent goes back to its seat, if the seat has not moved on since. */
+export const returnGhostVotes = async (votes: BallotEntry[]): Promise<void> => {
+  for (const entry of votes) {
+    if (entry.vote.spent && entry.seat.state === 'spent') await setSeat(entry.seat.id, { state: 'dead' });
+  }
+};
 
 /**
- * Rerolls the day's latest nomination against the grimoire as it stands:
+ * Rerolls one of the day's nominations against the grimoire as it stands:
  * it is no longer finalized, every lock comes off (a ghost vote it spent goes back), each hand's
  * snapshot and the count required are taken again, and the block is
  * recomputed. For the character effect the count could not see - the
  * accuser dying to a Witch, say - which the Storyteller applies in Seating
  * and then resets the nomination to notice. What the players wrote stays.
- * Only the latest nomination, since an earlier one's reroll would leave the
- * later ones made against a grimoire that no longer held.
+ *
+ * Any nomination of the day, not only the latest: the Storyteller may learn
+ * of the first one's effect only after the third is made. The later ones are
+ * left as they were made; the Storyteller resets those too if the change
+ * reaches them.
  */
 export const resetNomination = async (client: Client, nomination: NominationRow): Promise<ResetResult> => {
-  const siblings = await listNominationsOfPhase(nomination.phase);
-  const latest = siblings[siblings.length - 1];
-  if (!latest) return { ok: false, reason: 'gone' };
-  if (latest.id !== nomination.id) return { ok: false, reason: 'notLatest' };
+  if (!(await getNomination(nomination.id))) return { ok: false, reason: 'gone' };
 
   const votes = await listVotes(nomination.id);
-  for (const entry of votes) {
-    if (!entry.vote.locked) continue;
-    await unlockVote(entry.vote.id);
-    if (entry.vote.spent && entry.seat.state === 'spent') await setSeat(entry.seat.id, { state: 'dead' });
-  }
+  for (const entry of votes) if (entry.vote.locked) await unlockVote(entry.vote.id);
+  await returnGhostVotes(votes);
 
   const rows = await listSeating(nomination.game);
   const byId = new Map(rows.map((row) => [row.seat.id, row]));
@@ -50,16 +50,7 @@ export const resetNomination = async (client: Client, nomination: NominationRow)
     finalizedAt: null,
   });
 
-  const done = await Promise.all(
-    siblings.map(async (n) => {
-      const ballot = (await listVotes(n.id)).map((v) => v.vote);
-      const required = n.id === nomination.id ? requiredVotes(nomination.kind, rows.map(seatRef)) : n.required;
-      const finalized = n.id !== nomination.id && n.finalizedAt !== null;
-      return { id: n.id, kind: n.kind, status: statusOf(ballot, required, finalized), tally: tally(ballot) };
-    }),
-  );
-  await setBlock(nomination.phase, blockAfter(done));
-
+  const siblings = await settleBlock(nomination.phase);
   await publish(client, [
     dayChanged(nomination.phase),
     gameEvents(nomination.game).Changed,

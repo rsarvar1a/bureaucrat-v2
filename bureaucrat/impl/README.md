@@ -4,7 +4,7 @@ This bot. Everything here is expected to change; nothing in `engine/` may depend
 on it.
 
 ```
-acl/        the permission catalogue, resolver, cache and seed
+acl/        the permission catalogue, archetypes, resolver and cache
 discord/
   access/     the actor read off an interaction, and the resolver wrapped for both halves
   commands/   *.cmd.ts, globbed by the registry
@@ -22,7 +22,8 @@ discord/
 - **`guards/`** looks like framework and is not: it reads queues and entries, so
   it knows the domain. Generic view plumbing lives in `engine/discord/views`.
 - **`acl/`** is policy about who may do what in _this_ bot, not infrastructure.
-  `resolve.ts` is pure over the cached ACL and is tested exhaustively.
+  `archetypes.ts` is pure over a guild's archetype roles and is tested
+  exhaustively; `resolve.ts` bridges it to the cache (ADR-006).
 - **`registry/{commands,views,handlers}.ts`** are where the frameworks meet the
   implementation. They live in a folder of their own because
   `impl/discord/commands.ts` beside `impl/discord/commands/` makes `'..'`
@@ -46,9 +47,8 @@ discord/
 
 A management pane that would otherwise branch into child panes is one ephemeral
 view with a `tab` field in its state, built on the `tabs` component. `queuemanage`
-(Description | Resources | Category | Delete), `qmanage` (Details | Signups),
-`aclroleedit` (Details | Bindings | Permissions) and `statsmessages` (Games | Users) are the
-four in the tree.
+(Description | Resources | Category | Access | Delete), `qmanage` (Details | Signups)
+and `statsmessages` (Games | Users) are the three in the tree.
 
 - The strip is the header, with a separator beneath it so the content does not
   crowd the buttons. Every tab reads top to bottom as navigation (the strip),
@@ -63,8 +63,7 @@ four in the tree.
 - A pane that can delete its entity puts Delete on the strip as a Danger tab,
   the only coloured one, and the confirm row lives inside that tab. It never
   shares an action row with Edit.
-- Renderers live in a sibling folder (`queue/settings/`, `queue/manage/`,
-  `acl/role/`), one file per tab, returning body elements and control rows.
+- Renderers live in a sibling folder (`queue/settings/`, `queue/manage/`), one file per tab, returning body elements and control rows.
   Handlers stay in the view. A tab of steppers declares its specs beside the
   renderer, and the view keys a guarded handler off every press.
 - A `tabs.ts` beside them exports the strip and the action list, which a test

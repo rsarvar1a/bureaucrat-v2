@@ -8,7 +8,7 @@ import { claimEntry, slotAvailable } from '../../games/claim';
 import { nextClaimant } from '../../games/vacancy';
 import { Permissions } from '../../../acl/permissions';
 import { can, inGuild } from '../../guards';
-import { frontOfQueue, queueFromEntity } from '../../guards/queue';
+import { frontOfQueue, mayStorytellIn, queueFromEntity } from '../../guards/queue';
 import { insertQueueEntry, listQueueEntries, listQueueEntryCards } from '../../../../drizzle/queue-entries';
 import { ensureEntryThread } from './thread';
 import { fitPreviews, preview } from './preview';
@@ -72,7 +72,13 @@ export default createView<QueueState, typeof QueueEvents>()({
   events: QueueEvents,
   defaultState: { threadId: null },
   subscribesTo: { render: [QueueEvents.EntriesChanged], destroy: [QueueEvents.Destroyed] },
-  guards: { '*': [inGuild], manage: [can(Permissions.Queue.Edit, queueFromEntity)], claim: [frontOfQueue] },
+  guards: {
+    '*': [inGuild],
+    manage: [can(Permissions.Queue.Edit, queueFromEntity)],
+    enter: [mayStorytellIn],
+    'enter-submit': [mayStorytellIn],
+    claim: [mayStorytellIn, frontOfQueue],
+  },
 
   destroy: async (view, client) => {
     if (view.state.threadId) {

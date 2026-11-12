@@ -4,6 +4,7 @@ import { confirmButton, type ConfirmState } from '../../../../engine/discord/com
 import { modal, field } from '../../../../engine/discord/components/modal';
 import { bump } from '../../../../engine/discord/components/stepper';
 import { tabs } from '../../../../engine/discord/components/tabs';
+import { pickedRoles } from '../../../../engine/discord/components/role-picker';
 import { text, separator, linear, v2 } from '../../../../engine/discord/elements';
 import { tryDeleteReply } from '../../../../engine/discord/reply';
 import type { InteractionHandler, ViewGuard } from '../../../../engine/discord/views/types';
@@ -14,6 +15,7 @@ import { Permissions } from '../../../acl/permissions';
 import { can, inGuild } from '../../guards';
 import { queueFromEntity } from '../../guards/queue';
 import { QueueEvents } from './events';
+import { renderAccess } from './settings/access';
 import { renderCategory } from './settings/category';
 import { renderDescription } from './settings/description';
 import { BUMP_ACTIONS, parseBump, renderResources, type BumpAction } from './settings/resources';
@@ -94,6 +96,8 @@ export default createView<ManageState>()({
     previews: edits,
     category: edits,
     archive: edits,
+    'storyteller-roles': edits,
+    'player-roles': edits,
     ...(Object.fromEntries(BUMP_ACTIONS.map((action) => [action, edits])) as Record<BumpAction, ViewGuard[]>),
     delete: deletes,
     'delete-confirm': deletes,
@@ -110,18 +114,23 @@ export default createView<ManageState>()({
         ? renderResources(view, queue)
         : tab === 'category'
           ? renderCategory(view, queue)
-          : tab === 'delete'
-            ? [
-                text('### Delete'),
-                text(
-                  `Deleting **${queue.name}** removes the queue, all its entries and all their signups. Games already claimed from it stay. This cannot be undone.`,
-                ),
-                separator(),
-                del.isConfirming(view) ? del.confirmRow(view) : del.row(view),
-              ]
-            : renderDescription(view, queue);
+          : tab === 'access'
+            ? renderAccess(view, queue)
+            : tab === 'delete'
+              ? [
+                  text('### Delete'),
+                  text(
+                    `Deleting **${queue.name}** removes the queue, all its entries and all their signups. Games already claimed from it stay. This cannot be undone.`,
+                  ),
+                  separator(),
+                  del.isConfirming(view) ? del.confirmRow(view) : del.row(view),
+                ]
+              : renderDescription(view, queue);
 
-    return v2(linear(strip.row(view), separator(), ...body, separator(), dismiss.row(view)));
+    return {
+      ...v2(linear(strip.row(view), separator(), ...body, separator(), dismiss.row(view))),
+      allowedMentions: { parse: [] },
+    };
   },
 
   interactions: {
@@ -162,6 +171,20 @@ export default createView<ManageState>()({
       const chosen = interaction.values[0];
       await updateQueue(ctx.view.entityId!, { category: chosen ? BigInt(chosen) : null });
 
+      return { action: 'render' };
+    },
+
+    'storyteller-roles': async (interaction, ctx) => {
+      if (!interaction.isRoleSelectMenu()) return;
+      await interaction.deferUpdate();
+      await updateQueue(ctx.view.entityId!, { storytellerRoles: pickedRoles(interaction.values) });
+      return { action: 'render' };
+    },
+
+    'player-roles': async (interaction, ctx) => {
+      if (!interaction.isRoleSelectMenu()) return;
+      await interaction.deferUpdate();
+      await updateQueue(ctx.view.entityId!, { playerRoles: pickedRoles(interaction.values) });
       return { action: 'render' };
     },
 

@@ -43,7 +43,7 @@ export default new Superbuilder(new SlashCommandSubcommandBuilder())
     }
 
     const owner = game.creator === actor.id;
-    const manager = owner ? true : (await accessAllows(game.guild, actor, Permissions.Server.Manage)).ok;
+    const manager = owner ? true : (await accessAllows(game.guild, actor, Permissions.Game.Archive)).ok;
     if (!owner && !manager) {
       await toast.ephemeral(interaction, S.errors.notGameArchiver, { accent: accent.warning });
       return;

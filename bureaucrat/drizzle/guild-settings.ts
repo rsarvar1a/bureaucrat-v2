@@ -22,3 +22,14 @@ export const updateGuildSettings = async (guild: bigint, patch: Partial<Omit<Ins
   const [row] = await db.update(GuildSettings).set(patch).where(eq(GuildSettings.guild, guild)).returning();
   return row!;
 };
+
+/** The archetype roles (`impl/acl/archetypes.ts`), as the access cache keeps them. */
+export const getAccessConfig = async (guild: bigint) => {
+  const row = await getOrCreateGuildSettings(guild);
+  return {
+    manager: row.managerRoles,
+    moderator: row.moderatorRoles,
+    storyteller: row.storytellerRoles,
+    player: row.playerRoles,
+  };
+};

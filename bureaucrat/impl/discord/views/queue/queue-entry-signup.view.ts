@@ -6,6 +6,10 @@ import { modal, field } from '../../../../engine/discord/components/modal';
 import { text, separator, linear, buttonRow, selectRow, select, button, v2 } from '../../../../engine/discord/elements';
 
 import { getQueueEntry } from '../../../../drizzle/queue-entries';
+import { getQueue } from '../../../../drizzle/queues';
+import { actorOf, mayJoinAs } from '../../access';
+import { inGuild } from '../../guards';
+import type { ViewInteraction } from '../../../../engine/discord/views/types';
 import { insertSignup, updateSignup, deleteSignup } from '../../../../drizzle/queue-entry-signups';
 import { tryDeleteReply } from '../../../../engine/discord/reply';
 import { QueueEvents, QueueEntryEvents } from './events';
@@ -19,6 +23,19 @@ type SignupState = {
 };
 
 const dismiss = dismissButton<SignupState>()({ action: 'dismiss' });
+
+type JoinRole = NonNullable<SignupState['selectedRole']>;
+
+/** Why the presser may not sign up for this entry as `role` (the server's and the queue's roles), or null. */
+const refusal = async (interaction: ViewInteraction, entryId: string, role: JoinRole): Promise<string | null> => {
+  const actor = actorOf(interaction);
+  if (actor === null) return S.errors.guildOnly;
+  const entry = await getQueueEntry(entryId);
+  const queue = entry ? await getQueue(entry.queue) : undefined;
+  if (!queue || queue.guild !== BigInt(interaction.guildId!)) return S.errors.notHere;
+  const verdict = await mayJoinAs(queue.guild, actor, queue, role);
+  return verdict.ok ? null : verdict.reason;
+};
 
 const messageModal = modal<SignupState>()({
   action: 'message',
@@ -34,6 +51,13 @@ const messageModal = modal<SignupState>()({
     const message = values['message'] || undefined;
     const entry = await getQueueEntry(entryId);
     if (!entry) return;
+
+    // Checked again here: the roles may have changed while the modal was open.
+    const refused = await refusal(interaction, entryId, state.selectedRole!);
+    if (refused) {
+      await interaction.followUp({ content: refused, flags: [MessageFlags.Ephemeral] });
+      return;
+    }
 
     // The mode may have closed while this pane was open.
     if (!acceptsSignups(entry.signups)) {
@@ -87,6 +111,7 @@ export default createView<SignupState>()({
   events: {},
   defaultState: { mode: 'new', signupId: null },
   subscribesTo: { destroy: [QueueEvents.Destroyed, QueueEntryEvents.Destroyed] },
+  guards: { '*': [inGuild] },
 
   destroy: async (view, client) => {
     await deleteViewMessage(view, client);
@@ -134,7 +159,12 @@ export default createView<SignupState>()({
     'role-select': async (interaction, ctx) => {
       if (!interaction.isStringSelectMenu()) return;
 
-      const role = interaction.values[0] as 'Player' | 'Storyteller' | 'Kibitzer';
+      const role = interaction.values[0] as JoinRole;
+      const refused = await refusal(interaction, ctx.ids['qentry']!, role);
+      if (refused) {
+        await interaction.reply({ content: refused, flags: [MessageFlags.Ephemeral] });
+        return;
+      }
       await ctx.updateState({ selectedRole: role });
 
       await messageModal.show(interaction, ctx, { title: `Sign Up as ${role}` });

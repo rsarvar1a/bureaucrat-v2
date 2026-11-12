@@ -18,6 +18,9 @@ import { toast, tryDeleteReply } from '../../../../../engine/discord/reply';
 import { getGame } from '../../../../../drizzle/games';
 import { getSignup } from '../../../../../drizzle/signups';
 import { inGuild } from '../../../guards';
+import { getQueue } from '../../../../../drizzle/queues';
+import { actorOf, mayJoinAs } from '../../../access';
+import type { ViewInteraction } from '../../../../../engine/discord/views/types';
 import { declineSignup, requestSignup } from '../../../games/signups';
 import { GameEvents } from '../events';
 import { isRole, type Role } from './roles';
@@ -34,6 +37,17 @@ const refusal = (reason: 'ended' | 'already-member' | 'already-pending', role?: 
       ? S.errors.alreadyInGame(role ?? 'member')
       : S.errors.alreadySignedUp;
 
+/** Why the presser may not ask to join this game as `role` (the server's roles, and its queue's), or null. */
+const roleRefusal = async (interaction: ViewInteraction, gameId: string, role: Role): Promise<string | null> => {
+  const actor = actorOf(interaction);
+  if (actor === null) return S.errors.guildOnly;
+  const game = await getGame(gameId);
+  if (!game || game.guild !== BigInt(interaction.guildId!)) return S.errors.notHere;
+  const queue = game.queue ? await getQueue(game.queue) : null;
+  const verdict = await mayJoinAs(game.guild, actor, queue, role);
+  return verdict.ok ? null : verdict.reason;
+};
+
 const note = modal<SignupState>()({
   action: 'message',
   title: 'Sign Up',
@@ -44,6 +58,13 @@ const note = modal<SignupState>()({
     const game = await getGame(ctx.view.entityId!);
     const role = ctx.view.state?.role;
     if (!game || !role) return;
+
+    // Checked again here: the roles may have changed while the modal was open.
+    const refused = await roleRefusal(interaction, game.id, role);
+    if (refused) {
+      await toast.followUp(interaction, refused, { accent: accent.warning });
+      return;
+    }
 
     const result = await requestSignup(game, BigInt(interaction.user.id), role, values['message'] || null);
     if (!result.ok) {
@@ -119,6 +140,12 @@ export default createView<SignupState>()({
 
       const role = interaction.values[0] ?? '';
       if (!isRole(role)) return;
+
+      const refused = await roleRefusal(interaction, ctx.view.entityId!, role);
+      if (refused) {
+        await toast.ephemeral(interaction, refused, { accent: accent.warning });
+        return;
+      }
 
       await ctx.updateState({ role });
       await note.show(interaction, ctx, { title: `Sign up as ${role}` });

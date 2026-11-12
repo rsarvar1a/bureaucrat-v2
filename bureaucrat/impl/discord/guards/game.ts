@@ -21,14 +21,14 @@ export const gameFromEntity: Locator = async (ctx) => {
 };
 
 /**
- * A Storyteller of the game may run it; so may anyone holding `game.manage`
- * on it. Shared by the window guard and the commands that act on a game
+ * A Storyteller of the game may run it; so may a Moderator or Manager
+ * (`game.manage`). Shared by the window guard and the commands that act on a game
  * found by channel, so the two never disagree about who storytells.
  */
 export const isStorytellerOf = async (game: GameRow, actor: Actor): Promise<boolean> => {
   if (await isParticipant(game.id, actor.id, 'Storyteller')) return true;
 
-  const verdict = await accessAllows(game.guild, actor, Permissions.Game.Manage, { domain: 'game', id: game.id });
+  const verdict = await accessAllows(game.guild, actor, Permissions.Game.Manage);
   return verdict.ok;
 };
 

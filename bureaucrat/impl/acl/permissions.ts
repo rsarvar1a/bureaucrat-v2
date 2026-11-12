@@ -1,11 +1,10 @@
 /**
- * Permission constants organized by domain.
- * Each permission is a `domain.action` string.
+ * What the bot gates, as `domain.action` strings. The archetypes
+ * (`archetypes.ts`) decide who holds which; call sites name the action.
  */
 export const Permissions = {
   Server: {
     Manage: 'server.manage',
-    Permissions: 'server.permissions',
   },
   Queue: {
     Create: 'queue.create',
@@ -16,6 +15,8 @@ export const Permissions = {
   Game: {
     Create: 'game.create',
     Manage: 'game.manage',
+    /** Archive, export or copy offsite an ended game someone else made. */
+    Archive: 'game.archive',
   },
 } as const;
 
@@ -24,29 +25,13 @@ type PermissionValues<T> = T extends Record<string, infer V> ? (V extends string
 export type Permission = PermissionValues<typeof Permissions>;
 
 /**
- * Flat list of all registered permissions, grouped by domain.
- * Used by the grants editor to render the permission matrix.
+ * A Moderator's share: run any game and help its Storytellers, tend any
+ * queue's entries, start a game by hand, file one away. Never the server's
+ * configuration or the queues themselves.
  */
-export const PermissionsByDomain: Record<string, { permission: Permission; label: string }[]> = {
-  Server: [
-    { permission: Permissions.Server.Manage, label: 'Manage Server' },
-    { permission: Permissions.Server.Permissions, label: 'Manage Permissions' },
-  ],
-  Queue: [
-    { permission: Permissions.Queue.Create, label: 'Create Queues' },
-    { permission: Permissions.Queue.Edit, label: 'Edit Queues' },
-    { permission: Permissions.Queue.Delete, label: 'Delete Queues' },
-    { permission: Permissions.Queue.ManageEntries, label: 'Manage Entries' },
-  ],
-  Game: [
-    { permission: Permissions.Game.Create, label: 'Create Games' },
-    { permission: Permissions.Game.Manage, label: 'Manage Games' },
-  ],
-};
-
-/**
- * Flat list of all permissions for iteration.
- */
-export const AllPermissions: Permission[] = Object.values(PermissionsByDomain).flatMap((perms) =>
-  perms.map((p) => p.permission),
-);
+export const MODERATOR_PERMISSIONS: ReadonlySet<Permission> = new Set([
+  Permissions.Game.Create,
+  Permissions.Game.Manage,
+  Permissions.Game.Archive,
+  Permissions.Queue.ManageEntries,
+]);

@@ -184,3 +184,19 @@ export const deleteGameRoles = async (client: Client, game: GameRow): Promise<vo
     await deleteGameRole(game.id, row.role);
   }
 };
+
+/** The roles follow the game's name; one that cannot be renamed keeps its old one and the game runs on. */
+export const renameGameRoles = async (client: Client, game: GameRow, name: string): Promise<void> => {
+  const guild = await guildOf(client, game);
+  if (!guild) return;
+
+  for (const row of await listGameRoles(game.id)) {
+    const target = gameRoleName(name, row.role);
+    try {
+      const role = await guild.roles.fetch(String(row.discordRole)).catch(() => null);
+      if (role && role.name !== target) await role.setName(target, 'Game renamed');
+    } catch (error) {
+      logger.warn({ message: `Could not rename the ${row.role} role of game ${game.id}.`, error });
+    }
+  }
+};

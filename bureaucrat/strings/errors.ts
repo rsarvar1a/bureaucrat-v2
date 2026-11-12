@@ -58,7 +58,7 @@ export const gameRenameLimited = (when: string) =>
 
 /** Archiving files a finished game; who may file it is the owner or a server manager. */
 export const gameNotEnded = 'End the game before archiving it.';
-export const notGameArchiver = 'Only the owner of this game or a server manager can archive it.';
+export const notGameArchiver = 'Only the owner of this game, a Moderator or a Manager can archive it.';
 export const noArchive =
   "No archive category is set. A server manager can set one with `/archives manage`, or on the queue's Category tab.";
 export const gameAlreadyArchived = 'That game is already in the archive.';
@@ -202,6 +202,8 @@ export const notNominatedToday = 'You have no open nomination today.';
 export const notNomineeToday = 'Nobody has nominated you today.';
 export const nothingOpenToVote = 'There is no open nomination to vote on.';
 export const revealExists = 'This game already has a reveal; rename it with /reveal rename.';
+export const needsStorytellerRole = "You need a Storyteller role to do that here. Ask the server's moderators.";
+export const needsPlayerRole = "You need a Player role to sign up here. Ask the server's moderators.";
 export const noReveal = 'This game has no reveal yet.';
 export const revealNotPublished = 'The reveal has not been published yet.';
 export const badMark = 'A mark is a whole number from 1 to 5.';

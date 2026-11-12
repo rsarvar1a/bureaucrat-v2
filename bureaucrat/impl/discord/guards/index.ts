@@ -1,18 +1,17 @@
 import type { ViewContext, ViewGuard } from '../../../engine/discord/views/types';
 import type { Permission } from '../../acl/permissions';
-import type { AclLocation } from '../../acl/resolve';
 import { accessAllows, actorOf } from '../access';
 import { inSameGuild } from './scope';
 import { S } from '../../../strings';
 
 /**
- * Where a permission is being exercised, plus the guild that owns the record.
+ * The record a permission is being exercised on, and the guild that owns it.
  *
  * The guild is what lets `can` refuse a custom id replayed from another server:
- * the ACL is keyed by the interaction's guild, so without this check a
- * server-wide grant in guild A would authorise editing guild B's queue by id.
+ * access is decided by the interaction's guild, so without this check a
+ * Manager in guild A could edit guild B's queue by id.
  */
-export type Located = AclLocation & { guild: bigint };
+export type Located = { domain: string; id: string; guild: bigint };
 
 /**
  * How a guard finds the record an action targets.
@@ -28,10 +27,8 @@ export type Locator = (ctx: ViewContext<unknown>) => Located | null | undefined 
 export const inGuild: ViewGuard = async (interaction) => (interaction.inGuild() ? true : S.errors.guildOnly);
 
 /**
- * The actor holds `permission`, server-wide or at the located scope.
- *
- * With no locator the check is server-wide; with one, a location-scoped grant
- * or binding on that record also counts. Put this on the acting keys rather
+ * The actor holds `permission`; with a locator, the record must also belong to
+ * the interaction's guild. Put this on the acting keys rather
  * than on `'*'`: a gated `dismiss` strands the panel on screen for anyone the
  * guard turns away.
  */
@@ -41,16 +38,12 @@ export const can =
     const actor = actorOf(interaction);
     if (actor === null) return S.errors.guildOnly;
 
-    let location: AclLocation | undefined;
-
     if (locate) {
       const located = await locate(ctx);
       if (!located || !inSameGuild(located.guild, interaction.guildId)) return S.errors.notHere;
-
-      location = { domain: located.domain, id: located.id };
     }
 
-    const verdict = await accessAllows(BigInt(interaction.guildId!), actor, permission, location);
+    const verdict = await accessAllows(BigInt(interaction.guildId!), actor, permission);
 
     return verdict.ok ? true : verdict.reason;
   };

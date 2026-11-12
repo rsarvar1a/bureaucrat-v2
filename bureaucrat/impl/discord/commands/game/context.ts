@@ -10,8 +10,8 @@ import { S } from '../../../../strings';
 type GameRow = typeof Game.$inferSelect;
 
 /**
- * An ended game this channel belongs to, for the owner or a server
- * manager: the rule `/game archive` set, shared by the archive commands
+ * An ended game this channel belongs to, for the owner, a Moderator or a
+ * Manager (`game.archive`): the rule `/game archive` set, shared by the archive commands
  * that followed it. Refuses ephemerally; the reply is deferred.
  */
 export const endedGameContext = async (
@@ -34,7 +34,7 @@ export const endedGameContext = async (
   if (game.state !== 'completed') return refuse(S.errors.gameNotEnded);
 
   const owner = game.creator === actor.id;
-  const manager = owner ? true : (await accessAllows(game.guild, actor, Permissions.Server.Manage)).ok;
+  const manager = owner ? true : (await accessAllows(game.guild, actor, Permissions.Game.Archive)).ok;
   if (!owner && !manager) return refuse(S.errors.notGameArchiver);
 
   return { game, actor };

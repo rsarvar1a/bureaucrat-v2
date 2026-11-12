@@ -15,12 +15,6 @@ test('admin::sync is gated, which it was not before', () => {
   expect(commandAccess('admin::sync')).toBe(Permissions.Server.Manage);
 });
 
-test('everything under settings needs server.permissions', () => {
-  for (const path of ['settings', 'settings::permissions', 'settings::anything']) {
-    expect(commandAccess(path), path).toBe(Permissions.Server.Permissions);
-  }
-});
-
 test('creating a queue posts server furniture and needs queue.create', () => {
   expect(commandAccess('queues::new')).toBe(Permissions.Queue.Create);
 });
@@ -39,9 +33,9 @@ test('stats are open to read and need server.manage to configure', () => {
 });
 
 test('an unknown command defaults to open rather than to a permission', () => {
-  // The ACL is closed by default: no grant means deny. A default of "some
-  // permission" would therefore lock everyone out of a command nobody has
-  // thought to map, which is the wrong failure for a read.
+  // A permission is held only by an archetype. A default of "some permission"
+  // would therefore lock everyone else out of a command nobody has thought to
+  // map, which is the wrong failure for a read.
   expect(commandAccess('something::unmapped')).toBe('open');
 });
 

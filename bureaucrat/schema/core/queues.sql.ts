@@ -14,6 +14,9 @@ export const Queue = core.table('Queue', {
   category: snowflake(),
   archive: snowflake(),
   entryPreviews: boolean().notNull().default(false),
+  /** Needed on top of the server's Storyteller and Player roles, when any is set. */
+  storytellerRoles: snowflake().array().notNull().default([]),
+  playerRoles: snowflake().array().notNull().default([]),
   ...timestamps(),
 });
 

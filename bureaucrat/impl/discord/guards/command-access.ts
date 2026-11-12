@@ -46,17 +46,12 @@ const RULES: Record<string, CommandAccess> = {
 };
 
 /**
- * Everything under `admin` needs `server.manage` and everything under
- * `settings` needs `server.permissions`, by virtue of living there. Everything
- * else is open unless listed.
+ * Everything under `admin` needs `server.manage` (a Manager) by virtue of
+ * living there. Everything else is open unless listed.
  *
- * `open` rather than some baseline permission as the default: the ACL is
- * closed by default (no grant means deny), so an unmapped default of "any
- * permission" would lock everyone out of `/queues list`.
+ * `open` rather than some baseline permission as the default: a permission is
+ * held only by an archetype, so an unmapped default of "any permission" would
+ * lock everyone else out of `/queues list`.
  */
 export const commandAccess = (path: string): CommandAccess =>
-  path === 'admin' || path.startsWith('admin::')
-    ? Permissions.Server.Manage
-    : path === 'settings' || path.startsWith('settings::')
-      ? Permissions.Server.Permissions
-      : (RULES[path] ?? 'open');
+  path === 'admin' || path.startsWith('admin::') ? Permissions.Server.Manage : (RULES[path] ?? 'open');

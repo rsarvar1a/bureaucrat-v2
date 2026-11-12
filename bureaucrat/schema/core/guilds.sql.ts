@@ -14,6 +14,13 @@ export const GuildSettings = core.table(
     offsitePrivate: boolean().notNull().default(false),
     /** A win rate over fewer games than this is padded up to it, half won and half lost; 0 is off. */
     statsNormalization: integer().notNull().default(0),
+    /** The access archetypes (`impl/acl/archetypes.ts`), each a list of Discord roles. */
+    managerRoles: snowflake().array().notNull().default([]),
+    moderatorRoles: snowflake().array().notNull().default([]),
+    /** When any is set, one is needed to enter a queue or sign up as a Storyteller. */
+    storytellerRoles: snowflake().array().notNull().default([]),
+    /** When any is set, one is needed to sign up as a Player or Kibitzer. */
+    playerRoles: snowflake().array().notNull().default([]),
     ...timestamps(),
   },
   (table) => [unique().on(table.guild)],

@@ -25,7 +25,7 @@ bureaucrat/
   app.ts                         # Named startup hooks
   engine/discord/                # Views, commands, components, elements, reply (see engine/README.md)
   impl/                          # This bot (see impl/README.md)
-    acl/                         # Permission catalogue, resolver, cache, seed
+    acl/                         # Permission catalogue, archetypes, resolver, cache
     discord/{access,guards}/     # Actor extraction; ViewGuards and the command path rule
     discord/{commands,views}/    # *.cmd.ts and *.view.ts, globbed by registry/
     discord/handlers/            # Top-level client event handlers
@@ -139,7 +139,11 @@ a win rate over fewer games is padded up to, half of the missing games won and h
 - **Authorization**: Views declare `guards` per action; `'*'` carries only `inGuild` and
   permission checks go on the acting keys so `dismiss` always works. Guard both halves of a
   confirm. Commands are gated centrally by `commandAccess(path)` in
-  `impl/discord/guards/command-access.ts`, which has a test that pins the rule.
+  `impl/discord/guards/command-access.ts`, which has a test that pins the rule. Who holds a
+  permission is decided by four archetypes bound to Discord roles in `/admin config`
+  (`impl/acl/archetypes.ts`, ADR-006): Managers (and Manage Server holders) everything, Moderators
+  `MODERATOR_PERMISSIONS`; Storyteller and Player are gates checked on joining (`mayJoinAs`), which
+  a queue's Access tab can tighten.
 - **Events**: each view family's `events.ts` exports templates (for `subscribesTo` and in-tree
   publishers) and a concrete builder (for publishers outside the tree), with a test asserting they
   agree. Template keys are routes, never domain nouns.
@@ -194,7 +198,7 @@ a win rate over fewer games is padded up to, half of the missing games won and h
 ## Testing
 
 Use `bun test` to run tests. Tests live under `bureaucrat/tests/`, mirroring the source tree, and
-must not reach a socket: keep decision modules (`acl/resolve.ts`, `guards/scope.ts`,
+must not reach a socket: keep decision modules (`acl/archetypes.ts`, `guards/scope.ts`,
 `guards/command-access.ts`) import-free or mocked so they can be tested exhaustively.
 
 ```ts

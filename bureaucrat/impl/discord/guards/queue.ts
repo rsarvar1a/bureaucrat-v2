@@ -3,7 +3,7 @@ import { getQueue } from '../../../drizzle/queues';
 import { getQueueEntry, listQueueEntries } from '../../../drizzle/queue-entries';
 import { nextClaimant } from '../games/vacancy';
 import { Permissions } from '../../acl/permissions';
-import { accessAllows, actorOf } from '../access';
+import { accessAllows, actorOf, mayJoinAs } from '../access';
 import { inSameGuild } from './scope';
 import type { Locator } from './index';
 import { S } from '../../../strings';
@@ -32,8 +32,8 @@ export const queueOfEntry: Locator = async (ctx) => {
 };
 
 /**
- * The Storyteller who created the entry may manage it; so may anyone holding
- * `queue.manage_entries` on its queue.
+ * The Storyteller who created the entry may manage it; so may a Moderator or
+ * Manager (`queue.manage_entries`).
  *
  * One guard rather than two composed, so the entry is fetched once and the
  * refusal names the Storyteller rule, which is the one most people will meet.
@@ -50,10 +50,7 @@ export const canManageEntry: ViewGuard = async (interaction, ctx) => {
   const queue = await getQueue(entry.queue);
   if (!queue || !inSameGuild(queue.guild, interaction.guildId)) return S.errors.notHere;
 
-  const verdict = await accessAllows(queue.guild, actor, Permissions.Queue.ManageEntries, {
-    domain: 'queue',
-    id: queue.id,
-  });
+  const verdict = await accessAllows(queue.guild, actor, Permissions.Queue.ManageEntries);
 
   return verdict.ok ? true : S.errors.notStoryteller;
 };
@@ -73,4 +70,20 @@ export const frontOfQueue: ViewGuard = async (interaction, ctx) => {
   const front = nextClaimant(await listQueueEntries(queue.id), [], new Date());
 
   return front?.storyteller === actor.id ? true : S.errors.notFrontOfQueue;
+};
+
+/**
+ * The presser may enter this queue as a Storyteller: the server's Storyteller
+ * roles and the queue's own, where set (`mayJoinAs`). On entering and again on
+ * claiming, so a role taken away in between cannot claim a slot.
+ */
+export const mayStorytellIn: ViewGuard = async (interaction, ctx) => {
+  const actor = actorOf(interaction);
+  if (actor === null) return S.errors.guildOnly;
+
+  const queue = ctx.view.entityId ? await getQueue(ctx.view.entityId) : undefined;
+  if (!queue || !inSameGuild(queue.guild, interaction.guildId)) return S.errors.notHere;
+
+  const verdict = await mayJoinAs(queue.guild, actor, queue, 'Storyteller');
+  return verdict.ok ? true : verdict.reason;
 };

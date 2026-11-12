@@ -4,6 +4,7 @@ import type { Game } from '../../../schema/core/games.sql';
 import { fault } from '../errors/record';
 import { rejectingRateLimits, waitOf } from '../rest/reject';
 import { channelName, endedChannelName } from './names';
+import { renameGameRoles } from './roles';
 
 type GameRow = typeof Game.$inferSelect;
 
@@ -19,7 +20,8 @@ export type RenameResult =
  * Renames a game in the record and on its channel: the plain title while it
  * runs, the date it ended in front once it has. The channel goes first, so a
  * refusal leaves the two agreeing; the end and the archive name the channel
- * from the record, so a channel renamed alone would revert there.
+ * from the record, so a channel renamed alone would revert there. The
+ * game's roles follow, best effort: they only live while it runs.
  */
 export const renameGame = async (client: Client, game: GameRow, name: string): Promise<RenameResult> => {
   const target = game.state === 'completed' ? endedChannelName(name, game.endedAt ?? new Date()) : channelName(name);
@@ -40,5 +42,7 @@ export const renameGame = async (client: Client, game: GameRow, name: string): P
     return { ok: false, reason: 'failed' };
   }
 
-  return { ok: true, game: (await updateGame(game.id, { name })) ?? { ...game, name } };
+  const renamed = (await updateGame(game.id, { name })) ?? { ...game, name };
+  await renameGameRoles(client, renamed, name);
+  return { ok: true, game: renamed };
 };

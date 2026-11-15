@@ -19,6 +19,7 @@ import { toast } from '../../../../../engine/discord/reply';
 import { getGame } from '../../../../../drizzle/games';
 import { listParticipants } from '../../../../../drizzle/participants';
 import { listSeating } from '../../../../../drizzle/seating';
+import { listSignups } from '../../../../../drizzle/signups';
 import { inGuild } from '../../../guards';
 import { storytells } from '../../../guards/game';
 import { addMember, removeMember } from '../../../games/members';
@@ -66,7 +67,11 @@ export default createView<MembersState>()({
     if (!game) return v2(linear(text('Game not found.')).setAccentColor(accent.danger));
 
     const role = roleOf(view);
-    const [members, seating] = await Promise.all([listParticipants(game.id), listSeating(game.id)]);
+    const [members, seating, pending] = await Promise.all([
+      listParticipants(game.id),
+      listSeating(game.id),
+      listSignups(game.id),
+    ]);
     const seatOf = new Map(seating.map((row) => [row.seat.player, row.seat.seat]));
     const [names, name] = await Promise.all([
       displayNames(
@@ -78,7 +83,7 @@ export default createView<MembersState>()({
         client,
         game.guild,
         view.channel,
-        members.map((m) => m.member),
+        [...members, ...pending].map((m) => m.member),
       ),
     ]);
     const customId = (action: string) => view.customId(action as Parameters<typeof view.customId>[0]);
@@ -98,7 +103,8 @@ export default createView<MembersState>()({
           : group
               .map((m) => `${name(m.member)}${m.role === 'Player' && seatOf.has(m.id) ? ` (${seatOf.get(m.id)})` : ''}`)
               .join(', ');
-      return `**${r}s:** ${line}`;
+      const waiting = pending.filter((p) => p.role === r).map((p) => name(p.member));
+      return [`**${r}s:** ${line}`, ...(waiting.length > 0 ? [S.games.pendingLine(waiting)] : [])].join('\n');
     }).join('\n');
 
     return v2(

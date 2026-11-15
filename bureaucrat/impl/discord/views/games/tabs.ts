@@ -96,7 +96,7 @@ export const ACTIONS: Record<string, readonly string[]> = {
   gnominations: ['toggle:st', 'thread', 'after', 'after-submit'],
   gseatingconfig: ['thread', 'expose', 'live'],
   gtownsquare: ['details'],
-  gmessaging: ['announce', 'announce-submit', 'broadcast', 'broadcast-submit'],
+  gmessaging: ['announce', 'announce-submit', 'broadcast', 'broadcast-submit', 'recruit', 'recruit-submit'],
   gsignups: [],
   gapplications: [
     'filter',

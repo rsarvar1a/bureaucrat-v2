@@ -15,6 +15,3 @@ export const ARCHETYPES: { key: Archetype; label: string; about: string }[] = [
 ];
 
 export const isArchetype = (value: string | undefined): value is Archetype => ARCHETYPES.some((a) => a.key === value);
-
-/** The pane's acting keys: picking an archetype is navigation, picking its roles writes. */
-export const ACTIONS = ['archetype', 'roles'] as const;

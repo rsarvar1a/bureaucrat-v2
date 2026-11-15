@@ -7,18 +7,28 @@ import { toast } from '../../../../engine/discord/reply';
 import type { InteractionHandler, ViewContext } from '../../../../engine/discord/views/types';
 import { getGame } from '../../../../drizzle/games';
 import { listManagedThreads } from '../../../../drizzle/managed-threads';
+import { actorOf } from '../../access';
+import { recruit, recruitReply } from '../../games/recruitment/recruit';
+import { trackedRoles } from '../../games/roles';
 import { inGuild } from '../../guards';
 import { storytells } from '../../guards/game';
 import { GameEvents } from './events';
 
 type MessagingState = Record<string, never>;
 
-const post = async (client: Client, channelId: bigint, content: string): Promise<boolean> => {
+/**
+ * Posts a Storyteller's words as the bot. Members and the game's own roles may
+ * ring; nothing else, so a bot granted Mention All Roles for recruitment does
+ * not hand an @everyone to whoever storytells.
+ */
+const post = async (client: Client, channelId: bigint, content: string, roles: string[]): Promise<boolean> => {
   const channel = await client.channels.fetch(String(channelId)).catch(() => null);
   if (!channel || !('send' in channel)) return false;
-  await channel.send({ content });
+  await channel.send({ content, allowedMentions: { parse: ['users'], roles } });
   return true;
 };
+
+const gameRoleIds = async (gameId: string) => Object.values(await trackedRoles(gameId)).map(String);
 
 const announce = modal<MessagingState>()({
   action: 'announce',
@@ -30,7 +40,7 @@ const announce = modal<MessagingState>()({
     const game = await getGame(ctx.view.entityId!);
     if (!game) return;
 
-    const sent = await post(interaction.client, game.channel, `📣 ${values['message']!}`);
+    const sent = await post(interaction.client, game.channel, `📣 ${values['message']!}`, await gameRoleIds(game.id));
 
     await toast.followUp(interaction, sent ? `Posted in <#${game.channel}>.` : 'The game channel is unreachable.', {
       accent: sent ? accent.success : accent.danger,
@@ -51,13 +61,36 @@ const broadcast = modal<MessagingState>()({
       return;
     }
 
+    const roles = await gameRoleIds(ctx.view.entityId!);
     let reached = 0;
     for (const row of threads) {
-      if (await post(interaction.client, row.thread, values['message']!)) reached++;
+      if (await post(interaction.client, row.thread, values['message']!, roles)) reached++;
     }
 
     await toast.followUp(interaction, `Sent to ${reached} of ${threads.length} player thread(s).`, {
       accent: accent.success,
+    });
+  },
+});
+
+const recruitment = modal<MessagingState>()({
+  action: 'recruit',
+  title: 'Recruit players',
+  fields: { note: field.paragraph('A line to go with the ping (optional)', { required: false, maxLength: 1500 }) },
+  async onSubmit(values, interaction, ctx) {
+    await interaction.deferUpdate();
+
+    const game = await getGame(ctx.view.entityId!);
+    const actor = actorOf(interaction);
+    if (!game || !actor) return;
+
+    const reply = recruitReply(
+      await recruit(interaction.client, game, actor.id, values['note']?.trim() || null),
+      game.channel,
+    );
+    await toast.followUp(interaction, reply.message, {
+      accent: reply.ok ? accent.success : accent.warning,
+      timeoutMs: 15_000,
     });
   },
 });
@@ -93,9 +126,11 @@ export default createView<MessagingState>()({
       linear(
         text('### Messaging'),
         text(
-          [`Send an _announcement_ into town square, or...`, `... _broadcast_ a message into each ST thread.`].join(
-            '\n',
-          ),
+          [
+            `Send an _announcement_ into town square, or...`,
+            `... _broadcast_ a message into each ST thread, or...`,
+            `... _recruit_: ping the server's recruitment roles, while the game takes signups.`,
+          ].join('\n'),
         ),
         separator(),
         buttonRow(
@@ -103,6 +138,7 @@ export default createView<MessagingState>()({
           button(view.customId('broadcast'), 'Broadcast', ButtonStyle.Secondary).setDisabled(
             playerThreads.length === 0,
           ),
+          button(view.customId('recruit'), 'Recruit', ButtonStyle.Success).setDisabled(game.state !== 'signups'),
         ),
       ),
     );
@@ -111,8 +147,10 @@ export default createView<MessagingState>()({
   interactions: {
     ...announce.interactions,
     ...broadcast.interactions,
+    ...recruitment.interactions,
 
     announce: show(announce),
     broadcast: show(broadcast),
+    recruit: show(recruitment),
   },
 });

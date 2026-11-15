@@ -99,7 +99,9 @@ appear in Signups. Start gives it an ST thread with the Storytellers alone.
 
 ### `gmessaging` (window B)
 
-Announce posts to the game channel; Broadcast posts to every player's Storyteller thread.
+Announce posts to the game channel; Broadcast posts to every player's Storyteller thread. Both let
+members and the game's own roles ring, nothing else. Recruit (enabled while the game takes signups)
+is `/recruit`: see `games/recruitment/`.
 
 ### `gphases` (window B)
 

@@ -2,10 +2,14 @@ import { type Nudge, nudges, stepperRow, type Stepper } from '../../../../../eng
 import { text, separator } from '../../../../../engine/discord/elements';
 import type { ViewRow } from '../../../../../engine/discord/views/types';
 import type { Queue } from '../../../../../schema/core/queues.sql';
+import { COOLDOWN } from '../../../games/recruitment/policy';
 
 type QueueRow = typeof Queue.$inferSelect;
 
-export type Resource = Stepper & { slug: 'conc' | 'per'; column: 'concurrency' | 'entriesPerStoryteller' };
+export type Resource = Stepper & {
+  slug: 'conc' | 'per' | 'cool';
+  column: 'concurrency' | 'entriesPerStoryteller' | 'recruitCooldown';
+};
 
 // Declared once and read by the renderer, the guards and the handler, so a
 // new cap is one entry rather than a row, a guard key and a case kept in step.
@@ -19,6 +23,15 @@ export const RESOURCES: Resource[] = [
     max: 10,
     bigStep: 5,
     unlimited: true,
+  },
+  // Below the range is the server's own cooldown (`/admin config`), not none.
+  {
+    slug: 'cool',
+    column: 'recruitCooldown',
+    label: 'Recruitment cooldown',
+    ...COOLDOWN,
+    unlimited: true,
+    unlimitedLabel: 'server default',
   },
 ];
 

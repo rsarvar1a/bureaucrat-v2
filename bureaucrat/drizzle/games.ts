@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, ne, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lte, ne, or } from 'drizzle-orm';
 import { db } from '../utilities/db';
 import { Game } from '../schema/core/games.sql';
 import { ManagedThread } from '../schema/core/threads.sql';
@@ -122,4 +122,20 @@ export const listGameRecordsByMember = async (member: bigint, guildId: bigint) =
       .filter((r) => r.game === game.id)
       .map((r) => ({ position: r.position, winner: r.winner, wonAs: r.wonAs, won: r.winnerId !== null })),
   }));
+};
+
+/**
+ * Takes the game's recruitment slot: stamps `recruitedAt` only while it is
+ * taking signups and its last recruitment is no later than `cutoff`, so two
+ * presses at once cannot both ping. Undefined when it was not free.
+ */
+export const claimRecruitment = async (gameId: string, now: Date, cutoff: Date) => {
+  const [row] = await db
+    .update(Game)
+    .set({ recruitedAt: now })
+    .where(
+      and(eq(Game.id, gameId), eq(Game.state, 'signups'), or(isNull(Game.recruitedAt), lte(Game.recruitedAt, cutoff))),
+    )
+    .returning();
+  return row;
 };

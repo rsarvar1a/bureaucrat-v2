@@ -21,6 +21,10 @@ export const GuildSettings = core.table(
     storytellerRoles: snowflake().array().notNull().default([]),
     /** When any is set, one is needed to sign up as a Player or Kibitzer. */
     playerRoles: snowflake().array().notNull().default([]),
+    /** What `/recruit` pings for a game still taking signups; none set, recruitment is off. */
+    recruitRoles: snowflake().array().notNull().default([]),
+    /** Hours a game waits between recruitments. */
+    recruitCooldown: integer().notNull().default(48),
     ...timestamps(),
   },
   (table) => [unique().on(table.guild)],

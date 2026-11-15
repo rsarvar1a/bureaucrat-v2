@@ -27,3 +27,17 @@ export const renamed = (from: string, to: string) => `**${from}** is now **${to}
 
 /** The console's Close nomination, done. */
 export const nominationClosed = 'Closed the nomination. Both players may nominate or be nominated again.';
+
+/** The recruitment post: the pings, the call, the Storyteller's own words, and who sent it. */
+export const recruitment = (pings: string, game: string, note: string | null, by: string) =>
+  [
+    pings,
+    `📣 **${game}** is looking for players!`,
+    ...(note ? [note] : []),
+    `-# Sent by ${by} with \`/recruit\`.`,
+  ].join('\n');
+export const recruited = (where: string, next: string) =>
+  `Recruitment posted in ${where}. The next is available ${next}.`;
+
+/** Under a role's members: who has asked to join as it and not been answered. */
+export const pendingLine = (names: string[]) => `-# pending: ${names.join(', ')}`;

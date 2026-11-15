@@ -98,6 +98,7 @@ export default createView<ManageState>()({
     archive: edits,
     'storyteller-roles': edits,
     'player-roles': edits,
+    'recruit-roles': edits,
     ...(Object.fromEntries(BUMP_ACTIONS.map((action) => [action, edits])) as Record<BumpAction, ViewGuard[]>),
     delete: deletes,
     'delete-confirm': deletes,
@@ -185,6 +186,13 @@ export default createView<ManageState>()({
       if (!interaction.isRoleSelectMenu()) return;
       await interaction.deferUpdate();
       await updateQueue(ctx.view.entityId!, { playerRoles: pickedRoles(interaction.values) });
+      return { action: 'render' };
+    },
+
+    'recruit-roles': async (interaction, ctx) => {
+      if (!interaction.isRoleSelectMenu()) return;
+      await interaction.deferUpdate();
+      await updateQueue(ctx.view.entityId!, { recruitRoles: pickedRoles(interaction.values) });
       return { action: 'render' };
     },
 

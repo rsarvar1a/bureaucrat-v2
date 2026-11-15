@@ -237,3 +237,11 @@ export const notAdmitted = 'Could not add you to that thread.';
 export const noSuchThread = 'That thread does not exist; nothing is shown there.';
 export const nobodyToNominate = 'There is nobody left to nominate today.';
 export const nobodyToNominateFor = 'No living player is seated to nominate on behalf of.';
+/** `/recruit` and Messaging → Recruit. */
+export const recruitStarted = 'Recruitment is for a game still taking signups; this one has started.';
+export const recruitUnset =
+  "No recruitment roles are set for this game. A Manager sets the server's in `/admin config` (Recruitment), or a queue's on its Roles tab.";
+export const recruitCooldown = (when: string) => `This game has recruited recently. It may again ${when}.`;
+export const recruitUnmentionable = (roles: string) =>
+  `The bot cannot ping ${roles}. It needs **Mention @everyone, @here and All Roles** in the game channel, or the roles must be mentionable.`;
+export const recruitFailed = 'The recruitment could not be posted in the game channel.';

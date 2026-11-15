@@ -6,10 +6,11 @@ import { inGuild } from '../../guards';
 import { canManageEntry } from '../../guards/queue';
 
 import { deleteQueueEntry, getQueueEntry } from '../../../../drizzle/queue-entries';
-import { listAcceptedSignups, getSignupByMemberAndEntry } from '../../../../drizzle/queue-entry-signups';
+import { listSignups, getSignupByMemberAndEntry } from '../../../../drizzle/queue-entry-signups';
 import { countScriptPages, getEntryScriptSummary } from '../../../../drizzle/scripts';
 import { QueueEvents, QueueEntryEvents } from './events';
 import { acceptsSignups, modeLabel } from './signup-mode';
+import { ROLES } from './manage/signups';
 import { S } from '../../../../strings';
 
 type QueueEntryState = Record<string, never>;
@@ -36,23 +37,22 @@ export default createView<QueueEntryState, typeof QueueEntryEvents>()({
       return v2(linear(text('Entry not found.')));
     }
 
-    const [signups, script] = await Promise.all([listAcceptedSignups(entry.id), getEntryScriptSummary(entry.id)]);
+    const [signups, script] = await Promise.all([listSignups(entry.id), getEntryScriptSummary(entry.id)]);
     const pages = script?.hasPdf ? await countScriptPages(script.id) : 0;
 
-    let signupText: string;
-    if (signups.length > 0) {
-      const roleGroups: Record<string, string[]> = {};
-      for (const s of signups) {
-        const role = s.role;
-        if (!roleGroups[role]) roleGroups[role] = [];
-        roleGroups[role]!.push(`<@${s.member}>`);
-      }
-      signupText = Object.entries(roleGroups)
-        .map(([role, members]) => `**${role}s:**\n${members.map((m, i) => `${i + 1}. ${m}`).join('\n')}`)
-        .join('\n\n');
-    } else {
-      signupText = '*No signups yet.*';
-    }
+    // Accepted signups by role, numbered; under each, those not yet answered. Declined ones are not shown.
+    const sections = ROLES.map((role) => {
+      const ofRole = signups.filter((s) => s.role === role);
+      const accepted = ofRole.filter((s) => s.accepted === true).map((s) => `<@${s.member}>`);
+      const pending = ofRole.filter((s) => s.accepted === null).map((s) => `<@${s.member}>`);
+      if (accepted.length === 0 && pending.length === 0) return null;
+      return [
+        `**${role}s:**`,
+        ...accepted.map((m, i) => `${i + 1}. ${m}`),
+        ...(pending.length > 0 ? [S.games.pendingLine(pending)] : []),
+      ].join('\n');
+    }).filter((section) => section !== null);
+    const signupText = sections.length > 0 ? sections.join('\n\n') : '*No signups yet.*';
 
     const c = linear(
       text(`### ${entry.title}\n<@${entry.storyteller}>`),
@@ -76,7 +76,7 @@ export default createView<QueueEntryState, typeof QueueEntryEvents>()({
       ),
     ).setAccentColor(accent.success);
 
-    return v2(c);
+    return { ...v2(c), allowedMentions: { parse: [] } };
   },
 
   interactions: {

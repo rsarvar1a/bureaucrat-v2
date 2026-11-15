@@ -12,6 +12,8 @@ export const Game = core.table('Game', {
   name: text().notNull(),
   state: GameState().notNull().default('signups'),
   endedAt: timestamp(),
+  /** The last `/recruit`, from which the cooldown runs. */
+  recruitedAt: timestamp(),
   ...snowflakes('guild', 'channel'),
   ...timestamps(),
 });

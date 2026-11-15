@@ -1,6 +1,7 @@
 import { text, separator, linear, selectRow, select } from '../../../../../engine/discord/elements';
 import type { ViewRow } from '../../../../../engine/discord/views/types';
 import type { QueueEntrySignup } from '../../../../../schema/core/queues.sql';
+import { S } from '../../../../../strings';
 
 export type Role = 'Player' | 'Storyteller' | 'Kibitzer';
 
@@ -40,6 +41,18 @@ export const renderSignups = (
 
   const state = view.state;
 
+  // Who is in and who is waiting, by role, before the controls to decide.
+  const roster = ROLES.map((role) => {
+    const ofRole = signups.filter((s) => s.role === role);
+    const accepted = ofRole.filter((s) => s.accepted === true).map((s) => `<@${s.member}>`);
+    const pending = ofRole.filter((s) => s.accepted === null).map((s) => `<@${s.member}>`);
+    if (accepted.length === 0 && pending.length === 0) return null;
+    return [
+      `**${role}s:** ${accepted.length > 0 ? accepted.join(', ') : '*none accepted*'}`,
+      ...(pending.length > 0 ? [S.games.pendingLine(pending)] : []),
+    ].join('\n');
+  }).filter((line) => line !== null);
+
   const filterMenu = selectRow(
     select(view.customId('filter'), 'Filter by role')
       .setMinValues(0)
@@ -73,5 +86,7 @@ export const renderSignups = (
       ]
     : [];
 
-  return { body: [...heading, ...detail], controls: [filterMenu, signupMenu], selected };
+  const summary = roster.length > 0 ? [text(roster.join('\n')), separator()] : [];
+
+  return { body: [...heading, ...summary, ...detail], controls: [filterMenu, signupMenu], selected };
 };

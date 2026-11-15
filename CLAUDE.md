@@ -169,6 +169,13 @@ a win rate over fewer games is padded up to, half of the missing games won and h
   on a broad event like `Changed`, since a V2 edit re-sends every file; it re-renders from its
   own handlers only (see `gscript`). A tab that opens a header may
   `inline` its strip as a second row instead of a second message; the choice is per tab.
+- **Recruitment**: `/recruit` (or Messaging → Recruit) lets a game's Storytellers ping roles the
+  server would not let them ping themselves, while the game takes signups, once per cooldown
+  (`games/recruitment/`). The server's roles and cooldown are in `/admin config` (Recruitment); a
+  queue's Roles tab and Resources stepper replace either outright (`recruitmentFor`). The slot is
+  claimed atomically on `Game.recruitedAt` before posting and returned if the post fails. Only those
+  roles ring; Announce and Broadcast ring members and the game's roles, never `@everyone`, since the
+  bot needs Mention All Roles for recruitment.
 - **Membership**: game members are `Participant` rows and signups are pending requests, nothing
   more (ADR-005). Every thread join or leave goes through `games/membership.ts`, which does the
   Discord call and records the row together; never call `thread.members.add` directly. A game's

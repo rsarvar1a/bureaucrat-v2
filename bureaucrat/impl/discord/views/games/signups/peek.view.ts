@@ -5,6 +5,7 @@ import { accent, text, separator, linear, v2 } from '../../../../../engine/disco
 import { getGame } from '../../../../../drizzle/games';
 import { listParticipants } from '../../../../../drizzle/participants';
 import { listSeating } from '../../../../../drizzle/seating';
+import { listSignups } from '../../../../../drizzle/signups';
 import { inGuild } from '../../../guards';
 import { GameEvents } from '../events';
 import { ROLES } from './roles';
@@ -15,7 +16,8 @@ type Empty = Record<string, never>;
 const dismiss = dismissButton<Empty>()({ action: 'dismiss' });
 
 /**
- * The members as mentions, ephemeral beside the Members window. The window
+ * The members as mentions, ephemeral beside the Members window, with the
+ * signups still waiting under each role. The window
  * itself writes names, because a mention in a private thread would pull the
  * person in; an ephemeral message pulls nobody anywhere, so here they can be
  * copied as pings.
@@ -36,7 +38,11 @@ export default createView<Empty>()({
     const game = await getGame(view.entityId!);
     if (!game) return v2(linear(text(S.errors.notHere), separator(), dismiss.row(view)).setAccentColor(accent.neutral));
 
-    const [members, seating] = await Promise.all([listParticipants(game.id), listSeating(game.id)]);
+    const [members, seating, pending] = await Promise.all([
+      listParticipants(game.id),
+      listSeating(game.id),
+      listSignups(game.id),
+    ]);
     const seatOf = new Map(seating.map((row) => [row.seat.player, row.seat.seat]));
     // Players in seat order, the unseated after; the other roles as they joined.
     const byRole = ROLES.map((role) => ({
@@ -44,10 +50,15 @@ export default createView<Empty>()({
       members: members
         .filter((m) => m.role === role)
         .sort((a, b) => (seatOf.get(a.id) ?? Infinity) - (seatOf.get(b.id) ?? Infinity)),
-    })).filter(({ members }) => members.length > 0);
+      pending: pending.filter((s) => s.role === role).map((s) => `<@${s.member}>`),
+    })).filter(({ members, pending }) => members.length > 0 || pending.length > 0);
 
-    const sections = byRole.map(({ role, members }) =>
-      [`**${role}s**`, ...members.map((m, i) => `${i + 1}. <@${m.member}>`)].join('\n'),
+    const sections = byRole.map(({ role, members, pending }) =>
+      [
+        `**${role}s**`,
+        ...members.map((m, i) => `${i + 1}. <@${m.member}>`),
+        ...(pending.length > 0 ? [S.games.pendingLine(pending)] : []),
+      ].join('\n'),
     );
 
     return {

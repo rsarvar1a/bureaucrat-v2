@@ -17,6 +17,9 @@ export const Queue = core.table('Queue', {
   /** Needed on top of the server's Storyteller and Player roles, when any is set. */
   storytellerRoles: snowflake().array().notNull().default([]),
   playerRoles: snowflake().array().notNull().default([]),
+  /** Recruitment for this queue's games, instead of the server's: no roles or a null cooldown follow the server. */
+  recruitRoles: snowflake().array().notNull().default([]),
+  recruitCooldown: integer(),
   ...timestamps(),
 });
 

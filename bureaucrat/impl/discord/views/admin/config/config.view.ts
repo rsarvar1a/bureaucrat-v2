@@ -1,18 +1,24 @@
 import { createView } from '../../../../../engine/discord/views/create-view';
 import { dismissButton } from '../../../../../engine/discord/components/dismiss';
 import { pickedRoles } from '../../../../../engine/discord/components/role-picker';
+import { bump, type Nudge } from '../../../../../engine/discord/components/stepper';
+import { tabs } from '../../../../../engine/discord/components/tabs';
 import { linear, separator, v2 } from '../../../../../engine/discord/elements';
-import type { ViewGuard } from '../../../../../engine/discord/views/types';
-import { getAccessConfig, updateGuildSettings } from '../../../../../drizzle/guild-settings';
+import type { InteractionHandler, ViewGuard } from '../../../../../engine/discord/views/types';
+import { getAccessConfig, getOrCreateGuildSettings, updateGuildSettings } from '../../../../../drizzle/guild-settings';
 import { invalidateGuildAccess } from '../../../../acl/cache';
 import { Permissions } from '../../../../acl/permissions';
 import { can, inGuild, type Locator } from '../../../guards';
 import { renderAccess } from './access';
 import { isArchetype, type Archetype } from './archetypes';
+import { COOLDOWN_ACTIONS, COOLDOWN_STEPPER, renderRecruitment, type CooldownAction } from './recruitment';
+import { TABS, type ConfigTab } from './tabs';
 
-type ConfigState = { archetype: Archetype | null };
+type ConfigState = { tab: ConfigTab; archetype: Archetype | null };
 
 const dismiss = dismissButton<ConfigState>()({ action: 'dismiss' });
+
+const strip = tabs<ConfigState>()({ field: 'tab', tabs: TABS, fallback: 'access' });
 
 /** The pane is the guild's own: its entity is the guild id, checked against where it is pressed. */
 const guildFromEntity: Locator = (ctx) =>
@@ -27,28 +33,57 @@ const COLUMN = {
   player: 'playerRoles',
 } as const satisfies Record<Archetype, string>;
 
+const cooldown: InteractionHandler<ConfigState> = async (interaction, ctx) => {
+  if (!interaction.isMessageComponent()) return;
+  await interaction.deferUpdate();
+
+  const nudge = ctx.action.split(':')[2] as Nudge;
+  const guild = BigInt(ctx.view.entityId!);
+  const settings = await getOrCreateGuildSettings(guild);
+  const value = bump(COOLDOWN_STEPPER, settings.recruitCooldown, nudge);
+  if (value !== null) await updateGuildSettings(guild, { recruitCooldown: value });
+  return { action: 'render' };
+};
+
 /**
  * `/admin config`: who the Managers, Moderators, Storytellers and Players are,
- * by Discord role (`acl/archetypes.ts`). Picking an archetype is navigation
- * and ungated; setting its roles needs a Manager.
+ * by Discord role (`acl/archetypes.ts`), and the server's recruitment. Tabs
+ * and picking an archetype are navigation and ungated; every write needs a
+ * Manager.
  */
 export default createView<ConfigState>()({
   id: 'adminconfig',
   idParams: [],
   events: {},
-  defaultState: { archetype: null },
+  defaultState: { tab: 'access', archetype: null },
   subscribesTo: {},
-  guards: { '*': [inGuild], roles: manages },
+  guards: {
+    '*': [inGuild],
+    roles: manages,
+    'recruit-roles': manages,
+    ...(Object.fromEntries(COOLDOWN_ACTIONS.map((action) => [action, manages])) as Record<CooldownAction, ViewGuard[]>),
+  },
 
-  render: async (view) => {
-    const config = await getAccessConfig(BigInt(view.entityId!));
-    const body = renderAccess(view, config, view.state?.archetype ?? null);
+  render: async (view, _db, client) => {
+    const guild = BigInt(view.entityId!);
+    const body =
+      strip.active(view) === 'recruitment'
+        ? await renderRecruitment(view, await getOrCreateGuildSettings(guild), client)
+        : renderAccess(view, await getAccessConfig(guild), view.state?.archetype ?? null);
 
-    return { ...v2(linear(...body, separator(), dismiss.row(view))), allowedMentions: { parse: [] } };
+    return {
+      ...v2(linear(strip.row(view), separator(), ...body, separator(), dismiss.row(view))),
+      allowedMentions: { parse: [] },
+    };
   },
 
   interactions: {
     ...dismiss.interactions,
+    ...strip.interactions,
+    ...(Object.fromEntries(COOLDOWN_ACTIONS.map((action) => [action, cooldown])) as Record<
+      CooldownAction,
+      InteractionHandler<ConfigState>
+    >),
 
     archetype: async (interaction, ctx) => {
       if (!interaction.isStringSelectMenu()) return;
@@ -69,6 +104,13 @@ export default createView<ConfigState>()({
       const guild = BigInt(ctx.view.entityId!);
       await updateGuildSettings(guild, { [COLUMN[archetype]]: pickedRoles(interaction.values) });
       invalidateGuildAccess(guild);
+      return { action: 'render' };
+    },
+
+    'recruit-roles': async (interaction, ctx) => {
+      if (!interaction.isRoleSelectMenu()) return;
+      await interaction.deferUpdate();
+      await updateGuildSettings(BigInt(ctx.view.entityId!), { recruitRoles: pickedRoles(interaction.values) });
       return { action: 'render' };
     },
   },

@@ -8,7 +8,7 @@ export const TABS: Tab<SettingsTab>[] = [
   { key: 'description', label: 'Description' },
   { key: 'resources', label: 'Resources' },
   { key: 'category', label: 'Category' },
-  { key: 'access', label: 'Access' },
+  { key: 'access', label: 'Roles' },
   { key: 'delete', label: 'Delete', style: ButtonStyle.Danger },
 ];
 
@@ -20,6 +20,7 @@ export const ACTIONS = [
   'archive',
   'storyteller-roles',
   'player-roles',
+  'recruit-roles',
   'delete',
   'delete-confirm',
   'delete-cancel',

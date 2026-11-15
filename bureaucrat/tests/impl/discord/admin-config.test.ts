@@ -1,10 +1,17 @@
 import { test, expect } from 'bun:test';
 import { buildCustomId } from '../../../engine/discord/views/custom-id';
-import { ACTIONS, ARCHETYPES, isArchetype } from '../../../impl/discord/views/admin/config/archetypes';
+import { MAX_TABS } from '../../../engine/discord/components/tabs';
+import { ARCHETYPES, isArchetype } from '../../../impl/discord/views/admin/config/archetypes';
+import { ACTIONS, TABS } from '../../../impl/discord/views/admin/config/tabs';
+
+test('the strip fits on one row, with distinct keys', () => {
+  expect(TABS.length).toBeLessThanOrEqual(MAX_TABS);
+  expect(new Set(TABS.map((t) => t.key)).size).toBe(TABS.length);
+});
 
 test('every custom id stays under the 100-character cap', () => {
   const viewId = '0'.repeat(36);
-  for (const action of [...ACTIONS, 'dismiss']) {
+  for (const action of [...ACTIONS, ...TABS.map((t) => `tab-${t.key}`), 'dismiss']) {
     expect(() => buildCustomId('view::adminconfig', action, viewId), action).not.toThrow();
   }
 });

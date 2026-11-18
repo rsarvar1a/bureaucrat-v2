@@ -143,7 +143,9 @@ a win rate over fewer games is padded up to, half of the missing games won and h
   permission is decided by four archetypes bound to Discord roles in `/admin config`
   (`impl/acl/archetypes.ts`, ADR-006): Managers (and Manage Server holders) everything, Moderators
   `MODERATOR_PERMISSIONS`; Storyteller and Player are gates checked on joining (`mayJoinAs`), which
-  a queue's Access tab can tighten.
+  a queue's Roles tab can tighten. A Moderator who plays in a game, or has asked to (`recuses`),
+  holds no archetype in it: `isStorytellerOf` and `canManageEntry` check the seat first. Managers
+  are exempt.
 - **Events**: each view family's `events.ts` exports templates (for `subscribesTo` and in-tree
   publishers) and a concrete builder (for publishers outside the tree), with a test asserting they
   agree. Template keys are routes, never domain nouns.
@@ -183,10 +185,14 @@ a win rate over fewer games is padded up to, half of the missing games won and h
   grant on arrival, revoke on departure, delete at the end. They carry no guild permissions, only
   overwrites on the game channel (`grantChannelOverwrites`): the Kibitzers get Manage Threads,
   which is how Discord lets a role see every private thread, and the Storytellers get Manage
-  Threads and Pin Messages. Startup re-applies them to every running game. A player in an open synchronous whisper has a
-  member overwrite on the game channel (no Send Messages, Send Messages in Threads allowed) that
-  only `games/whispers/restrict.ts` writes or removes; `/whispers end`, promotion to async, night
-  and the game's end all go through it.
+  Threads and Pin Messages. Startup re-applies them to every running game. A member's own overwrite on the game channel
+  has two reasons: an open synchronous whisper (no Send Messages, Send Messages in Threads allowed)
+  and being a Moderator (not a Manager) who plays (no Manage Threads, no Pin Messages). Only
+  `syncMemberOverwrite` (`games/member-overwrite.ts`) writes or removes it, from both at once; joins,
+  departures, substitutions, whisper transitions, the game's end, startup, a change of the
+  Moderator or Manager roles in `/admin config`, a member's roles changing in Discord
+  (`onGuildMemberUpdate`, which needs the privileged Server Members intent) and a role's
+  permissions changing (`onGuildRoleUpdate`) all go through it.
 - **Errors**: a caught error that is not simply handled is recorded in `ErrorEvent` through
   `impl/discord/errors/record.ts`: `fault(operation, outcome, error)` in a `catch`, or
   `.catch(swallow(operation, outcome, fallback))` where a silent `.catch(() => null)` would have gone.

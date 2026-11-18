@@ -370,9 +370,10 @@ a link. A no from anyone ends it and the card says who declined.
 **The lifecycle** (`games/whispers/close.ts`, `restrict.ts`). While a synchronous, non-neighbour
 whisper is open each member has a member overwrite on the game channel, Send Messages denied and
 Send Messages in Threads allowed, so they speak in the whisper and their ST thread and not in
-town. `syncTownVoice` is the one writer of that overwrite: it counts the member's open
-synchronous whispers they have not ended (`rules.restricts`) and sets or deletes it, and every
-transition calls it for the members it touched. `/whispers end` inside the thread ends the
+town. `syncMemberOverwrite` (`games/member-overwrite.ts`) is the one writer of that overwrite:
+it counts the member's open synchronous whispers they have not ended (`rules.restricts`), adds a
+playing Moderator's denials, and sets or deletes it, and every transition calls it for the members
+it touched. `/whispers end` inside the thread ends the
 caller's part (`WhisperParticipant.endedAt`); their voice comes back and the card marks them
 `ended`, but they keep the thread until the last member ends, when the whisper closes: state
 `ended`, the thread locked (not for two seated neighbours under the neighbour rule, whose thread

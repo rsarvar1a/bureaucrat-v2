@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test';
-import { archetypesOf, decide, meetsGate, type AccessConfig } from '../../../impl/acl/archetypes';
+import { archetypesOf, decide, meetsGate, recuses, type AccessConfig } from '../../../impl/acl/archetypes';
 import { MODERATOR_PERMISSIONS, Permissions, type Permission } from '../../../impl/acl/permissions';
 
 const MANAGER = 1n;
@@ -65,4 +65,12 @@ test("a queue's gate is met as well as the server's, never instead of it", () =>
   expect(meetsGate([2n], server, queue)).toBe(false);
   expect(meetsGate([2n], [], queue)).toBe(true);
   expect(meetsGate([1n], server, [])).toBe(true);
+});
+
+test('a Player in a game leaves their archetype outside it; a Storyteller or Kibitzer does not', () => {
+  expect(recuses('Player')).toBe(true);
+  expect(recuses('Storyteller')).toBe(false);
+  expect(recuses('Kibitzer')).toBe(false);
+  expect(recuses(null)).toBe(false);
+  expect(recuses(undefined)).toBe(false);
 });

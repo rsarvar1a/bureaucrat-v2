@@ -5,6 +5,7 @@ import { listRunningGames } from '../../../drizzle/games';
 import { logger } from '../../../utilities/logger';
 import type { Game } from '../../../schema/core/games.sql';
 import type { ParticipantRow } from './membership';
+import { syncPlayerOverwrites } from './member-overwrite';
 
 type GameRow = typeof Game.$inferSelect;
 export type LogicalRole = ParticipantRow['role'];
@@ -157,16 +158,19 @@ export const syncGameRoles = async (client: Client, game: GameRow): Promise<void
   const roles = await ensureGameRoles(client, game);
   await grantChannelOverwrites(client, game, roles);
   for (const participant of await listParticipants(game.id)) await grantGameRole(client, game, participant, roles);
+  await syncPlayerOverwrites(client, game);
 };
 
 /**
  * The channel overwrites, re-applied to every running game: a grant added to
- * `CHANNEL_GRANTS` reaches games made before it. Idempotent, one request per
- * role per game.
+ * `CHANNEL_GRANTS` reaches games made before it, and each player's own
+ * overwrite follows who is a Moderator now. Idempotent, one request per role
+ * per game and one per player whose overwrite has to change.
  */
 export const restoreChannelOverwrites = async (client: Client): Promise<void> => {
   for (const game of await listRunningGames()) {
     await grantChannelOverwrites(client, game, await trackedRoles(game.id));
+    await syncPlayerOverwrites(client, game);
   }
 };
 

@@ -1,8 +1,10 @@
 import type { ViewContext, ViewGuard } from '../../../engine/discord/views/types';
 import { getGame } from '../../../drizzle/games';
-import { isParticipant } from '../../../drizzle/participants';
+import { getParticipantByMember } from '../../../drizzle/participants';
+import { getSignupByMember } from '../../../drizzle/signups';
+import { recuses } from '../../acl/archetypes';
 import { Permissions } from '../../acl/permissions';
-import { accessAllows, actorOf, type Actor } from '../access';
+import { accessAllows, actorOf, archetypesFor, type Actor } from '../access';
 import { inSameGuild } from './scope';
 import type { Locator } from './index';
 import { S } from '../../../strings';
@@ -21,12 +23,17 @@ export const gameFromEntity: Locator = async (ctx) => {
 };
 
 /**
- * A Storyteller of the game may run it; so may a Moderator or Manager
- * (`game.manage`). Shared by the window guard and the commands that act on a game
+ * A Storyteller of the game may run it; so may a Manager, and a Moderator
+ * (`game.manage`) unless they are a Player in it or have asked to be
+ * (`recuses`). Shared by the window guard and the commands that act on a game
  * found by channel, so the two never disagree about who storytells.
  */
 export const isStorytellerOf = async (game: GameRow, actor: Actor): Promise<boolean> => {
-  if (await isParticipant(game.id, actor.id, 'Storyteller')) return true;
+  const seat = await getParticipantByMember(game.id, actor.id);
+  if (seat?.role === 'Storyteller') return true;
+  if (recuses(seat?.role ?? (await getSignupByMember(game.id, actor.id))?.role)) {
+    return (await archetypesFor(game.guild, actor)).manager;
+  }
 
   const verdict = await accessAllows(game.guild, actor, Permissions.Game.Manage);
   return verdict.ok;

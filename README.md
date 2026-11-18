@@ -6,7 +6,7 @@ Discord bot for Clocktower. Bun + TypeScript + discord.js + Drizzle ORM + Postgr
 
 Copy `.env.example` to `.env` and fill in `DISCORD_TOKEN`.
 
-Invite the bot with the Message Content intent. The bot requires the **Manage Roles** permission globally, and the **Manage Channels**, **Create Private Threads**, **Manage Threads** and **Send Messages in Threads** permissions in its categories.
+Invite the bot with the Message Content and Server Members intents (both privileged: switch them on under Bot in the Developer Portal, or the bot cannot log in). The bot requires the **Manage Roles** permission globally, and the **Manage Channels**, **Create Private Threads**, **Manage Threads** and **Send Messages in Threads** permissions in its categories.
 
 Once it is in, a server manager runs `/admin config` to say which Discord roles are the bot's Managers, Moderators, Storytellers and Players (see `docs/interactions/ADR-006-access-archetypes.md`). Until then, members with Manage Server manage it and anyone may storytell or play.
 

@@ -11,6 +11,7 @@ import { listThreadsOfParticipant } from '../../../drizzle/managed-thread-partic
 import type { Game } from '../../../schema/core/games.sql';
 import { joinThreads, leaveThreads, swapInPublicThreads, type JoinOutcome, type ParticipantRow } from './membership';
 import { grantGameRole, revokeGameRole } from './roles';
+import { syncMemberOverwrite } from './member-overwrite';
 
 type GameRow = typeof Game.$inferSelect;
 
@@ -70,7 +71,9 @@ export const substitute = async (
     await leaveThreads(client, outgoing, threads);
     await revokeGameRole(client, game, outgoing);
     await deleteParticipant(outgoing.id);
+    await syncMemberOverwrite(client, game, outgoing.member);
   }
+  await syncMemberOverwrite(client, game, newcomer.member);
 
   return { ok: true, outgoing, incoming: newcomer, threads: joined };
 };

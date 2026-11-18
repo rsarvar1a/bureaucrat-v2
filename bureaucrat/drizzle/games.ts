@@ -139,3 +139,20 @@ export const claimRecruitment = async (gameId: string, now: Date, cutoff: Date) 
     .returning();
   return row;
 };
+
+/** The running games in a guild a member plays in (not storytells or kibitzes). */
+export const listRunningGamesOfPlayer = async (member: bigint, guildId: bigint) =>
+  (
+    await db
+      .select({ game: Game })
+      .from(Participant)
+      .innerJoin(Game, eq(Participant.game, Game.id))
+      .where(
+        and(
+          eq(Participant.member, member),
+          eq(Participant.role, 'Player'),
+          eq(Game.guild, guildId),
+          ne(Game.state, 'completed'),
+        ),
+      )
+  ).map((row) => row.game);

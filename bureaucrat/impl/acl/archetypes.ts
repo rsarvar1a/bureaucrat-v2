@@ -32,3 +32,12 @@ export const decide = (permission: Permission, archetypes: Archetypes): boolean 
 /** Every list that is set must be met: the server's, then the queue's. An empty list asks nothing. */
 export const meetsGate = (held: readonly bigint[], ...lists: (readonly bigint[])[]): boolean =>
   lists.every((list) => list.length === 0 || holdsAny(held, list));
+
+/**
+ * Whether someone with this seat in a game (or this signup to one) must leave
+ * their archetype outside it. A Player who could open the Storyteller's views
+ * would know the grimoire; a Storyteller is one already, and a Kibitzer sees
+ * every thread anyway. Moderators only: a Manager is the server's admin and
+ * keeps everything wherever they sit.
+ */
+export const recuses = (role: 'Player' | 'Storyteller' | 'Kibitzer' | null | undefined): boolean => role === 'Player';

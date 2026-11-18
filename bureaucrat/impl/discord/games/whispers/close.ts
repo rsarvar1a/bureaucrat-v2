@@ -29,7 +29,7 @@ import { boundChannel } from '../bound-thread';
 import { spawnByRoute } from '../create';
 import { publish } from '../publish';
 import { checkProposal, openWhisper, recordProposal, threadFor } from './propose';
-import { syncTownVoice } from './restrict';
+import { syncMemberOverwrite } from '../member-overwrite';
 import { allowanceOf } from './allowance';
 import { lockOnClose, neighbours, promotable, promotedCost, remainingAfter } from './rules';
 import { displayNames } from '../../views/queue/members';
@@ -112,7 +112,7 @@ export const closeWhisper = async (client: Client, game: GameRow, whisper: Whisp
   if (whisper.state === 'accepted' && !shared && (reason === 'night' || (await locks(game, members)))) {
     await lockThread(client, whisper, reason);
   }
-  for (const m of members) await syncTownVoice(client, game, m.participant);
+  for (const m of members) await syncMemberOverwrite(client, game, m.participant.member);
   await publish(client, [whisperChanged(whisper.id)]);
   return closed;
 };
@@ -198,7 +198,7 @@ export const endFor = async (
   if (mine.part.endedAt !== null) return { ok: false, reason: 'already-ended' };
 
   await endMember(whisper.id, participant.id);
-  await syncTownVoice(client, game, participant);
+  await syncMemberOverwrite(client, game, participant.member);
 
   const remaining = remainingAfter(
     members.map((m) => ({ participant: m.participant.id, endedAt: m.part.endedAt })),
@@ -318,7 +318,7 @@ export const answerPromotion = async (
       cost: promotedCost(settings.whisperMode, m.part.cost, members.length),
     })),
   );
-  for (const m of members) await syncTownVoice(client, game, m.participant);
+  for (const m of members) await syncMemberOverwrite(client, game, m.participant.member);
   await publish(client, [whisperChanged(whisper.id)]);
   return { ok: true, outcome: 'promoted' };
 };

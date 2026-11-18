@@ -10,6 +10,7 @@ import { getSeatOfParticipant } from '../../../drizzle/seating';
 import type { Game } from '../../../schema/core/games.sql';
 import { joinByRole, leaveAllThreads, type JoinOutcome, type ParticipantRow } from './membership';
 import { grantGameRole, revokeGameRole } from './roles';
+import { syncMemberOverwrite } from './member-overwrite';
 import { unseat } from './seats';
 
 type GameRow = typeof Game.$inferSelect;
@@ -26,6 +27,7 @@ export const addMember = async (client: Client, game: GameRow, member: bigint, r
   const participant = await insertParticipant({ game: game.id, member, role });
   const threads = await joinByRole(client, participant);
   await grantGameRole(client, game, participant);
+  await syncMemberOverwrite(client, game, member);
 
   return { ok: true, participant, threads };
 };
@@ -49,6 +51,7 @@ export const removeMember = async (client: Client, game: GameRow, participantId:
   await leaveAllThreads(client, participant);
   await revokeGameRole(client, game, participant);
   await deleteParticipant(participant.id);
+  await syncMemberOverwrite(client, game, participant.member);
 
   return { ok: true, participant };
 };

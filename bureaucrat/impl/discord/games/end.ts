@@ -9,6 +9,7 @@ import { gameEvents } from '../views/games/events';
 import { endedChannelName } from './names';
 import { deleteGameRoles } from './roles';
 import { closeAllWhispers } from './whispers/close';
+import { syncPlayerOverwrites } from './member-overwrite';
 import { autoExport } from './offsite/start';
 
 type GameRow = typeof Game.$inferSelect;
@@ -37,6 +38,7 @@ export const endGame = async (client: Client, game: GameRow, outcomes: OutcomeIn
 
   await deleteGameRoles(client, game);
   await closeAllWhispers(client, game, 'night');
+  await syncPlayerOverwrites(client, ended);
 
   for (const row of await listManagedThreads(game.id)) {
     try {

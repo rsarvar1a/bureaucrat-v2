@@ -38,3 +38,14 @@ tested exhaustively, and `acl/resolve.ts` reads it over the cached roles.
 - The migration carried server-wide Discord-role bindings of the seeded `admin` and `moderator`
   roles over to Managers and Moderators; member bindings, location bindings and other ACL roles
   were dropped.
+
+## Addendum: recusal
+
+A Moderator who is a Player in a game, or has a pending signup to play in it (or to a queue
+entry), holds no archetype there: they cannot open its Storyteller views, run its Storyteller
+commands, or manage that entry. Storytellers and Kibitzers keep theirs (`recuses` in
+`impl/acl/archetypes.ts`). Managers are the server's admins and are never recused.
+
+Discord's own permissions are taken away to match: while a Moderator plays, their member overwrite
+on the game channel denies Manage Threads (which would show every private thread, and which every
+thread inherits) and Pin Messages (`games/member-overwrite.ts`).

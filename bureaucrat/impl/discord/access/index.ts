@@ -1,6 +1,6 @@
-import { PermissionFlagsBits, type BaseInteraction } from 'discord.js';
+import { PermissionFlagsBits, type BaseInteraction, type GuildMember } from 'discord.js';
 import { resolvePermission } from '../../acl/resolve';
-import { archetypesOf, meetsGate } from '../../acl/archetypes';
+import { archetypesOf, meetsGate, type Archetypes } from '../../acl/archetypes';
 import { getGuildAccess } from '../../acl/cache';
 import type { Permission } from '../../acl/permissions';
 import type { Queue } from '../../../schema/core/queues.sql';
@@ -54,7 +54,18 @@ export const actorOf = (interaction: BaseInteraction): Actor | null => {
   };
 };
 
+/** The same actor from a fetched member, for work that runs with no interaction to read. */
+export const actorOfMember = (member: GuildMember): Actor => ({
+  id: BigInt(member.id),
+  roles: [...new Set([...member.roles.cache.keys(), member.guild.id])].map(BigInt),
+  manageGuild: member.permissions.has(PermissionFlagsBits.ManageGuild),
+  owner: member.guild.ownerId === member.id,
+});
+
 const bypassOf = (actor: Actor) => ({ owner: actor.owner, manageGuild: actor.manageGuild });
+
+export const archetypesFor = async (guild: bigint, actor: Actor): Promise<Archetypes> =>
+  archetypesOf(actor.roles, await getGuildAccess(guild), bypassOf(actor));
 
 /**
  * The decision, with the archetypes consulted.

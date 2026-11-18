@@ -2,6 +2,8 @@ import { Client, Events, type ClientEvents } from 'discord.js';
 
 import onInteractionCreate from '../handlers/onInteractionCreate';
 import onMessageDelete from '../handlers/onMessageDelete';
+import onGuildMemberUpdate from '../handlers/onGuildMemberUpdate';
+import onGuildRoleUpdate from '../handlers/onGuildRoleUpdate';
 import onClientReady from '../handlers/onClientReady';
 import onClientError from '../handlers/onClientError';
 import { logger } from '../../../utilities/logger';
@@ -32,4 +34,7 @@ export const handlers = [
 
   // State that changes outside the bot: view messages deleted by hand.
   new TopLevelHandlerDefinition('on', Events.MessageDelete, onMessageDelete),
+  // Who is a Moderator or Manager, which a playing member's channel overwrite follows.
+  new TopLevelHandlerDefinition('on', Events.GuildMemberUpdate, onGuildMemberUpdate),
+  new TopLevelHandlerDefinition('on', Events.GuildRoleUpdate, onGuildRoleUpdate),
 ] as const;

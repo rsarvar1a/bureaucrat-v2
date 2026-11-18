@@ -5,6 +5,7 @@ import type { Game } from '../../../schema/core/games.sql';
 import type { Signup } from '../../../schema/core/people.sql';
 import { joinByRole, type JoinOutcome, type ParticipantRow } from './membership';
 import { grantGameRole } from './roles';
+import { syncMemberOverwrite } from './member-overwrite';
 
 type GameRow = typeof Game.$inferSelect;
 export type SignupRow = typeof Signup.$inferSelect;
@@ -50,6 +51,7 @@ export const acceptSignup = async (client: Client, game: GameRow, signupId: stri
   const threads = await joinByRole(client, participant);
   await grantGameRole(client, game, participant);
   await deleteSignup(signup.id);
+  await syncMemberOverwrite(client, game, participant.member);
 
   return { ok: true, participant, threads };
 };

@@ -21,7 +21,8 @@ import { displayNames } from '../../views/queue/members';
 import { writable } from '../../../../engine/discord/views/threads';
 import { logger } from '../../../../utilities/logger';
 import { joinThreads } from '../membership';
-import { busyWhispering, syncTownVoice } from './restrict';
+import { busyWhispering } from './restrict';
+import { syncMemberOverwrite } from '../member-overwrite';
 import { allowanceOf } from './allowance';
 import {
   affordable,
@@ -221,7 +222,7 @@ export const openWhisper = async (client: Client, game: GameRow, whisper: Whispe
     whisper.free,
   );
   const opened = (await updateWhisper(whisper.id, { state: 'accepted', thread: thread.id })) ?? whisper;
-  for (const m of members) await syncTownVoice(client, game, m.participant);
+  for (const m of members) await syncMemberOverwrite(client, game, m.participant.member);
   return opened;
 };
 

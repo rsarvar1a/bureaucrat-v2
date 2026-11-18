@@ -1,9 +1,11 @@
 import type { ViewGuard } from '../../../engine/discord/views/types';
 import { getQueue } from '../../../drizzle/queues';
 import { getQueueEntry, listQueueEntries } from '../../../drizzle/queue-entries';
+import { getSignupByMemberAndEntry } from '../../../drizzle/queue-entry-signups';
+import { recuses } from '../../acl/archetypes';
 import { nextClaimant } from '../games/vacancy';
 import { Permissions } from '../../acl/permissions';
-import { accessAllows, actorOf, mayJoinAs } from '../access';
+import { accessAllows, actorOf, archetypesFor, mayJoinAs } from '../access';
 import { inSameGuild } from './scope';
 import type { Locator } from './index';
 import { S } from '../../../strings';
@@ -32,8 +34,9 @@ export const queueOfEntry: Locator = async (ctx) => {
 };
 
 /**
- * The Storyteller who created the entry may manage it; so may a Moderator or
- * Manager (`queue.manage_entries`).
+ * The Storyteller who created the entry may manage it; so may a Manager, and
+ * a Moderator (`queue.manage_entries`) unless signed up to play in it
+ * (`recuses`), which would let them accept themselves.
  *
  * One guard rather than two composed, so the entry is fetched once and the
  * refusal names the Storyteller rule, which is the one most people will meet.
@@ -49,6 +52,11 @@ export const canManageEntry: ViewGuard = async (interaction, ctx) => {
 
   const queue = await getQueue(entry.queue);
   if (!queue || !inSameGuild(queue.guild, interaction.guildId)) return S.errors.notHere;
+
+  const signup = await getSignupByMemberAndEntry(actor.id, entry.id);
+  if (signup && signup.accepted !== false && recuses(signup.role)) {
+    return (await archetypesFor(queue.guild, actor)).manager ? true : S.errors.notStoryteller;
+  }
 
   const verdict = await accessAllows(queue.guild, actor, Permissions.Queue.ManageEntries);
 

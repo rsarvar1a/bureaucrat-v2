@@ -7,6 +7,8 @@ import { linear, separator, v2 } from '../../../../../engine/discord/elements';
 import type { InteractionHandler, ViewGuard } from '../../../../../engine/discord/views/types';
 import { getAccessConfig, getOrCreateGuildSettings, updateGuildSettings } from '../../../../../drizzle/guild-settings';
 import { invalidateGuildAccess } from '../../../../acl/cache';
+import { resyncGuildOverwrites } from '../../../games/member-overwrite';
+import { logger } from '../../../../../utilities/logger';
 import { Permissions } from '../../../../acl/permissions';
 import { can, inGuild, type Locator } from '../../../guards';
 import { renderAccess } from './access';
@@ -104,6 +106,12 @@ export default createView<ConfigState>()({
       const guild = BigInt(ctx.view.entityId!);
       await updateGuildSettings(guild, { [COLUMN[archetype]]: pickedRoles(interaction.values) });
       invalidateGuildAccess(guild);
+      // Who is a Moderator decides which players' channel overwrites take Manage Threads away.
+      if (archetype === 'moderator' || archetype === 'manager') {
+        void resyncGuildOverwrites(interaction.client, guild).catch((error: unknown) =>
+          logger.warn({ message: `Could not resync the player overwrites of guild ${guild}.`, error }),
+        );
+      }
       return { action: 'render' };
     },
 
